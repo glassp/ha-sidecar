@@ -7,13 +7,13 @@ based on its **public docs only**; everything here is implemented independently.
 |---|---|
 | PIN-protected kiosk, lockdown, device-owner lock task, accessibility "system UI guard" | ✅ scaffolded (phase 1) |
 | Home-Assistant-facing entities (switches, sensors, buttons) over ESPHome native API | ✅ own WebSocket + HA integration instead of ESPHome. works through reverse proxies; discovery is mDNS pairing (phase 2.7, [PAIRING.md](PAIRING.md)) |
-| Alarms (next alarm, ringing, stop, snooze) | ✅ scaffolded, native `setAlarmClock` |
-| Remote screen on/off, brightness, keep screen on | ✅ scaffolded |
+| Alarms (next alarm, ringing, stop, snooze) | ✅ native `setAlarmClock`; plus remote mute / skip next / enable, labeled timers and stopwatches (phase 2.3) |
+| Remote screen on/off, brightness, keep screen on | ✅ all brightness settings are entities (percentage and raw), night mode actions |
 | Reboot (device owner) | ✅ |
 | OS update entity | ✅ (detection: device owner only) - KS lists an app-update entity, ours is the OS |
 | Foreground app, battery, charging, Android version sensors | ✅ partial |
-| Voice Satellite (wake word, Assist, TTS, timers) | ⏳ phase 3 |
-| Screensaver (clock, photos, Immich, "at a glance") | ⏳ phase 2 |
+| Voice Satellite (wake word, Assist, TTS, timers) | ⏳ phase 3 (the timer engine it needs exists since phase 2.3) |
+| Screensaver (clock, photos, Immich, "at a glance") | ✅ at-a-glance (clock, next alarm, timers, HA values) or an own glance dashboard; ⏳ photos / Immich |
 | Screensaver triggers: motion/face/proximity via camera | ⏳ phase 2/4 |
 | Media player / DLNA / Music Assistant | ⏳ phase 4 (optional) |
 | Intercom between tablets | ⏳ phase 4 (optional) |
@@ -25,8 +25,25 @@ based on its **public docs only**; everything here is implemented independently.
 
 ## Phases
 
-### 1. Kiosk core (this scaffold)
-Lockdown (DO + accessibility), allowlist, PIN, alarms, OS update signal, entities/services.
+Status as of 2026-10-09. Everything marked done was built and exercised on an Android 15 emulator against a real Home
+Assistant (see [TESTING.md](TESTING.md)); nothing has run on a physical tablet yet (checklist at the end).
+
+| Phase | State |
+|---|---|
+| 1 Kiosk core | done |
+| 2 Smart-display surface (brightness, presence, glance, camera, dashboards) | done |
+| 2.1 App UI: wizard, search, translations, Flutter-only screens | done |
+| 2.3 Timers, stopwatches and remote alarm control | done |
+| 2.4 Naming, brightness units, night mode actions | done |
+| 2.5 Companion app watchdog | design only |
+| 2.7 Discovery, pairing and network-aware connection | done (discovery itself unverified on a real LAN) |
+| 3 Voice | not started |
+| 4 Optional | not started |
+
+### 1. Kiosk core (done)
+Lockdown (device owner lock task, or accessibility fallback), allowlist, on-device PIN with cooldown, home-app role (boot
+start, crash recovery), remote enable/disable (needs a PIN and a kiosk dashboard), alarms, OS update signal and trigger,
+entities/services, the HACS integration. Sidecar and the Home Assistant companion app run side by side.
 
 ### 2. Smart-display surface (brightness, presence, glance, camera: done, see [DISPLAY.md](DISPLAY.md))
 Done: time-of-day brightness, idle dim, night light on presence, HA presence/night inputs, camera motion presence (menu),
@@ -38,6 +55,25 @@ Original plan:
 - Idle detection: no touch for N s (needs a transparent touch-observer overlay or accessibility events).
 - Dimming curve + presence wake (HA `binary_sensor` → `screen` command already works).
 - Screenshot + battery/uptime sensors.
+
+### 2.1 App UI (done, see [UI.md](UI.md))
+First-run setup wizard that explains and guides every permission; Home / Kiosk / Display / Alarms / System tabs; a settings
+search over every setting; kiosk dashboard (required) and idle/glance dashboard (optional) taking pasted browser URLs; brand
+icons; English and German (`easy_localization`); `beamer` routing; **no native screens**: the PIN pad, ringing alarm and idle
+screen are Flutter pages of one activity.
+
+### 2.3 Timers, stopwatches and remote alarm control (done)
+Labeled countdowns and count-ups on the tablet (persistent, exact wake-up, survive reboot), shown on the idle screen and in
+the app; a finished countdown rings and counts the time it is over until dismissed. Home Assistant can start / pause /
+resume / adjust / cancel them (by id or label), gets `timer_*` events, and has sensors (next timer, timers, alarms). Alarms
+can be muted (also for a duration, e.g. while away), skipped once, enabled or disabled remotely. Details in
+[PROTOCOL.md](PROTOCOL.md).
+
+### 2.4 Naming, brightness units and night mode (done)
+Entities are `<domain>.<prefix>_<entity>` with a prefix chosen at setup (Home Assistant forbids `__` in entity ids).
+Brightness is a percentage by default in the app (raw 0-255 is a developer option) and every brightness has a
+`..._percentage` and a `..._raw` entity. `enter_night_mode` / `exit_night_mode` actions drive the night state from
+automations.
 
 ### 2.5 Companion app watchdog (frozen / non-responsive HA app) - design, not built
 
@@ -97,7 +133,7 @@ action (`restart` | `notify only`), `button` Restart companion app, bus events `
 4. Real tablet: low memory, slow storage, OEM ANR dialog wording (the dialog text is localized: match by package +
    button roles, not only English text).
 
-### 2.7 Discovery and pairing (done, see [PAIRING.md](PAIRING.md))
+### 2.7 Discovery, pairing and network-aware connection (done, see [PAIRING.md](PAIRING.md))
 mDNS: the tablet advertises `_ha-sidecar._tcp` while its pairing mode is on, Home Assistant discovers it (zeroconf) and the two
 pair with an ECDH handshake: confirm the six-digit number on the tablet, or use IP + the code the tablet shows when discovery is
 not available. Home Assistant hands over the connection token and its address(es) encrypted. Also: internal and external address,
@@ -116,7 +152,7 @@ Open: QR pairing, reconfigure/re-pair from Home Assistant, verification on a rea
   end a turn; result cards (weather, image, media) from the conversation log; draggable timer pills; error notices that
   name the failing stage (mic, wake word, connection, TTS, pipeline). Implementation: accessibility overlay window hosting
   a Flutter surface (second `FlutterEngine`/`FlutterView` in a service) or plain native views for v1; skins as themes.
-- Timers: HA `timer`s mirrored as native countdown notifications; reuse the alarm audio path.
+- Timers: the native timer engine and alarm audio path exist (phase 2.3); voice only has to create timers through them and mirror HA `timer`s.
 
 ### 4. Optional
 Media player entity, intercom, camera-based motion/presence, Bluetooth proxy (ESPHome BT proxy protocol), iOS/desktop ports
@@ -125,13 +161,15 @@ Media player entity, intercom, camera-based motion/presence, Bluetooth proxy (ES
 ## Open design questions
 - Nightly "reload/restart HA app" job to mitigate stale dashboards (DO: reboot; non-DO: relaunch).
 - Pairing UX: QR code on the tablet (zeroconf advertisement and code pairing are done, see PAIRING.md).
-- Token rotation / re-pair flow in the integration (reconfigure step).
+- Token rotation / re-pair flow in the integration (reconfigure step); long-term identity pinning after pairing.
+- Entity prefix is fixed at setup; a rename flow would need to migrate registry ids.
+- Dashboard buttons / blueprints for timers (Batch 1 style presets) and a voice front end for them.
 - Whether to allow `clearDeviceOwnerApp` from the app behind the PIN (currently only factory reset removes ownership).
 - Play Store distribution is doubtful (accessibility + device-owner use, `USE_FULL_SCREEN_INTENT`); plan on F-Droid/GitHub APKs.
 
 ## First device test checklist
 Steps 2-5 (partly 7) were run on an emulator, see [TESTING.md](TESTING.md); all of it still needs a physical tablet.
-1. Debug APK installs; pairing works; entities appear and go unavailable when the app is killed.
+1. Debug APK installs; pairing works (**mDNS discovery on the real LAN**, then the manual code route across VLANs); entities appear and go unavailable when the app is killed.
 2. Accessibility mode: lockdown on → Home/Recents/shade/Settings all bounce to the HA app; keyboard still works in HA; HA app's own launcher mode doesn't fight the guard.
 3. Device-owner mode: `dpm set-device-owner` succeeds; lock task starts for the HA app via `setLockTaskEnabled`; status bar gone; hot corner overlay still receives taps (**most likely failure point**); PIN disables.
 4. Remote `launch_app` / bounce while the HA app is in front (background-activity-start restriction).
@@ -139,3 +177,5 @@ Steps 2-5 (partly 7) were run on an emulator, see [TESTING.md](TESTING.md); all 
 6. `onSystemUpdatePending` arrives (needs a real OTA); stale-fingerprint clearing after update.
 7. Process death: kill the app; lockdown (accessibility service restarts by system, DO policy persists) and alarms still work.
 8. Android 14/15/16/17 foreground-service-type and full-screen-intent permission behavior.
+9. Timers: a countdown rings on time with the screen off and in Doze, survives a reboot (a timer that ended while off rings at boot), count-ups keep counting; muted alarms stay silent and keep their schedule.
+10. Network: home-Wi-Fi detection (needs the location permission and a real SSID), VPN-as-home, Ethernet, switching internal/external address while moving between networks, *home network only* idling away from home.
