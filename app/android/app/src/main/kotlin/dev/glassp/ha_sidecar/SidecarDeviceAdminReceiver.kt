@@ -21,6 +21,10 @@ class SidecarDeviceAdminReceiver : DeviceAdminReceiver() {
         EventBus.emit("system_update_pending", mapOf("received_at" to receivedTime))
     }
 
+    override fun onDisabled(context: Context, intent: Intent) {
+        EventBus.emit("device_admin_disabled")
+    }
+
     override fun onLockTaskModeEntering(context: Context, intent: Intent, pkg: String) {
         EventBus.emit("lock_task_changed", mapOf("active" to true, "package" to pkg))
     }

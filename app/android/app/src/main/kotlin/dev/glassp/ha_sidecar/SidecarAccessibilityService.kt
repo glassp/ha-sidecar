@@ -33,6 +33,8 @@ class SidecarAccessibilityService : AccessibilityService() {
     override fun onUnbind(intent: android.content.Intent?): Boolean {
         instance = null
         HotCorner.hide()
+        TouchWatcher.hide()
+        if (Prefs.lockdown(this)) EventBus.emit("guard_disabled")
         EventBus.emit("status_changed")
         return super.onUnbind(intent)
     }
@@ -61,6 +63,9 @@ class SidecarAccessibilityService : AccessibilityService() {
             return
         }
         if (KioskController.isAllowed(this, pkg)) return
+        KioskController.lastBlockedApp = pkg
+        KioskController.blockedCount++
+        EventBus.emit("app_blocked", mapOf("package" to pkg))
         bounce()
     }
 

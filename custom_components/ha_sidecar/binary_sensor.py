@@ -13,13 +13,17 @@ from .entity import SidecarEntity
 
 # key, name, device_class, entity_category, icon
 SENSORS = [
+    ("presence", "Presence", BinarySensorDeviceClass.PRESENCE, None, None),
+    ("camera_motion", "Camera motion", BinarySensorDeviceClass.MOTION, None, None),
+    ("is_night", "Night", None, None, "mdi:weather-night"),
     ("alarm_ringing", "Alarm ringing", None, None, "mdi:alarm-light"),
-    ("charging", "Charging", BinarySensorDeviceClass.BATTERY_CHARGING, None, None),
-    ("screen_on", "Screen on", None, None, "mdi:monitor"),
+    ("camera_in_use", "Camera in use", BinarySensorDeviceClass.RUNNING, None, "mdi:camera"),
+    ("mic_in_use", "Microphone in use", BinarySensorDeviceClass.RUNNING, None, "mdi:microphone"),
     ("is_home_app", "Is home app", None, EntityCategory.DIAGNOSTIC, "mdi:home"),
     ("device_owner", "Device owner", None, EntityCategory.DIAGNOSTIC, "mdi:shield-account"),
     ("accessibility_enabled", "Accessibility guard", None, EntityCategory.DIAGNOSTIC, "mdi:human"),
     ("overlay_granted", "Overlay permission", None, EntityCategory.DIAGNOSTIC, "mdi:layers"),
+    ("write_settings_granted", "Modify system settings permission", None, EntityCategory.DIAGNOSTIC, "mdi:cog"),
 ]
 
 

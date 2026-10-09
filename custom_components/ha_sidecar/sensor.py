@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, EntityCategory
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -14,13 +14,16 @@ from .const import CONF_DEVICE_ID, DOMAIN
 from .entity import SidecarEntity
 
 # key, name, device_class, unit, entity_category, icon
+# (battery, charging, Android version, security patch, next alarm and storage are already exposed by the
+# Home Assistant companion app, so they are intentionally not duplicated here)
 SENSORS = [
-    ("battery_level", "Battery", SensorDeviceClass.BATTERY, PERCENTAGE, None, None),
-    ("next_alarm", "Next alarm", SensorDeviceClass.TIMESTAMP, None, None, None),
+    ("last_interaction", "Last interaction", SensorDeviceClass.TIMESTAMP, None, None, "mdi:gesture-tap"),
     ("foreground_app", "Foreground app", None, None, None, "mdi:application"),
+    ("target_brightness", "Target brightness", None, None, EntityCategory.DIAGNOSTIC, "mdi:brightness-percent"),
+    ("last_blocked_app", "Last blocked app", None, None, EntityCategory.DIAGNOSTIC, "mdi:shield-alert"),
+    ("blocked_count", "Blocked app launches", None, None, EntityCategory.DIAGNOSTIC, "mdi:counter"),
+    ("pin_failures", "PIN failures", None, None, EntityCategory.DIAGNOSTIC, "mdi:lock-alert"),
     ("mode", "Enforcement mode", None, None, EntityCategory.DIAGNOSTIC, "mdi:shield-lock"),
-    ("security_patch", "Security patch", None, None, EntityCategory.DIAGNOSTIC, "mdi:shield-check"),
-    ("android_release", "Android version", None, None, EntityCategory.DIAGNOSTIC, "mdi:android"),
 ]
 
 
@@ -43,6 +46,6 @@ class SidecarSensor(SidecarEntity, SensorEntity):
         value = self._state.get(self._key)
         if value is None:
             return None
-        if self._key == "next_alarm":  # epoch millis
+        if self._key == "last_interaction":  # epoch millis
             return datetime.fromtimestamp(value / 1000, tz=timezone.utc)
         return value

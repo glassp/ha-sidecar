@@ -95,7 +95,10 @@ class PinActivity : Activity() {
                 runCatching { stopLockTask() }
                 finish()
             }
-            -1L -> message.text = "Wrong PIN"
+            -1L -> {
+                message.text = "Wrong PIN"
+                EventBus.emit("pin_failed", mapOf("failures" to Prefs.pinFails(this)))
+            }
             else -> message.text = "Locked. Try again in ${r / 1000 + 1}s"
         }
         entered.clear()
