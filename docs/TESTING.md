@@ -207,6 +207,24 @@ emulator by pairing while the tablet sat in that state: it connected by itself. 
 test harness must restart it on that code; on macOS the `pyobjc` CoreBluetooth binding gets the Home Assistant process killed
 when it has no Bluetooth permission (remove the package or the `bluetooth` integration for lab runs).
 
+### Voice, integration side (slice 3.1)
+
+`tests/lab/voice_fake.py` is a fake tablet that speaks the voice protocol against the lab Home Assistant (needs the real tablet
+offline: `adb shell cmd connectivity airplane-mode enable`, because a reconnecting tablet takes the connection back) with the
+`tests/lab/lab_voice` component providing STT (always "recognises" a fixed phrase when it gets audio) and TTS (a tone) and a
+pipeline using them. 26 checks pass: the entity is idle on connect; a full turn (`start`, 1 s of 100 ms frames, `stop`) gives
+`stt-start`, `stt-end` (text), `intent-end` (the built-in agent answers "what time is it"), `tts-end` (URL that plays, 200 and
+audio) and `run-end`; the state goes `listening`, `processing`, `responding`, back to `idle` on `played`; `assist_satellite.announce`
+reaches the tablet as `voice_announce` with the URL, message and pre-announce sound and blocks until the tablet answers;
+barge-in (a new `start` cancels the running turn, no event of the old run is tagged with the new session); `cancel`; garbage
+(bad base64, odd-length PCM, missing fields, frames for unknown sessions) is ignored; a disconnect makes the entity unavailable and
+ends the turn, and a turn after reconnecting works. The barge-in check found a real bug on the first run (the cancelled run's closing
+`run-end` was tagged with the new session, so the tablet would have taken the new turn for finished); a new run now starts only after the
+old one ended. Unit tests (`tests/test_voice.py`, 11) cover the audio queue (order, close, back-pressure, bad frames) and the event trimming.
+
+Not verified: real speech (the lab STT ignores the audio content), a real VAD end-of-speech (the fake tablet ends the turn itself),
+any of the app side.
+
 ## Not verified
 
 - Update **detection** (`onSystemUpdatePending`) and the download/install/restart taps: need a real pending OTA.

@@ -36,6 +36,9 @@ Additional state keys: `cfg{...}`, `is_night`, `presence`, `camera_motion`, `cam
 Events: `app_blocked`, `pin_failed`, `guard_disabled`, `device_admin_disabled`, `alarm_ringing`, `alarm_stopped` (`reason`: dismissed/snoozed/timeout), `system_update_pending`,
 `system_update_install_error`, `update_automation_started`, `update_automation_step`, `update_automation_finished` (`reason`: idle) (`label` = button tapped), `lockdown_disabled_by_pin`.
 
+Voice (see [VOICE.md](VOICE.md)): `{"type":"voice","action":"start|audio|stop|cancel|played","session":"<tablet's id>",...}`;
+`start` may carry `wake_word`, `audio` carries `data` (base64, 16 kHz mono PCM16, 100 ms per frame).
+
 ## HA → app
 
 ```
@@ -91,6 +94,9 @@ each with `id`, `label`, `kind`, `duration_s`. State additionally carries `timer
 | `reboot` | | device owner |
 
 Unknown commands → `unknown_command`. Commands time out after 20 s on the HA side.
+
+Voice: `{"type":"voice_event","session":id,"event":"stt-end|intent-end|tts-end|run-end|error|...","data":{...}}` (trimmed Assist
+pipeline events) and the command `voice_announce` `{url, message, preannounce_url}`, answered when playback ended.
 
 ## Security notes
 

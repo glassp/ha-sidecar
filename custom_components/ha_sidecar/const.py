@@ -14,6 +14,7 @@ WS_PATH = "/api/ha_sidecar/ws"
 EVENT_SIDECAR = "ha_sidecar_event"
 
 COMMAND_TIMEOUT = 20
+ANNOUNCE_TIMEOUT = 120  # an announcement blocks until it has been played
 
 # Options (Configure on the integration card)
 CONF_PRESENCE_ENTITIES = "presence_entities"  # on = someone is near the tablet (mmWave, PIR, ...)

@@ -19,7 +19,7 @@ companion app** for the dashboard and a small **sidecar app** for everything the
 | At a glance | Clock, next alarm and chosen HA values after idle; dismissed by touch or presence |
 | Extra sensors | last interaction, camera/mic in use, blocked apps, PIN failures (the companion app's own sensors are not duplicated) |
 | Theme | `App theme` select: system / light / dark / dark at night |
-| Voice assistant (planned) | Assist satellite, see [docs/ROADMAP.md](docs/ROADMAP.md) |
+| Voice assistant (in progress) | Assist satellite: the integration side is built and tested with a fake tablet, the app side is next, see [docs/VOICE.md](docs/VOICE.md) |
 
 ## The app
 

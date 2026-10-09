@@ -22,6 +22,7 @@ from .frontend import async_register_card
 from .websocket_view import SidecarWebSocketView
 
 PLATFORMS = [
+    Platform.ASSIST_SATELLITE,
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
     Platform.NUMBER,

@@ -86,5 +86,7 @@ class SidecarWebSocketView(HomeAssistantView):
             device.update_state(msg["state"])
         elif kind == "event" and isinstance(msg.get("event"), str):
             device.handle_event(msg["event"], msg.get("data") or {})
+        elif kind == "voice":
+            device.handle_voice(msg)
         elif kind == "result":
             device.handle_result(msg)

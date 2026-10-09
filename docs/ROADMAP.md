@@ -37,7 +37,7 @@ Assistant (see [TESTING.md](TESTING.md)); nothing has run on a physical tablet y
 | 2.4 Naming, brightness units, night mode actions | done |
 | 2.5 Companion app watchdog | done: F1/F2 (UI probe, ANR dialog, start-up hang) and F3 (beacon card, opt-in remedy ladder); the optional signals (visual freeze, scheduled restart) open |
 | 2.7 Discovery, pairing and network-aware connection | done (discovery itself unverified on a real LAN) |
-| 3 Voice | not started |
+| 3 Voice | 3.1 integration side done (see [VOICE.md](VOICE.md)); app side (3.2), wake word (3.3), timers by voice (3.4) not started |
 | 4 Optional | not started |
 
 ### 1. Kiosk core (done)
@@ -162,8 +162,8 @@ home networks (Wi-Fi name, Ethernet, VPN) and a *home network only* option for t
 Open: QR pairing, reconfigure/re-pair from Home Assistant, verification on a real network (the emulator cannot bridge multicast).
 
 ### 3. Voice
-- Integration side: implement `assist_satellite` entity platform (`AssistSatelliteEntity`): `async_announce`,
-  `async_set_configuration`, pipeline events; audio over a second binary WebSocket stream or HA's `assist_pipeline/run`.
+- Integration side (**built, slice 3.1, see [VOICE.md](VOICE.md)**): `assist_satellite` entity on `AssistSatelliteEntity` with
+  `async_announce`, pipeline events and the pipeline / VAD selects; audio over the existing sidecar WebSocket as base64 PCM frames.
 - App side: push-to-talk first, then on-device wake word behind `WakeWordEngine` (openWakeWord via TFLite, in a
   foreground service of type `microphone`; needs `RECORD_AUDIO`), TTS playback with audio focus + ducking, listening
   UI overlay on top of the companion app (accessibility overlay) showing Assist responses/cards.

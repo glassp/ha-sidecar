@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -54,6 +55,8 @@ class SidecarDevice:
         self.beacon_state = BeaconState.PAUSED
         self._beacon_episode = False
         self._started_at = dt_util.utcnow()
+        # set by the Assist satellite entity while it exists: receives the tablet's `voice` messages
+        self.voice_handler: Callable[[dict[str, Any]], None] | None = None
 
     @property
     def beacon_timeout_minutes(self) -> int:
@@ -121,6 +124,11 @@ class SidecarDevice:
         )
 
     @callback
+    def handle_voice(self, msg: dict[str, Any]) -> None:
+        if self.voice_handler is not None:
+            self.voice_handler(msg)
+
+    @callback
     def handle_result(self, msg: dict[str, Any]) -> None:
         fut = self._pending.pop(msg.get("id"), None)
         if fut is not None and not fut.done():
@@ -128,7 +136,16 @@ class SidecarDevice:
 
     # --- outbound ---------------------------------------------------------------------------
 
-    async def send_command(self, command: str, data: dict[str, Any] | None = None) -> dict[str, Any]:
+    @callback
+    def push(self, msg: dict[str, Any]) -> None:
+        """Send a message that needs no answer (voice events); dropped while the tablet is away."""
+        ws = self._ws
+        if ws is not None and not ws.closed:
+            self.hass.async_create_task(ws.send_json(msg))
+
+    async def send_command(
+        self, command: str, data: dict[str, Any] | None = None, timeout: float = COMMAND_TIMEOUT
+    ) -> dict[str, Any]:
         """Send a command and wait for the tablet's result; raises on failure."""
         if not self.connected:
             raise HomeAssistantError(f"{self.name} is not connected")
@@ -139,7 +156,7 @@ class SidecarDevice:
         assert self._ws is not None
         await self._ws.send_json({"type": "command", "id": cmd_id, "command": command, "data": data or {}})
         try:
-            async with asyncio.timeout(COMMAND_TIMEOUT):
+            async with asyncio.timeout(timeout):
                 msg = await fut
         except TimeoutError as err:
             self._pending.pop(cmd_id, None)
