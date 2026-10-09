@@ -63,6 +63,7 @@ SWITCHES = [
 SELECTS = [
     ("mode", "Brightness mode", ["auto", "day", "night", "manual"], "mdi:theme-light-dark"),
     ("camera_facing", "Presence camera", ["front", "back"], "mdi:camera-switch"),
+    ("theme", "App theme", ["system", "light", "dark", "night"], "mdi:theme-light-dark"),
 ]
 
 # key, name

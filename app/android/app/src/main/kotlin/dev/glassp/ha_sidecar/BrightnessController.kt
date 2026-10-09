@@ -120,7 +120,28 @@ object BrightnessController {
             target = -1
             error = null
         }
+        glance(c, cfg, now)
         emitIfChanged(c)
+    }
+
+    /** Show the at-a-glance screen when idle and nobody is near; dismiss it when someone is. */
+    private fun glance(c: Context, cfg: Map<String, Any>, now: Long) {
+        if (cfg["glance"] != true) {
+            if (GlanceActivity.showing) GlanceActivity.dismiss()
+            return
+        }
+        if (GlanceActivity.showing) {
+            if (present) {
+                GlanceActivity.dismiss()
+                InteractionTracker.touch() // restart the idle timer so it does not pop straight back
+            }
+            return
+        }
+        val idleMs = now - InteractionTracker.lastMs
+        val pm = c.getSystemService(PowerManager::class.java)
+        if (idleMs > (cfg["glance_after_s"] as Int) * 1000L && !present && pm.isInteractive &&
+            AlarmService.ringingId == null && !PinActivity.visible
+        ) GlanceActivity.show(c)
     }
 
     private fun desiredLevel(cfg: Map<String, Any>, now: Long): Int {

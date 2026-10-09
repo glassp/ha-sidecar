@@ -19,9 +19,24 @@ class SidecarApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // theme is a setting (also a HA select entity): system | light | dark | night (dark while it is night)
+    return ListenableBuilder(listenable: controller, builder: (context, _) => _app(context));
+  }
+
+  ThemeMode get _themeMode {
+    final s = controller.status;
+    return switch (s.cfg['theme']) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      'night' => s.isNight ? ThemeMode.dark : ThemeMode.light,
+      _ => ThemeMode.system,
+    };
+  }
+
+  Widget _app(BuildContext context) {
     return MaterialApp(
       title: 'HA Sidecar',
-      themeMode: ThemeMode.system,
+      themeMode: _themeMode,
       theme: ThemeData(colorSchemeSeed: const Color(0xFF03A9F4), useMaterial3: true),
       darkTheme: ThemeData(
         colorSchemeSeed: const Color(0xFF03A9F4),

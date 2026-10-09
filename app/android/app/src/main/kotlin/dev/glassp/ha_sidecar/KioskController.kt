@@ -319,7 +319,8 @@ object KioskController {
             "blocked_count" to blockedCount,
             "pin_failures" to Prefs.pinFails(ctx),
             "cfg" to DisplayConfig.get(ctx),
-        ) + BrightnessController.snapshot()
+            "glance_showing" to GlanceActivity.showing,
+        ) + BrightnessController.snapshot() + PresenceCamera.snapshot(ctx)
     }
 
     private fun JSONObject.toMap(): Map<String, Any?> =

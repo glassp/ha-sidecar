@@ -13,7 +13,14 @@ from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.const import CONF_NAME
 
-from .const import CONF_DEVICE_ID, CONF_NIGHT_ENTITY, CONF_PRESENCE_ENTITIES, CONF_TOKEN, DOMAIN
+from .const import (
+    CONF_DEVICE_ID,
+    CONF_GLANCE_ENTITIES,
+    CONF_NIGHT_ENTITY,
+    CONF_PRESENCE_ENTITIES,
+    CONF_TOKEN,
+    DOMAIN,
+)
 
 
 class SidecarConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -73,6 +80,10 @@ class SidecarOptionsFlow(OptionsFlow):
                             domain=["binary_sensor", "input_boolean", "switch", "group"], multiple=True
                         )
                     ),
+                    vol.Optional(
+                        CONF_GLANCE_ENTITIES,
+                        description={"suggested_value": opts.get(CONF_GLANCE_ENTITIES, [])},
+                    ): selector.EntitySelector(selector.EntitySelectorConfig(multiple=True)),
                     vol.Optional(
                         CONF_NIGHT_ENTITY,
                         description={"suggested_value": opts.get(CONF_NIGHT_ENTITY)},

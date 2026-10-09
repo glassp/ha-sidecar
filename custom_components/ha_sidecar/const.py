@@ -15,4 +15,5 @@ COMMAND_TIMEOUT = 20
 
 # Options (Configure on the integration card)
 CONF_PRESENCE_ENTITIES = "presence_entities"  # on = someone is near the tablet (mmWave, PIR, ...)
+CONF_GLANCE_ENTITIES = "glance_entities"  # values shown on the at-a-glance screen
 CONF_NIGHT_ENTITY = "night_entity"  # sun.sun (below_horizon) or any on/off entity: on = night

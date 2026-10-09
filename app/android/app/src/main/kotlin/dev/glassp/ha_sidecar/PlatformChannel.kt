@@ -95,6 +95,28 @@ object PlatformChannel {
                 result.success(null)
             }
 
+            "setGlanceItems" -> {
+                val items = org.json.JSONArray(call.argument<List<Map<String, Any?>>>("items").orEmpty().map { org.json.JSONObject(it) })
+                Prefs.setGlanceItemsJson(ctx, items.toString())
+                GlanceActivity.refresh()
+                result.success(null)
+            }
+            "showGlance" -> result.success(GlanceActivity.show(ctx))
+            "hideGlance" -> {
+                GlanceActivity.dismiss()
+                result.success(null)
+            }
+            "requestPermission" -> {
+                val perm = when (call.argument<String>("name")) {
+                    "camera" -> android.Manifest.permission.CAMERA
+                    else -> return result.error("bad_args", "unknown permission", null)
+                }
+                ctx.startActivity(
+                    Intent(ctx, PermissionActivity::class.java).putExtra("perm", perm).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+                result.success(null)
+            }
+
             // alarms -----------------------------------------------------------------------
             "getAlarms" -> result.success(AlarmStore.all(ctx).map { it.toMap() })
             "upsertAlarm" -> {

@@ -83,6 +83,17 @@ class DisplayScreen extends StatelessWidget {
                   'entity). Day/Night force a period.',
                 ),
               ),
+              const _Header('Appearance'),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'system', label: Text('System')),
+                  ButtonSegment(value: 'light', label: Text('Light')),
+                  ButtonSegment(value: 'dark', label: Text('Dark')),
+                  ButtonSegment(value: 'night', label: Text('Dark at night')),
+                ],
+                selected: {(cfg['theme'] ?? 'system') as String},
+                onSelectionChanged: (v) => _set('theme', v.first),
+              ),
               const _Header('Day'),
               level('day_level', 'Brightness'),
               SwitchListTile(
@@ -105,6 +116,14 @@ class DisplayScreen extends StatelessWidget {
               level('night_light_level', 'Night light brightness'),
               level('night_touch_level', 'Brightness after a touch'),
               seconds('night_hold_s', 'Keep after a touch', 5, 300),
+              const _Header('At a glance'),
+              SwitchListTile(
+                title: const Text('Show the glance screen when idle'),
+                subtitle: const Text('Clock, next alarm and chosen Home Assistant values; touch or presence dismisses it'),
+                value: cfg['glance'] == true,
+                onChanged: (v) => _set('glance', v),
+              ),
+              seconds('glance_after_s', 'Show after', 30, 3600),
               const _Header('Presence'),
               seconds('presence_hold_s', 'Keep "present" after the last detection', 5, 300),
               _SliderTile(

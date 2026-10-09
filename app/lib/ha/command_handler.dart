@@ -46,6 +46,12 @@ class CommandRouter {
         await platform.setExternalPresence(d['present'] == true);
       case 'external_night':
         await platform.setExternalNight(d['night'] as bool?);
+      case 'glance_items':
+        await platform.setGlanceItems(((d['items'] ?? const []) as List).map((e) => Map<String, dynamic>.from(e as Map)).toList());
+      case 'show_glance':
+        await platform.showGlance();
+      case 'hide_glance':
+        await platform.hideGlance();
       case 'set_alarm':
         await platform.upsertAlarm(AlarmSpec.fromMap((d['alarm'] as Map).cast<String, dynamic>()));
       case 'cancel_alarm':

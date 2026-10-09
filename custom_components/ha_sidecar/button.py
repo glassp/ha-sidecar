@@ -16,6 +16,8 @@ BUTTONS = [
     ("wake_screen", "Wake screen", "screen", {"on": True}, None, None, "mdi:monitor-shimmer"),
     ("sleep_screen", "Sleep screen", "screen", {"on": False}, None, None, "mdi:monitor-off"),
     ("bring_to_front", "Bring dashboard to front", "bring_to_front", {}, None, None, "mdi:monitor-dashboard"),
+    ("show_glance", "Show glance screen", "show_glance", {}, None, None, "mdi:clock-digital"),
+    ("hide_glance", "Hide glance screen", "hide_glance", {}, None, None, "mdi:clock-remove"),
     ("stop_alarm", "Stop alarm", "stop_alarm", {}, None, None, "mdi:alarm-off"),
     ("snooze_alarm", "Snooze alarm", "snooze_alarm", {}, None, None, "mdi:alarm-snooze"),
     ("run_system_update", "Run system update", "run_system_update", {}, None, EntityCategory.CONFIG, "mdi:cellphone-arrow-down"),

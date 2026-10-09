@@ -4,6 +4,7 @@ import '../app_controller.dart';
 import '../ha/sidecar_client.dart';
 import '../platform/kiosk_platform.dart';
 import 'allowlist_screen.dart';
+import 'camera_screen.dart';
 import 'display_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -25,6 +26,16 @@ class HomeScreen extends StatelessWidget {
             _connectionCard(context),
             _enforcementCard(context),
             _kioskCard(context),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: const Text('Camera & presence'),
+                subtitle: Text(s.cfg['camera_presence'] == true
+                    ? (s.cameraActive ? 'running${s.cameraMotion ? ' · motion' : ''}' : (s.cameraError ?? 'enabled'))
+                    : 'off'),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CameraScreen(controller: controller))),
+              ),
+            ),
             Card(
               child: ListTile(
                 leading: const Icon(Icons.brightness_6),

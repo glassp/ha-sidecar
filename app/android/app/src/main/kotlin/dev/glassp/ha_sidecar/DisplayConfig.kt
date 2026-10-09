@@ -11,6 +11,7 @@ object DisplayConfig {
     private val DEFAULTS: Map<String, Any> = linkedMapOf(
         // "manual" = the sidecar never touches brightness
         "mode" to "manual", // auto | day | night | manual
+        "theme" to "system", // app UI: system | light | dark | night (dark while it is night)
         "auto_dim" to true,
         "night_light" to true,
         "day_level" to 200,
@@ -36,6 +37,7 @@ object DisplayConfig {
 
     private val MODES = setOf("auto", "day", "night", "manual")
     private val FACINGS = setOf("front", "back")
+    private val THEMES = setOf("system", "light", "dark", "night")
 
     fun get(ctx: Context): Map<String, Any> {
         val stored = runCatching { JSONObject(Prefs.displayConfigJson(ctx)) }.getOrDefault(JSONObject())
@@ -52,6 +54,7 @@ object DisplayConfig {
         }
         Prefs.setDisplayConfigJson(ctx, current.toString())
         BrightnessController.poke()
+        PresenceCamera.refresh(ctx)
         EventBus.emit("status_changed")
         return get(ctx)
     }
@@ -77,6 +80,7 @@ object DisplayConfig {
     private fun validString(key: String, v: String) = when (key) {
         "mode" -> v in MODES
         "camera_facing" -> v in FACINGS
+        "theme" -> v in THEMES
         else -> true
     }
 }

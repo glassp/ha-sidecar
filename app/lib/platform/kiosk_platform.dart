@@ -29,6 +29,11 @@ class DeviceStatus {
   bool get presence => _b('presence');
   bool get cameraInUse => _b('camera_in_use');
   bool get micInUse => _b('mic_in_use');
+  bool get cameraPermission => _b('camera_permission');
+  bool get cameraActive => _b('camera_active');
+  bool get cameraMotion => _b('camera_motion');
+  String? get cameraError => raw['camera_error'] as String?;
+  double get cameraScore => ((raw['camera_score'] ?? 0) as num).toDouble();
   int? get targetBrightness => raw['target_brightness'] as int?;
   String? get displayError => raw['display_error'] as String?;
   Map<String, dynamic> get cfg => Map<String, dynamic>.from((raw['cfg'] as Map?) ?? const {});
@@ -130,6 +135,12 @@ abstract class KioskPlatform {
   Future<void> setDisplayConfig(Map<String, dynamic> config);
   Future<void> setExternalPresence(bool present);
   Future<void> setExternalNight(bool? night);
+
+  // At-a-glance screen and permissions
+  Future<void> setGlanceItems(List<Map<String, dynamic>> items);
+  Future<bool> showGlance();
+  Future<void> hideGlance();
+  Future<void> requestPermission(String name);
 
   // Alarms
   Future<List<AlarmSpec>> getAlarms();

@@ -14,6 +14,20 @@ import android.widget.TextView
 
 /** Native PIN pad that disables lockdown. Pure code UI so it works without the Flutter engine. */
 class PinActivity : Activity() {
+    companion object {
+        @Volatile var visible = false
+    }
+
+    override fun onStart() {
+        super.onStart()
+        visible = true
+    }
+
+    override fun onStop() {
+        visible = false
+        super.onStop()
+    }
+
     private val entered = StringBuilder()
     private lateinit var dots: TextView
     private lateinit var message: TextView

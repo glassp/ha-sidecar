@@ -14,10 +14,12 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.core import Event, EventStateChangedData
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.util import dt as dt_util
 
 from .const import (
     COMMAND_TIMEOUT,
     CONF_DEVICE_ID,
+    CONF_GLANCE_ENTITIES,
     CONF_NIGHT_ENTITY,
     CONF_PRESENCE_ENTITIES,
     CONF_TOKEN,
@@ -130,10 +132,18 @@ class SidecarDevice:
     def _night_entity(self) -> str | None:
         return self.entry.options.get(CONF_NIGHT_ENTITY) or None
 
+    @property
+    def _glance_entities(self) -> list[str]:
+        return list(self.entry.options.get(CONF_GLANCE_ENTITIES) or [])[:9]
+
     @callback
     def async_start_input_tracking(self) -> None:
         """Forward the chosen presence / night entities to the tablet whenever they change."""
-        entities = [*self._presence_entities, *([self._night_entity] if self._night_entity else [])]
+        entities = [
+            *self._presence_entities,
+            *([self._night_entity] if self._night_entity else []),
+            *self._glance_entities,
+        ]
         if not entities:
             return
 
@@ -160,5 +170,25 @@ class SidecarDevice:
                 else:
                     night = state.state == "on"
                 await self.send_command("external_night", {"night": night})
+            if self._glance_entities:
+                await self.send_command("glance_items", {"items": self._glance_items()})
         except HomeAssistantError as err:
             _LOGGER.debug("Could not sync inputs to %s: %s", self.name, err)
+
+    def _glance_items(self) -> list[dict[str, str]]:
+        items = []
+        for entity_id in self._glance_entities:
+            state = self.hass.states.get(entity_id)
+            if state is None:
+                continue
+            unit = state.attributes.get("unit_of_measurement")
+            value = state.state if state.state not in ("unknown", "unavailable") else "–"
+            if value != "–" and state.attributes.get("device_class") == "timestamp":
+                parsed = dt_util.parse_datetime(value)
+                if parsed is not None:
+                    value = dt_util.as_local(parsed).strftime("%H:%M")
+            name = str(state.attributes.get("friendly_name") or entity_id)
+            if name.startswith(f"{self.name} "):  # "Kitchen tablet Temperature" -> "Temperature"
+                name = name[len(self.name) + 1 :]
+            items.append({"name": str(name), "value": f"{value} {unit}" if unit and value != "–" else value})
+        return items

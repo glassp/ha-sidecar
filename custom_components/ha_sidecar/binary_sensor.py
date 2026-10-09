@@ -15,6 +15,8 @@ from .entity import SidecarEntity
 SENSORS = [
     ("presence", "Presence", BinarySensorDeviceClass.PRESENCE, None, None),
     ("camera_motion", "Camera motion", BinarySensorDeviceClass.MOTION, None, None),
+    ("camera_active", "Presence camera running", None, EntityCategory.DIAGNOSTIC, "mdi:camera"),
+    ("glance_showing", "Glance screen showing", None, None, "mdi:clock-digital"),
     ("is_night", "Night", None, None, "mdi:weather-night"),
     ("alarm_ringing", "Alarm ringing", None, None, "mdi:alarm-light"),
     ("camera_in_use", "Camera in use", BinarySensorDeviceClass.RUNNING, None, "mdi:camera"),

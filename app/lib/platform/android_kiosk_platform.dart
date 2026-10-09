@@ -77,6 +77,18 @@ class AndroidKioskPlatform implements KioskPlatform {
   Future<void> setExternalNight(bool? night) => _call('setExternalNight', {'night': night});
 
   @override
+  Future<void> setGlanceItems(List<Map<String, dynamic>> items) => _call('setGlanceItems', {'items': items});
+
+  @override
+  Future<bool> showGlance() async => await _call<bool>('showGlance') ?? false;
+
+  @override
+  Future<void> hideGlance() => _call('hideGlance');
+
+  @override
+  Future<void> requestPermission(String name) => _call('requestPermission', {'name': name});
+
+  @override
   Future<List<AlarmSpec>> getAlarms() async {
     final list = await _call<List>('getAlarms') ?? const [];
     return [for (final e in list) AlarmSpec.fromMap(e as Map)];

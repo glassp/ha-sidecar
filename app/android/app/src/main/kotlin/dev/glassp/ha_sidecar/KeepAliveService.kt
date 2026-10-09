@@ -45,6 +45,7 @@ class KeepAliveService : Service() {
         SidecarEngine.get(this) // headless Dart: HA connection survives without the UI
         BrightnessController.start(this)
         PrivacyMonitor.start(this)
+        PresenceCamera.refresh(this)
         KioskController.setKeepScreenOn(this, Prefs.keepScreenOn(this))
         KioskController.applyPolicy(this)
         KioskController.refreshOverlay(this)

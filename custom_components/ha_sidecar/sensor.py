@@ -23,6 +23,7 @@ SENSORS = [
     ("last_blocked_app", "Last blocked app", None, None, EntityCategory.DIAGNOSTIC, "mdi:shield-alert"),
     ("blocked_count", "Blocked app launches", None, None, EntityCategory.DIAGNOSTIC, "mdi:counter"),
     ("pin_failures", "PIN failures", None, None, EntityCategory.DIAGNOSTIC, "mdi:lock-alert"),
+    ("camera_error", "Presence camera error", None, None, EntityCategory.DIAGNOSTIC, "mdi:camera-off"),
     ("mode", "Enforcement mode", None, None, EntityCategory.DIAGNOSTIC, "mdi:shield-lock"),
 ]
 
