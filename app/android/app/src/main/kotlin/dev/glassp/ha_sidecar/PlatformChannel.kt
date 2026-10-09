@@ -115,6 +115,9 @@ object PlatformChannel {
             "requestPermission" -> {
                 val perm = when (call.argument<String>("name")) {
                     "camera" -> android.Manifest.permission.CAMERA
+                    "notifications" ->
+                        if (Build.VERSION.SDK_INT >= 33) android.Manifest.permission.POST_NOTIFICATIONS
+                        else return result.success(null)
                     else -> return result.error("bad_args", "unknown permission", null)
                 }
                 ctx.startActivity(

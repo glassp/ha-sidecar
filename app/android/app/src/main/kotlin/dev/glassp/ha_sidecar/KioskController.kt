@@ -68,6 +68,11 @@ object KioskController {
         return COMPANION_PACKAGES.firstOrNull { isInstalled(ctx, it) }
     }
 
+    fun notificationsGranted(ctx: Context): Boolean =
+        if (Build.VERSION.SDK_INT >= 33) ctx.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        else ctx.getSystemService(android.app.NotificationManager::class.java).areNotificationsEnabled()
+
     private fun isInstalled(ctx: Context, pkg: String) =
         ctx.packageManager.getLaunchIntentForPackage(pkg) != null
 
@@ -322,6 +327,11 @@ object KioskController {
             "blocked_count" to blockedCount,
             "pin_failures" to Prefs.pinFails(ctx),
             "cfg" to DisplayConfig.get(ctx),
+            "notifications_granted" to notificationsGranted(ctx),
+            "battery_unrestricted" to ctx.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(ctx.packageName),
+            "full_screen_intent_granted" to
+                (Build.VERSION.SDK_INT < 34 || ctx.getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()),
+            "companion_packages" to COMPANION_PACKAGES.filter { isInstalled(ctx, it) },
             "glance_showing" to (GlanceActivity.showing || BrightnessController.dashboardGlanceShowing),
         ) + BrightnessController.snapshot() + PresenceCamera.snapshot(ctx)
     }

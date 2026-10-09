@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ha/command_handler.dart';
 import 'ha/sidecar_client.dart';
@@ -22,6 +24,10 @@ class AppController extends ChangeNotifier {
   Timer? _poll;
   bool ready = false;
 
+  /// First-run wizard state. `kiosk` = wall display, `extras` = sensors and alarms only.
+  bool setupDone = false;
+  String setupMode = 'kiosk';
+
   /// Events worth surfacing to HA as `ha_sidecar_event` bus events.
   static const _forwarded = {
     'alarm_ringing',
@@ -41,6 +47,9 @@ class AppController extends ChangeNotifier {
   ValueListenable<LinkState>? get link => _client?.link;
 
   Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    setupDone = prefs.getBool('setup_done') ?? false;
+    setupMode = prefs.getString('setup_mode') ?? 'kiosk';
     settings = await ConnectionSettings.load();
     await refresh();
     _events = platform.events.listen(_onPlatformEvent);
@@ -49,6 +58,35 @@ class AppController extends ChangeNotifier {
     if (settings.isPaired) _startClient();
     ready = true;
     notifyListeners();
+  }
+
+  Future<void> completeSetup() async {
+    setupDone = true;
+    await (await SharedPreferences.getInstance()).setBool('setup_done', true);
+    notifyListeners();
+  }
+
+  Future<void> setSetupMode(String mode) async {
+    setupMode = mode;
+    await (await SharedPreferences.getInstance()).setString('setup_mode', mode);
+    notifyListeners();
+  }
+
+  Future<void> restartSetup() async {
+    setupDone = false;
+    await (await SharedPreferences.getInstance()).setBool('setup_done', false);
+    notifyListeners();
+  }
+
+  /// Writes one display/kiosk setting. @return a human readable error, or null on success.
+  Future<String?> setConfig(String key, Object value) async {
+    try {
+      await platform.setDisplayConfig({key: value});
+      await refresh();
+      return null;
+    } on PlatformException catch (e) {
+      return e.code == 'invalid_value' ? 'That value is not valid.' : (e.message ?? e.code);
+    }
   }
 
   Future<void> pair(String haUrl, String token) async {

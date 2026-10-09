@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'app_controller.dart';
-import 'ui/home_screen.dart';
-import 'ui/setup_screen.dart';
+import 'ui/shell.dart';
+import 'ui/wizard/wizard.dart';
 
 /// Owned by the Dart isolate, not the widget tree: the isolate also runs headless (started by
 /// the Android KeepAliveService at boot), where no widget is ever built.
@@ -47,7 +47,7 @@ class SidecarApp extends StatelessWidget {
         listenable: controller,
         builder: (context, _) {
           if (!controller.ready) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-          return controller.settings.isPaired ? HomeScreen(controller: controller) : SetupScreen(controller: controller);
+          return controller.setupDone && controller.settings.isPaired ? AppShell(controller: controller) : WizardScreen(controller: controller);
         },
       ),
     );

@@ -30,6 +30,11 @@ class DeviceStatus {
   bool get cameraInUse => _b('camera_in_use');
   bool get micInUse => _b('mic_in_use');
   bool get cameraPermission => _b('camera_permission');
+  bool get notificationsGranted => _b('notifications_granted');
+  bool get batteryUnrestricted => _b('battery_unrestricted');
+  bool get fullScreenIntentGranted => _b('full_screen_intent_granted');
+  List<String> get companionPackages => (raw['companion_packages'] as List? ?? const []).cast<String>();
+  bool get glanceShowing => _b('glance_showing');
   bool get cameraActive => _b('camera_active');
   bool get cameraMotion => _b('camera_motion');
   String? get cameraError => raw['camera_error'] as String?;
