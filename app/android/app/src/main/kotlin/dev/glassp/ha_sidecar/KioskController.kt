@@ -125,11 +125,12 @@ object KioskController {
     fun setLockdown(ctx: Context, enabled: Boolean): String? {
         if (enabled) {
             if (!Prefs.hasPin(ctx)) return "pin_required"
+            if (DisplayConfig.kioskDashboard(ctx).isEmpty()) return "dashboard_required"
             if (mode(ctx) == "none") return "no_enforcement_available"
         }
         Prefs.setLockdown(ctx, enabled)
         applyPolicy(ctx)
-        if (enabled) launchTarget(ctx, lockTask = true)
+        if (enabled) launchTarget(ctx, lockTask = true, dashboard = true)
         refreshOverlay(ctx)
         EventBus.emit("lockdown_changed", mapOf("enabled" to enabled))
         return null
@@ -175,14 +176,16 @@ object KioskController {
      * the dashboard it is showing is kept. [navigatePath] uses the companion app's
      * `homeassistant://navigate/<path>` deep link to also switch dashboard.
      */
-    fun launchTarget(ctx: Context, lockTask: Boolean = false, navigatePath: String? = null): Boolean {
+    fun launchTarget(ctx: Context, lockTask: Boolean = false, navigatePath: String? = null, dashboard: Boolean = false): Boolean {
         val pkg = targetPackage(ctx) ?: return false
-        return launchPackage(ctx, pkg, lockTask, navigatePath)
+        // [dashboard]: go to the configured kiosk dashboard (boot, Home, lockdown start); plain bounces keep the current page
+        val path = navigatePath ?: if (dashboard) DisplayConfig.kioskDashboard(ctx).ifEmpty { null } else null
+        return launchPackage(ctx, pkg, lockTask, path)
     }
 
     fun launchPackage(ctx: Context, pkg: String, lockTask: Boolean = false, navigatePath: String? = null): Boolean {
         val intent = if (navigatePath != null) {
-            Intent(Intent.ACTION_VIEW, Uri.parse("homeassistant://navigate/${navigatePath.trimStart('/')}")).setPackage(pkg)
+            Intent(Intent.ACTION_VIEW, Uri.parse(DashboardPath.deepLink(navigatePath))).setPackage(pkg)
         } else {
             ctx.packageManager.getLaunchIntentForPackage(pkg) ?: return false
         }
@@ -319,7 +322,7 @@ object KioskController {
             "blocked_count" to blockedCount,
             "pin_failures" to Prefs.pinFails(ctx),
             "cfg" to DisplayConfig.get(ctx),
-            "glance_showing" to GlanceActivity.showing,
+            "glance_showing" to (GlanceActivity.showing || BrightnessController.dashboardGlanceShowing),
         ) + BrightnessController.snapshot() + PresenceCamera.snapshot(ctx)
     }
 

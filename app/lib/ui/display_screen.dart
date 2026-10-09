@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_controller.dart';
 
@@ -82,6 +83,24 @@ class DisplayScreen extends StatelessWidget {
                   'Manual: the sidecar never changes brightness. Auto: follows the night schedule (or the HA night '
                   'entity). Day/Night force a period.',
                 ),
+              ),
+              const _Header('Dashboards'),
+              _DashboardField(
+                controller: controller,
+                configKey: 'kiosk_dashboard',
+                label: 'Kiosk dashboard (required)',
+                help: 'Opened on boot, Home and when lockdown starts. Paste the address from your browser, '
+                    'e.g. https://home.example.org/lovelace/wall-panel - only the path is stored.',
+                value: (cfg['kiosk_dashboard'] ?? '') as String,
+              ),
+              const SizedBox(height: 12),
+              _DashboardField(
+                controller: controller,
+                configKey: 'glance_dashboard',
+                label: 'Glance dashboard (optional)',
+                help: 'Shown instead of the clock screen when idle (needs the glance screen enabled below and a '
+                    'kiosk dashboard to return to). Leave empty for the built-in clock screen.',
+                value: (cfg['glance_dashboard'] ?? '') as String,
               ),
               const _Header('Appearance'),
               SegmentedButton<String>(
@@ -206,6 +225,88 @@ class _SliderTileState extends State<_SliderTile> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Text field that takes a pasted browser URL or path and shows what was actually stored.
+class _DashboardField extends StatefulWidget {
+  const _DashboardField({
+    required this.controller,
+    required this.configKey,
+    required this.label,
+    required this.help,
+    required this.value,
+  });
+  final AppController controller;
+  final String configKey;
+  final String label;
+  final String help;
+  final String value;
+
+  @override
+  State<_DashboardField> createState() => _DashboardFieldState();
+}
+
+class _DashboardFieldState extends State<_DashboardField> {
+  late final TextEditingController _text = TextEditingController(text: widget.value);
+  final FocusNode _focus = FocusNode();
+  String? _error;
+
+  @override
+  void didUpdateWidget(covariant _DashboardField old) {
+    super.didUpdateWidget(old);
+    // follow changes made from Home Assistant, unless the user is typing
+    if (!_focus.hasFocus && widget.value != _text.text) _text.text = widget.value;
+  }
+
+  @override
+  void dispose() {
+    _text.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final input = _text.text.trim();
+    try {
+      final cfg = await widget.controller.platform.setDisplayConfig({widget.configKey: input});
+      if (!mounted) return;
+      setState(() {
+        _error = null;
+        _text.text = (cfg[widget.configKey] ?? '') as String;
+      });
+      final pasted = Uri.tryParse(input);
+      final paired = Uri.tryParse(widget.controller.settings.haUrl);
+      if (pasted != null && pasted.hasAuthority && paired != null && pasted.host != paired.host && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('The address is on ${pasted.host}, not on the paired Home Assistant (${paired.host}). '
+              'Only the path "${_text.text}" is used.'),
+        ));
+      }
+      await widget.controller.refresh();
+    } on PlatformException {
+      if (mounted) setState(() => _error = 'That is not a dashboard address (needs a path such as lovelace/wall-panel)');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _text,
+      focusNode: _focus,
+      keyboardType: TextInputType.url,
+      autocorrect: false,
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => _save(),
+      decoration: InputDecoration(
+        labelText: widget.label,
+        helperText: widget.help,
+        helperMaxLines: 4,
+        errorText: _error,
+        border: const OutlineInputBorder(),
+        suffixIcon: IconButton(icon: const Icon(Icons.check), tooltip: 'Save', onPressed: _save),
+      ),
     );
   }
 }

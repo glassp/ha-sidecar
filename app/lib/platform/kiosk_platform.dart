@@ -132,7 +132,8 @@ abstract class KioskPlatform {
   Future<void> setBrightness(int level);
 
   // Display / presence (brightness controller runs natively; see BrightnessController.kt)
-  Future<void> setDisplayConfig(Map<String, dynamic> config);
+  /// Returns the full resulting config; throws PlatformException(invalid_value) for rejected values.
+  Future<Map<String, dynamic>> setDisplayConfig(Map<String, dynamic> config);
   Future<void> setExternalPresence(bool present);
   Future<void> setExternalNight(bool? night);
 

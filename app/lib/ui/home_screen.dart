@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_controller.dart';
 import '../ha/sidecar_client.dart';
@@ -117,9 +118,11 @@ class HomeScreen extends StatelessWidget {
         children: [
           SwitchListTile(
             title: const Text('Lockdown'),
-            subtitle: Text(s.hasPin
-                ? 'Target: ${s.targetPackage ?? 'HA companion app not found'}. Exit: tap top-left corner 5×, enter PIN.'
-                : 'Set a PIN first'),
+            subtitle: Text(!s.hasPin
+                ? 'Set a PIN first'
+                : (s.cfg['kiosk_dashboard'] ?? '') == ''
+                    ? 'Set the kiosk dashboard first (Display & presence → Dashboards)'
+                    : 'Dashboard: ${s.cfg['kiosk_dashboard']}. Exit: tap top-left corner 5×, enter PIN.'),
             value: s.lockdown,
             onChanged: (on) => _toggleLockdown(context, on),
           ),
@@ -214,6 +217,14 @@ class HomeScreen extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
     try {
       await platform.setLockdown(on);
+    } on PlatformException catch (e) {
+      final msg = switch (e.code) {
+        'dashboard_required' => 'Set the kiosk dashboard first (Display & presence → Dashboards).',
+        'pin_required' => 'Set a PIN first.',
+        'no_enforcement_available' => 'Enable the accessibility guard or provision device owner first.',
+        _ => 'Could not change lockdown: ${e.message ?? e.code}',
+      };
+      messenger.showSnackBar(SnackBar(content: Text(msg)));
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('Could not change lockdown: $e')));
     }

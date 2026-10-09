@@ -12,6 +12,9 @@ object DisplayConfig {
         // "manual" = the sidecar never touches brightness
         "mode" to "manual", // auto | day | night | manual
         "theme" to "system", // app UI: system | light | dark | night (dark while it is night)
+        // dashboards (paths in the HA frontend, e.g. "lovelace/wall-panel"; a pasted browser URL is reduced to its path)
+        "kiosk_dashboard" to "", // required to enable lockdown; opened on boot, Home press and lockdown start
+        "glance_dashboard" to "", // optional: shown instead of the native clock screen when idle
         "auto_dim" to true,
         "night_light" to true,
         "day_level" to 200,
@@ -44,27 +47,33 @@ object DisplayConfig {
         return DEFAULTS.mapValues { (k, def) -> if (stored.has(k)) coerce(k, stored.get(k), def) ?: def else def }
     }
 
-    /** @return the new full config; unknown keys and invalid values are ignored (old value kept). */
-    fun set(ctx: Context, changes: Map<*, *>): Map<String, Any> {
+    class Result(val config: Map<String, Any>, val rejected: List<String>)
+
+    /** Applies [changes]; unknown keys are ignored, invalid values are reported in [Result.rejected] and not applied. */
+    fun set(ctx: Context, changes: Map<*, *>): Result {
         val current = JSONObject(get(ctx))
+        val rejected = mutableListOf<String>()
         for ((k, v) in changes) {
             val key = k as? String ?: continue
             val def = DEFAULTS[key] ?: continue
-            current.put(key, coerce(key, v, def) ?: continue)
+            val coerced = coerce(key, v, def)
+            if (coerced == null) rejected += key else current.put(key, coerced)
         }
         Prefs.setDisplayConfigJson(ctx, current.toString())
         BrightnessController.poke()
         PresenceCamera.refresh(ctx)
         EventBus.emit("status_changed")
-        return get(ctx)
+        return Result(get(ctx), rejected)
     }
+
+    fun kioskDashboard(ctx: Context): String = get(ctx)["kiosk_dashboard"] as String
 
     /** Coerces [value] to the type of [def]; null if it does not fit. */
     private fun coerce(key: String, value: Any?, def: Any): Any? = when (def) {
         is Boolean -> value as? Boolean
         is Int -> (value as? Number)?.toInt()?.let { clamp(key, it) }
         is Double -> (value as? Number)?.toDouble()?.coerceIn(0.0, 10.0)
-        is String -> (value as? String)?.takeIf { validString(key, it) }
+        is String -> (value as? String)?.let { if (key.endsWith("_dashboard")) DashboardPath.normalize(it) else it.takeIf { v -> validString(key, v) } }
         else -> null
     }
 

@@ -13,6 +13,7 @@ from typing import Any
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.components.select import SelectEntity
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.components.text import TextEntity, TextMode
 from homeassistant.components.time import TimeEntity
 from homeassistant.const import EntityCategory, UnitOfTime
 
@@ -29,9 +30,12 @@ class _ConfigMixin:
         return (self._device.state.get("cfg") or {}).get(self._key)
 
     async def _write(self, value: Any) -> None:
-        await self._device.send_command("set_config", {"config": {self._key: value}})
-        # optimistic: the tablet pushes the authoritative state right after
-        self._device.state.setdefault("cfg", {})[self._key] = value
+        result = await self._device.send_command("set_config", {"config": {self._key: value}})
+        # the tablet answers with the full, validated config (e.g. a pasted URL reduced to its path)
+        if isinstance(result.get("config"), dict):
+            self._device.state["cfg"] = result["config"]
+        else:
+            self._device.state.setdefault("cfg", {})[self._key] = value
         self.async_write_ha_state()  # type: ignore[attr-defined]
 
 
@@ -64,6 +68,12 @@ SELECTS = [
     ("mode", "Brightness mode", ["auto", "day", "night", "manual"], "mdi:theme-light-dark"),
     ("camera_facing", "Presence camera", ["front", "back"], "mdi:camera-switch"),
     ("theme", "App theme", ["system", "light", "dark", "night"], "mdi:theme-light-dark"),
+]
+
+# key, name, icon
+TEXTS = [
+    ("kiosk_dashboard", "Kiosk dashboard", "mdi:view-dashboard"),
+    ("glance_dashboard", "Glance dashboard", "mdi:view-dashboard-outline"),
 ]
 
 # key, name
@@ -150,3 +160,26 @@ class ConfigTime(_ConfigMixin, SidecarEntity, TimeEntity):
 
     async def async_set_value(self, value: time) -> None:
         await self._write(value.hour * 60 + value.minute)
+
+
+class ConfigText(_ConfigMixin, SidecarEntity, TextEntity):
+    """Dashboard link: accepts a pasted browser URL, the tablet stores just the path."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_mode = TextMode.TEXT
+    _attr_native_min = 0
+    _attr_native_max = 255
+
+    def __init__(self, device, key, name, icon) -> None:
+        super().__init__(device, f"cfg_{key}")
+        self._key = key
+        self._attr_name = name
+        self._attr_icon = icon
+
+    @property
+    def native_value(self) -> str | None:
+        value = self._cfg_value
+        return None if value is None else str(value)
+
+    async def async_set_value(self, value: str) -> None:
+        await self._write(value)

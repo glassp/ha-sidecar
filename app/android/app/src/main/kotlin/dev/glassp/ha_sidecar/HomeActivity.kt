@@ -15,7 +15,7 @@ class HomeActivity : Activity() {
         KeepAliveService.start(this) // engine + HA connection + overlay, also right after boot
 
         val opened = Prefs.kioskLauncher(this) &&
-            KioskController.launchTarget(this, lockTask = Prefs.lockdown(this))
+            KioskController.launchTarget(this, lockTask = Prefs.lockdown(this), dashboard = true)
         if (!opened) {
             // Launcher mode off, or the HA app is missing: show the sidecar UI instead of a blank screen.
             startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

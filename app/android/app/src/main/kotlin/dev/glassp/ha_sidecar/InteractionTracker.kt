@@ -21,6 +21,7 @@ object InteractionTracker {
 
     fun touch() {
         lastMs = System.currentTimeMillis()
+        BrightnessController.onTouch()
         BrightnessController.poke()
         val now = SystemClock.elapsedRealtime()
         if (now - lastEmit > 10_000) {

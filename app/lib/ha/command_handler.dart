@@ -41,7 +41,7 @@ class CommandRouter {
       case 'set_keep_screen_on':
         await platform.setKeepScreenOn(d['enabled'] == true);
       case 'set_config':
-        await platform.setDisplayConfig(Map<String, dynamic>.from(d['config'] as Map));
+        return {'config': await platform.setDisplayConfig(Map<String, dynamic>.from(d['config'] as Map))};
       case 'external_presence':
         await platform.setExternalPresence(d['present'] == true);
       case 'external_night':

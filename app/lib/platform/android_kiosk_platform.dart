@@ -68,7 +68,8 @@ class AndroidKioskPlatform implements KioskPlatform {
   Future<void> setBrightness(int level) => _call('setBrightness', {'level': level});
 
   @override
-  Future<void> setDisplayConfig(Map<String, dynamic> config) => _call('setDisplayConfig', {'config': config});
+  Future<Map<String, dynamic>> setDisplayConfig(Map<String, dynamic> config) async =>
+      Map<String, dynamic>.from(await _call<Map>('setDisplayConfig', {'config': config}) ?? const {});
 
   @override
   Future<void> setExternalPresence(bool present) => _call('setExternalPresence', {'present': present});

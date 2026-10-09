@@ -62,7 +62,9 @@ object PlatformChannel {
             "launchApp" -> result.success(
                 KioskController.launchPackage(ctx, call.argument<String>("package").orEmpty(), navigatePath = call.argument<String>("path"))
             )
-            "bringHaToFront" -> result.success(KioskController.launchTarget(ctx, navigatePath = call.argument<String>("path")))
+            "bringHaToFront" -> result.success(
+                KioskController.launchTarget(ctx, navigatePath = call.argument<String>("path"), dashboard = true)
+            )
             "listLaunchableApps" -> result.success(listLaunchableApps(ctx))
 
             // screen -----------------------------------------------------------------------
@@ -84,7 +86,11 @@ object PlatformChannel {
             }
 
             // display / presence -----------------------------------------------------------
-            "setDisplayConfig" -> result.success(DisplayConfig.set(ctx, call.argument<Map<String, Any?>>("config").orEmpty()))
+            "setDisplayConfig" -> {
+                val r = DisplayConfig.set(ctx, call.argument<Map<String, Any?>>("config").orEmpty())
+                if (r.rejected.isEmpty()) result.success(r.config)
+                else result.error("invalid_value", "Not a valid value for: ${r.rejected.joinToString()}", null)
+            }
             "setExternalPresence" -> {
                 BrightnessController.setExternalPresence(call.argument<Boolean>("present") == true)
                 result.success(null)

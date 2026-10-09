@@ -124,24 +124,66 @@ object BrightnessController {
         emitIfChanged(c)
     }
 
-    /** Show the at-a-glance screen when idle and nobody is near; dismiss it when someone is. */
+    /** True while the glance *dashboard* (an HA page in the companion app) is the one on screen. */
+    @Volatile var dashboardGlanceShowing = false
+        private set
+
+    private fun glanceShowing() = GlanceActivity.showing || dashboardGlanceShowing
+
+    /**
+     * At-a-glance when idle and nobody is near; dismissed by touch (see [onTouch]) or presence.
+     * With a glance dashboard configured (and a kiosk dashboard to come back to) it navigates the
+     * HA companion app to that dashboard; otherwise the native clock screen is shown.
+     */
     private fun glance(c: Context, cfg: Map<String, Any>, now: Long) {
         if (cfg["glance"] != true) {
-            if (GlanceActivity.showing) GlanceActivity.dismiss()
+            if (glanceShowing()) dismissGlance(c)
             return
         }
-        if (GlanceActivity.showing) {
+        if (glanceShowing()) {
             if (present) {
-                GlanceActivity.dismiss()
+                dismissGlance(c)
                 InteractionTracker.touch() // restart the idle timer so it does not pop straight back
             }
             return
         }
         val idleMs = now - InteractionTracker.lastMs
         val pm = c.getSystemService(PowerManager::class.java)
-        if (idleMs > (cfg["glance_after_s"] as Int) * 1000L && !present && pm.isInteractive &&
-            AlarmService.ringingId == null && !PinActivity.visible
-        ) GlanceActivity.show(c)
+        if (idleMs <= (cfg["glance_after_s"] as Int) * 1000L || present || !pm.isInteractive ||
+            AlarmService.ringingId != null || PinActivity.visible
+        ) return
+
+        val glancePath = cfg["glance_dashboard"] as String
+        val kioskPath = cfg["kiosk_dashboard"] as String
+        if (glancePath.isNotEmpty() && kioskPath.isNotEmpty()) {
+            // do not yank the user out of another allowed app (foreground known via the accessibility service)
+            val fg = KioskController.lastForeground
+            val target = KioskController.targetPackage(c)
+            if (fg != null && target != null && fg != target) return
+            if (KioskController.launchTarget(c, navigatePath = glancePath)) {
+                dashboardGlanceShowing = true
+                EventBus.emit("status_changed")
+            }
+        } else {
+            GlanceActivity.show(c)
+        }
+    }
+
+    fun dismissGlance(c: Context) {
+        if (GlanceActivity.showing) GlanceActivity.dismiss()
+        if (dashboardGlanceShowing) {
+            dashboardGlanceShowing = false
+            // back to the kiosk dashboard
+            val kioskPath = DisplayConfig.kioskDashboard(c)
+            KioskController.launchTarget(c, navigatePath = kioskPath.ifEmpty { null })
+            EventBus.emit("status_changed")
+        }
+    }
+
+    /** Any touch while the glance dashboard is up returns to the kiosk dashboard. */
+    fun onTouch() {
+        val c = ctx ?: return
+        if (dashboardGlanceShowing) main.post { dismissGlance(c) }
     }
 
     private fun desiredLevel(cfg: Map<String, Any>, now: Long): Int {

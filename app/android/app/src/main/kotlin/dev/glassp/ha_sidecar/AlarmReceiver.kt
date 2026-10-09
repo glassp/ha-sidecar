@@ -30,7 +30,7 @@ class BootReceiver : BroadcastReceiver() {
                     // Back into the locked-down kiosk after a reboot / app update.
                     // With launcher mode, Android starts HomeActivity at boot which does this itself.
                     if (Prefs.lockdown(context) && !Prefs.kioskLauncher(context)) {
-                        KioskController.launchTarget(context, lockTask = true)
+                        KioskController.launchTarget(context, lockTask = true, dashboard = true)
                     }
                 }
             }
