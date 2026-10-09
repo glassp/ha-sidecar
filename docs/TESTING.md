@@ -1,6 +1,6 @@
 # Test log and how to reproduce
 
-Last full run: 2026-10-09, emulator `ha_sidecar_tablet` (Android 15 / API 35 google_apis arm64, tablet 2560x1800)
+Last full run: 2026-10-10 (beacon, pairing reconnect and service sweep; earlier parts 2026-10-09), emulator `ha_sidecar_tablet` (Android 15 / API 35 google_apis arm64, tablet 2560x1800)
 + Home Assistant Core 2026.10.0 (venv, Python 3.14) + HA companion app 2026.8.4 (`app-minimal-release.apk`).
 No physical device yet.
 

@@ -64,6 +64,8 @@ The watchdog above sees a frozen *app*; a frozen or dead *page* inside a healthy
 ```yaml
 type: custom:ha-sidecar-beacon-card
 tablet: wallpanel      # the entity prefix of the tablet
+interval: 30           # optional: seconds between pings (5-300)
+compact: false         # optional: hide the status line
 ```
 
 While the card is on screen it pings Home Assistant every 30 s over the page's own connection (and does not ping when nothing is

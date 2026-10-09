@@ -25,7 +25,7 @@ based on its **public docs only**; everything here is implemented independently.
 
 ## Phases
 
-Status as of 2026-10-09. Everything marked done was built and exercised on an Android 15 emulator against a real Home
+Status as of 2026-10-10. Everything marked done was built and exercised on an Android 15 emulator against a real Home
 Assistant (see [TESTING.md](TESTING.md)); nothing has run on a physical tablet yet (checklist at the end).
 
 | Phase | State |
@@ -35,7 +35,7 @@ Assistant (see [TESTING.md](TESTING.md)); nothing has run on a physical tablet y
 | 2.1 App UI: wizard, search, translations, Flutter-only screens | done |
 | 2.3 Timers, stopwatches and remote alarm control | done |
 | 2.4 Naming, brightness units, night mode actions | done |
-| 2.5 Companion app watchdog | done for F1/F2 (UI probe, ANR dialog, start-up hang); F3 and the optional signals open |
+| 2.5 Companion app watchdog | done: F1/F2 (UI probe, ANR dialog, start-up hang) and F3 (beacon card, opt-in remedy ladder); the optional signals (visual freeze, scheduled restart) open |
 | 2.7 Discovery, pairing and network-aware connection | done (discovery itself unverified on a real LAN) |
 | 3 Voice | not started |
 | 4 Optional | not started |
@@ -82,9 +82,9 @@ app). A *frozen* app is not: it is still "running" so nothing relaunches it. Fai
 
 | # | Failure | Looks like | Handled today |
 |---|---|---|---|
-| F1 | Cold-start hang (splash forever, never reaches the dashboard) | process alive, UI never changes | no |
-| F2 | UI-thread freeze / ANR | touches ignored, system may show "App isn't responding" | no |
-| F3 | WebView renderer hang or blank/white page (UI thread alive) | app responds, page is dead or stale | no (beacon designed, signal 4) |
+| F1 | Cold-start hang (splash forever, never reaches the dashboard) | process alive, UI never changes | yes (watchdog, opt-in) |
+| F2 | UI-thread freeze / ANR | touches ignored, system may show "App isn't responding" | yes (watchdog, opt-in) |
+| F3 | WebView renderer hang or blank/white page (UI thread alive) | app responds, page is dead or stale | yes with the beacon card (opt-in, signal 4) |
 | F4 | Crash / kill / lock-task exit | app gone | yes |
 
 **Spike results (emulator, Android 15, companion 2026.8.4, process frozen with `kill -STOP`):**
@@ -96,7 +96,7 @@ app). A *frozen* app is not: it is still "running" so nothing relaunches it. Fai
 - Kill-from-outside: `pm suspend` (= `setPackagesSuspended`) did **not** kill the stopped process; `pm hide` /
   `setApplicationHidden(true)` did, and `unhide` + relaunch gave a healthy process with data intact. A device owner can
   use `setApplicationHidden(admin, pkg, true/false)`.
-- Not covered by any of this: F3 (the UI thread is fine, the page is dead). Needs a content-level signal.
+- Not covered by these two probes: F3 (the UI thread is fine, the page is dead). That needed a content-level signal: the beacon card (signal 4).
 
 **Status (built).** Opt-in (*Kiosk -> Watchdog*, off by default; needs the accessibility service, which now also reports view
 ids). Implemented: signal 1 (UI probe, with the cold-start expectation), signal 2 (ANR dialog, matched by view id
@@ -106,7 +106,7 @@ timeout because the accessibility call goes to the frozen app and can hang; a pr
 Without device owner and without the dialog the watchdog can only bring the app to the front and tell Home Assistant
 (`method: relaunch_only`); the Settings force-stop automation was not built. Measured on the emulator in
 [TESTING.md](TESTING.md): frozen UI detected after three bad probes (~30 s at a 5 s interval, ~75 s at the default 20 s),
-device-owner recovery ~3.5 s, the ANR dialog answered by view id, the 3-per-10-minutes limit verified. Not built: signals 3-5 (visual freeze, HA-side heartbeat, scheduled restart) and F3.
+device-owner recovery ~3.5 s, the ANR dialog answered by view id, the 3-per-10-minutes limit verified. F3 is covered by the dashboard beacon (signal 4, below). Not built: signal 3 (visual freeze) and signal 5 (scheduled restart).
 
 **Detection signals (combine, each with a grace period):**
 1. *UI probe* (F1, F2): every 15-30 s while the HA app is foreground, the screen is on and nothing else is running,

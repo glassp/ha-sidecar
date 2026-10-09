@@ -45,14 +45,18 @@ app at boot and again whenever the task stack is empty, so one mechanism covers:
 crash/force-stop, lock-task exit. It starts `KeepAliveService` (headless engine, overlay, policy), then launches the HA
 app (`lockTask` + `CLEAR_TASK` when lockdown is on; plain reorder-to-front otherwise). Device owner sets itself as home
 via `addPersistentPreferredActivity`; others pick it in Android settings (`ROLE_HOME`). There is deliberately no
-polling watchdog: the OS tells us when the HA app is gone. Gaps: a *frozen* (not dead) HA app is not detected, and
-without the home role or the accessibility service nothing recovers a crashed HA app.
+polling for *crashes*: the OS tells us when the HA app is gone. A *frozen* (not dead) HA app is handled by the opt-in
+watchdog below; without the home role or the accessibility service nothing recovers a crashed HA app.
 
-## Watchdog (planned, phase 2.5)
+## Watchdog (opt-in, phase 2.5)
 
-See ROADMAP 2.5. Short version: crashes are recovered by the home role; frozen apps need an accessibility UI probe + ANR
-dialog recognition, and a device-owner `setApplicationHidden` kill/relaunch (spiked: suspend does not kill a stopped
-process, hide does). Page-level hangs inside a live WebView need an optional visual or HA-side heartbeat signal.
+`CompanionWatchdog` runs in the keep-alive service. Signals: an accessibility UI probe of the companion app (null root node =
+frozen; run on a worker thread with a timeout because the call goes to the frozen app), the ANR dialog (matched by view id),
+and a start-up expectation after a launch the sidecar issued. Recovery: "Close app" on the ANR dialog, or device-owner
+`setApplicationHidden` true/false plus relaunch (`pm suspend` does not kill a stopped process, hide does); at most 3 restarts
+per 10 minutes, never while an alarm rings, the PIN is open or the screen is off. Page-level hangs inside a live WebView are
+reported by the *beacon card* in the dashboard: the integration tracks it and, if the user enabled that option, first sends a
+navigate intent and then asks the tablet to restart the app (`heal_dashboard`, same gating and limit). Details: ROADMAP 2.5.
 
 ## Foregrounding the HA app
 
