@@ -57,7 +57,21 @@ Events: `app_blocked`, `pin_failed`, `guard_disabled`, `device_admin_disabled`, 
 | `glance_items` | `items[{name,value}]` | values for the glance screen |
 | `show_glance` / `hide_glance` | | |
 | `set_alarm` | `alarm{id,hour,minute,days[1-7],label,enabled,snooze_minutes}` | empty `days` = once |
-| `cancel_alarm` / `stop_alarm` / `snooze_alarm` / `get_alarms` | | |
+| `cancel_alarm` / `stop_alarm` / `snooze_alarm` / `get_alarms` | | `stop_alarm` / `snooze_alarm` also end a ringing timer |
+| `set_alarm_enabled` | `id`, `enabled` | |
+| `skip_next_alarm` | `id?` | repeating: next occurrence is skipped (again = undo); one-shot: disabled; no id = the alarm that rings next |
+| `mute_alarms` / `unmute_alarms` | `until_ms?` (none = until unmuted) | muted alarms do not ring, keep their schedule, fire `alarm_skipped` (`reason: muted`) |
+| `start_timer` | `id`, `label`, `kind` (`countdown`/`countup`), `duration_s` (countdown) | same `id` restarts it; max 20 timers, 1 s..99 h |
+| `pause_timer` / `resume_timer` / `cancel_timer` | `id` | `cancel_timer` removes without ringing |
+| `adjust_timer` | `id`, `delta_s` | add/remove time on a countdown; on a finished one it runs again |
+| `get_timers` | | |
+
+**Timers.** A countdown rings when it ends (native alarm sound, full-screen page, "+1 min" snooze). It then stays `finished`
+with `finished_at` set, and the UI shows the time over (`+0:24`) counting up until it is dismissed (dismiss = remove). If
+the ring times out it is only silenced and stays listed. Timer events: `timer_started`, `timer_paused`, `timer_resumed`,
+`timer_extended`, `timer_finished`, `timer_snoozed`, `timer_dismissed` (`reason`), `timer_ring_timeout`, `timer_cancelled`,
+each with `id`, `label`, `kind`, `duration_s`. State additionally carries `timers` and `alarms` (lists), `alarms_muted`,
+`alarms_muted_until`, `timer_ringing`.
 | `open_system_update` | | opens the screen only; temporarily allowlists Settings |
 | `run_system_update` | | opens the screen and taps through it via the accessibility service (`needs_accessibility` otherwise) |
 | `install_system_update` | `uri` | device owner, A/B devices, caller supplies the OTA zip |

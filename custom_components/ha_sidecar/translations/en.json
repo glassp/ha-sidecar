@@ -106,6 +106,136 @@
           "description": "Optional dashboard path to navigate to."
         }
       }
+    },
+    "set_alarm_enabled": {
+      "name": "Enable or disable alarm",
+      "description": "Turns an existing alarm on or off without changing its time.",
+      "fields": {
+        "alarm_id": {
+          "name": "Alarm ID",
+          "description": "ID of the alarm."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Whether the alarm is active."
+        }
+      }
+    },
+    "skip_next_alarm": {
+      "name": "Skip next alarm",
+      "description": "A repeating alarm does not ring on its next occurrence (call again to undo); a one-time alarm is turned off. Without an ID the alarm that rings next is used.",
+      "fields": {
+        "alarm_id": {
+          "name": "Alarm ID",
+          "description": "Alarm to skip. Optional."
+        }
+      }
+    },
+    "mute_alarms": {
+      "name": "Mute alarms",
+      "description": "Silences all alarms, for example while you are away. They keep their schedule and ring again when the mute ends.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "How long to mute. Leave empty to mute until Unmute alarms is called."
+        }
+      }
+    },
+    "unmute_alarms": {
+      "name": "Unmute alarms",
+      "description": "Lets alarms ring again."
+    },
+    "start_timer": {
+      "name": "Start timer",
+      "description": "Starts a labeled countdown on the tablet. It is shown on the idle screen and rings when it ends; Home Assistant gets a timer_finished event.",
+      "fields": {
+        "duration": {
+          "name": "Duration",
+          "description": "Countdown length."
+        },
+        "label": {
+          "name": "Label",
+          "description": "Name of the timer, shown on the tablet. Instead of the ID it also finds an existing timer."
+        },
+        "timer_id": {
+          "name": "Timer ID",
+          "description": "ID of the timer. Defaults to the label in lower case with underscores (Batch 1 becomes batch_1)."
+        }
+      }
+    },
+    "start_stopwatch": {
+      "name": "Start stopwatch",
+      "description": "Starts a labeled count-up that is shown on the idle screen until it is cancelled.",
+      "fields": {
+        "label": {
+          "name": "Label",
+          "description": "Name of the timer, shown on the tablet. Instead of the ID it also finds an existing timer."
+        },
+        "timer_id": {
+          "name": "Timer ID",
+          "description": "ID of the timer. Defaults to the label in lower case with underscores (Batch 1 becomes batch_1)."
+        }
+      }
+    },
+    "pause_timer": {
+      "name": "Pause timer",
+      "description": "Pauses a running timer or stopwatch.",
+      "fields": {
+        "timer_id": {
+          "name": "Timer ID",
+          "description": "ID of the timer. Defaults to the label in lower case with underscores (Batch 1 becomes batch_1)."
+        },
+        "label": {
+          "name": "Label",
+          "description": "Name of the timer, shown on the tablet. Instead of the ID it also finds an existing timer."
+        }
+      }
+    },
+    "resume_timer": {
+      "name": "Resume timer",
+      "description": "Continues a paused timer or stopwatch.",
+      "fields": {
+        "timer_id": {
+          "name": "Timer ID",
+          "description": "ID of the timer. Defaults to the label in lower case with underscores (Batch 1 becomes batch_1)."
+        },
+        "label": {
+          "name": "Label",
+          "description": "Name of the timer, shown on the tablet. Instead of the ID it also finds an existing timer."
+        }
+      }
+    },
+    "cancel_timer": {
+      "name": "Cancel timer",
+      "description": "Removes a timer or stopwatch without ringing.",
+      "fields": {
+        "timer_id": {
+          "name": "Timer ID",
+          "description": "ID of the timer. Defaults to the label in lower case with underscores (Batch 1 becomes batch_1)."
+        },
+        "label": {
+          "name": "Label",
+          "description": "Name of the timer, shown on the tablet. Instead of the ID it also finds an existing timer."
+        }
+      }
+    },
+    "adjust_timer": {
+      "name": "Adjust timer",
+      "description": "Adds or removes time on a countdown.",
+      "fields": {
+        "timer_id": {
+          "name": "Timer ID",
+          "description": "ID of the timer. Defaults to the label in lower case with underscores (Batch 1 becomes batch_1)."
+        },
+        "label": {
+          "name": "Label",
+          "description": "Name of the timer, shown on the tablet. Instead of the ID it also finds an existing timer."
+        },
+        "seconds": {
+          "name": "Seconds",
+          "description": "Seconds to add; negative to remove."
+        }
+      }
     }
   },
   "options": {

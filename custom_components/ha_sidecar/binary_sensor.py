@@ -19,6 +19,7 @@ SENSORS = [
     ("glance_showing", "Glance screen showing", None, None, "mdi:clock-digital"),
     ("is_night", "Night", None, None, "mdi:weather-night"),
     ("alarm_ringing", "Alarm ringing", None, None, "mdi:alarm-light"),
+    ("timer_ringing", "Timer ringing", None, None, "mdi:timer-alert"),
     ("camera_in_use", "Camera in use", BinarySensorDeviceClass.RUNNING, None, "mdi:camera"),
     ("mic_in_use", "Microphone in use", BinarySensorDeviceClass.RUNNING, None, "mdi:microphone"),
     ("is_home_app", "Is home app", None, EntityCategory.DIAGNOSTIC, "mdi:home"),

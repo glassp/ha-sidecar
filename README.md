@@ -29,6 +29,24 @@ needs attention), **Kiosk** (dashboards, lock, PIN, allowed apps, start-up), **D
 camera), **Alarms**, **System** (connection, permissions, updates, theme, language). A global **search** finds any setting.
 English and German; light/dark theme. See [docs/UI.md](docs/UI.md).
 
+## Timers, stopwatches and remote alarm control
+
+Labeled countdowns ("Batch 1") and count-ups ("Treadmill") run on the tablet and show on the idle screen. A finished
+countdown rings and keeps counting how long it has been over until dismissed. Home Assistant gets
+`ha_sidecar_event` events (`timer_finished`, `timer_started`, ...) and can drive everything:
+
+```yaml
+action: ha_sidecar.start_timer
+data: { duration: "00:25:00", label: "Batch 1" }
+target: { device_id: <tablet> }
+```
+
+Services: `start_timer`, `start_stopwatch`, `pause_timer`, `resume_timer`, `cancel_timer`, `adjust_timer` (address a timer
+by `timer_id` or the `label` it was started with), and for alarms `set_alarm`, `set_alarm_enabled`, `skip_next_alarm`,
+`mute_alarms` (optionally for a duration, e.g. while away), `unmute_alarms`, `stop_alarm`, `snooze_alarm`. Entities:
+`switch.<tablet>_alarms_muted`, `sensor.<tablet>_next_timer` (timestamp, a live countdown on dashboards),
+`sensor.<tablet>_timers` and `sensor.<tablet>_alarms` (counts, details as attributes), `binary_sensor.<tablet>_timer_ringing`.
+
 ## Repository layout
 
 ```

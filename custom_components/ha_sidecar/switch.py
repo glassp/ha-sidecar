@@ -8,6 +8,7 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .config_entities import SWITCHES, ConfigSwitch
 from .const import CONF_DEVICE_ID, DOMAIN
@@ -21,6 +22,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             SidecarSwitch(device, "lockdown", "Kiosk lockdown", "set_lockdown", "mdi:lock"),
             SidecarSwitch(device, "keep_screen_on", "Keep screen on", "set_keep_screen_on", "mdi:brightness-7"),
             SidecarSwitch(device, "kiosk_launcher", "Act as home app", "set_kiosk_launcher", "mdi:home-lock"),
+            AlarmsMutedSwitch(device),
             *(ConfigSwitch(device, *s) for s in SWITCHES),
         ]
     )
@@ -43,3 +45,21 @@ class SidecarSwitch(SidecarEntity, SwitchEntity):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._device.send_command(self._command, {"enabled": False})
+
+
+class AlarmsMutedSwitch(SidecarSwitch):
+    """Mutes every alarm (they keep their schedule). Turn on = until turned off; use `ha_sidecar.mute_alarms` for a duration."""
+
+    def __init__(self, device) -> None:
+        super().__init__(device, "alarms_muted", "Alarms muted", "mute_alarms", "mdi:bell-sleep")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        until = self._state.get("alarms_muted_until")
+        return {"muted_until": dt_util.utc_from_timestamp(until / 1000) if until else None}
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._device.send_command("mute_alarms", {})
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._device.send_command("unmute_alarms", {})

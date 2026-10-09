@@ -95,3 +95,125 @@ install_system_update:
       example: file:///sdcard/Download/ota.zip
       selector:
         text:
+
+set_alarm_enabled:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    alarm_id:
+      required: true
+      selector:
+        text:
+    enabled:
+      required: true
+      selector:
+        boolean:
+
+skip_next_alarm:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    alarm_id:
+      selector:
+        text:
+
+mute_alarms:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    duration:
+      selector:
+        duration:
+
+unmute_alarms:
+  target:
+    device:
+      integration: ha_sidecar
+
+start_timer:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    duration:
+      required: true
+      selector:
+        duration:
+    label:
+      example: Batch 1
+      selector:
+        text:
+    timer_id:
+      selector:
+        text:
+
+start_stopwatch:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    label:
+      example: Treadmill
+      selector:
+        text:
+    timer_id:
+      selector:
+        text:
+
+pause_timer:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    timer_id:
+      selector:
+        text:
+    label:
+      selector:
+        text:
+
+resume_timer:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    timer_id:
+      selector:
+        text:
+    label:
+      selector:
+        text:
+
+cancel_timer:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    timer_id:
+      selector:
+        text:
+    label:
+      selector:
+        text:
+
+adjust_timer:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    timer_id:
+      selector:
+        text:
+    label:
+      selector:
+        text:
+    seconds:
+      required: true
+      selector:
+        number:
+          min: -86400
+          max: 86400
+          unit_of_measurement: s

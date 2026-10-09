@@ -94,6 +94,21 @@ reused key never updates its child → the shell reads the tab from the router; 
 Not verified: alarm page while an alarm really rings over the lock screen, PIN unlock round trip through the new page, wizard
 permission buttons (they open Android settings), phone-sized layout.
 
+### Timers and remote alarm control (emulator + throwaway HA)
+
+| Area | Result |
+|---|---|
+| `start_timer` / `start_stopwatch` / `pause` / `resume` / `adjust` / `cancel` via HA services, by label and by id; `sensor.timers`, `next_timer` | ✅ |
+| Countdown finishes: rings, `timer_finished` event on the HA bus, ring page shows "Time's up" and the overtime counting up, `stop_alarm` dismisses (`timer_dismissed`) | ✅ |
+| `mute_alarms` (switch on, event); a muted alarm fires silently (`alarm_skipped`, `reason: muted`, `binary_sensor.alarm_ringing` stays off); `unmute_alarms` | ✅ |
+| `skip_next_alarm` on a repeating alarm moves `next` by one day (`skip_next` attribute) | ✅ |
+| 5 Kotlin unit tests (timer arithmetic, skip-next) | ✅ |
+
+Bugs found: the ringing page and the idle screen never ticked because their clock timer was a lazy `late final` that nothing
+started; a second timer finishing while one rings replaced the first one's sound, so it now stays listed as finished instead.
+Not verified: timers over a reboot / Doze, countdown on the idle screen visually, voice interaction (not built yet; it will
+call the same platform methods).
+
 ## Not verified
 
 - Update **detection** (`onSystemUpdatePending`) and the download/install/restart taps: need a real pending OTA.

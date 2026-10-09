@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import voluptuous as vol
 
+from datetime import timedelta
+import uuid
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.util import dt as dt_util, slugify
 
 from .const import DOMAIN
 from .device import SidecarDevice
@@ -33,6 +37,14 @@ WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 _TARGET = {vol.Required("device_id"): vol.All(cv.ensure_list, [cv.string])}
 
+# existing timers are addressed by id, or by the label they were started with (the id defaults to its slug)
+def _timer_schema(extra: dict | None = None) -> vol.Schema:
+    return vol.All(
+        vol.Schema({**_TARGET, vol.Optional("timer_id"): cv.string, vol.Optional("label"): cv.string, **(extra or {})}),
+        cv.has_at_least_one_key("timer_id", "label"),
+    )
+
+
 SERVICES: dict[str, vol.Schema] = {
     "launch_app": vol.Schema({**_TARGET, vol.Required("package"): cv.string, vol.Optional("path"): cv.string}),
     "bring_to_front": vol.Schema({**_TARGET, vol.Optional("path"): cv.string}),
@@ -51,6 +63,23 @@ SERVICES: dict[str, vol.Schema] = {
     "cancel_alarm": vol.Schema({**_TARGET, vol.Required("alarm_id"): cv.string}),
     "stop_alarm": vol.Schema(_TARGET),
     "snooze_alarm": vol.Schema(_TARGET),
+    "set_alarm_enabled": vol.Schema({**_TARGET, vol.Required("alarm_id"): cv.string, vol.Required("enabled"): cv.boolean}),
+    "skip_next_alarm": vol.Schema({**_TARGET, vol.Optional("alarm_id"): cv.string}),
+    "mute_alarms": vol.Schema({**_TARGET, vol.Optional("duration"): cv.time_period}),
+    "unmute_alarms": vol.Schema(_TARGET),
+    "start_timer": vol.Schema(
+        {
+            **_TARGET,
+            vol.Required("duration"): vol.All(cv.time_period, vol.Range(min=timedelta(seconds=1), max=timedelta(hours=99))),
+            vol.Optional("label", default=""): cv.string,
+            vol.Optional("timer_id"): cv.string,
+        }
+    ),
+    "start_stopwatch": vol.Schema({**_TARGET, vol.Optional("label", default=""): cv.string, vol.Optional("timer_id"): cv.string}),
+    "pause_timer": _timer_schema(),
+    "resume_timer": _timer_schema(),
+    "cancel_timer": _timer_schema(),
+    "adjust_timer": _timer_schema({vol.Required("seconds"): vol.All(vol.Coerce(int), vol.Range(min=-86400, max=86400))}),
     "install_system_update": vol.Schema({**_TARGET, vol.Required("uri"): cv.string}),
 }
 
@@ -108,7 +137,39 @@ def _build_command(service: str, data: dict) -> tuple[str, dict]:
         return "cancel_alarm", {"id": data["alarm_id"]}
     if service == "install_system_update":
         return "install_system_update", {"uri": data["uri"]}
-    return service, {}  # stop_alarm, snooze_alarm
+    if service == "set_alarm_enabled":
+        return "set_alarm_enabled", {"id": data["alarm_id"], "enabled": data["enabled"]}
+    if service == "skip_next_alarm":
+        return "skip_next_alarm", {"id": data.get("alarm_id")}
+    if service == "mute_alarms":
+        if (duration := data.get("duration")) is None:
+            return "mute_alarms", {}  # until unmuted
+        return "mute_alarms", {"until_ms": int((dt_util.utcnow() + duration).timestamp() * 1000)}
+    if service == "start_timer":
+        return "start_timer", {
+            "id": _timer_id(data),
+            "label": data["label"],
+            "kind": "countdown",
+            "duration_s": int(data["duration"].total_seconds()),
+        }
+    if service == "start_stopwatch":
+        return "start_timer", {"id": _timer_id(data), "label": data["label"], "kind": "countup"}
+    if service in ("pause_timer", "resume_timer", "cancel_timer"):
+        return service, {"id": _timer_id(data, create=False)}
+    if service == "adjust_timer":
+        return "adjust_timer", {"id": _timer_id(data, create=False), "delta_s": data["seconds"]}
+    return service, {}  # stop_alarm, snooze_alarm, unmute_alarms
+
+
+def _timer_id(data: dict, *, create: bool = True) -> str:
+    """`timer_id`, else the slug of the label (so `label: Batch 1` can start and later cancel the same timer)."""
+    if data.get("timer_id"):
+        return data["timer_id"]
+    if data.get("label") and (slug := slugify(data["label"])):
+        return slug
+    if create:
+        return f"ha-{uuid.uuid4().hex[:8]}"
+    raise ServiceValidationError("Give timer_id or label")
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
