@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import datetime, timedelta
 from typing import Any
 
 from aiohttp import web
@@ -13,10 +14,13 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.core import Event, EventStateChangedData
 from homeassistant.helpers.dispatcher import async_dispatcher_send
-from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.event import async_track_state_change_event, async_track_time_interval
 from homeassistant.util import dt as dt_util, slugify
 
+from .beacon import BeaconState, BeaconTracker
 from .const import (
+    CONF_BEACON_HEAL,
+    CONF_BEACON_TIMEOUT,
     COMMAND_TIMEOUT,
     CONF_DEVICE_ID,
     CONF_ENTITY_PREFIX,
@@ -46,6 +50,22 @@ class SidecarDevice:
         self._ws: web.WebSocketResponse | None = None
         self._pending: dict[int, asyncio.Future[dict[str, Any]]] = {}
         self._next_id = 1
+        self.beacon = BeaconTracker(timedelta(minutes=self.beacon_timeout_minutes))
+        self.beacon_state = BeaconState.PAUSED
+        self._beacon_episode = False
+        self._started_at = dt_util.utcnow()
+
+    @property
+    def beacon_timeout_minutes(self) -> int:
+        return int(self.entry.options.get(CONF_BEACON_TIMEOUT) or 4)
+
+    @property
+    def beacon_heal_enabled(self) -> bool:
+        return bool(self.entry.options.get(CONF_BEACON_HEAL))
+
+    @property
+    def last_beacon(self) -> datetime | None:
+        return self.beacon.last
 
     @property
     def signal(self) -> str:
@@ -86,11 +106,16 @@ class SidecarDevice:
 
     @callback
     def update_state(self, partial: dict[str, Any]) -> None:
+        was_front = self._companion_in_front()
         self.state.update(partial)
+        if not was_front and self._companion_in_front():
+            self.beacon.disarm()  # a fresh page: wait for its first beacon before judging it
         self._notify()
 
     @callback
     def handle_event(self, event: str, data: dict[str, Any]) -> None:
+        if event == "companion_restarted":
+            self.beacon.disarm()
         self.hass.bus.async_fire(
             EVENT_SIDECAR, {"device_id": self.device_id, "name": self.name, "event": event, **data}
         )
@@ -195,3 +220,61 @@ class SidecarDevice:
                 name = name[len(self.name) + 1 :]
             items.append({"name": str(name), "value": f"{value} {unit}" if unit and value != "–" else value})
         return items
+
+
+    # --- dashboard beacon ----------------------------------------------------------------------------
+
+    def _companion_in_front(self) -> bool:
+        return self.state.get("foreground_app") in (self.state.get("companion_packages") or [])
+
+    def _beacon_watching(self) -> bool:
+        """Pings are expected only while the screen is on, the companion app is in front and everything is up."""
+        return (
+            self.connected
+            and self.state.get("screen_on") is True
+            and self._companion_in_front()
+            and dt_util.utcnow() - self._started_at > timedelta(minutes=2)  # Home Assistant just started: dashboards reconnect
+        )
+
+    @callback
+    def handle_beacon(self) -> None:
+        self.beacon.timeout = timedelta(minutes=self.beacon_timeout_minutes)
+        self.beacon.record(dt_util.utcnow())
+        self._beacon_episode = False
+        self._set_beacon_state(self.beacon.evaluate(dt_util.utcnow(), watching=self._beacon_watching()))
+
+    @callback
+    def _set_beacon_state(self, state: BeaconState) -> None:
+        if state != self.beacon_state:
+            self.beacon_state = state
+            self._notify()
+
+    @callback
+    def async_start_beacon_monitor(self) -> None:
+        @callback
+        def _tick(_now: datetime) -> None:
+            self.hass.async_create_task(self._async_beacon_tick())
+
+        self.entry.async_on_unload(async_track_time_interval(self.hass, _tick, timedelta(seconds=30)))
+
+    async def _async_beacon_tick(self) -> None:
+        now = dt_util.utcnow()
+        self.beacon.timeout = timedelta(minutes=self.beacon_timeout_minutes)
+        state = self.beacon.evaluate(now, watching=self._beacon_watching())
+        self._set_beacon_state(state)
+        if state != BeaconState.STALE or self._beacon_episode:
+            return
+        self._beacon_episode = True
+        self.hass.bus.async_fire(
+            EVENT_SIDECAR,
+            {"device_id": self.device_id, "name": self.name, "event": "dashboard_unresponsive",
+             "last_beacon": self.beacon.last.isoformat() if self.beacon.last else None},
+        )
+        if self.beacon_heal_enabled and self.beacon.may_heal(now):
+            try:
+                result = await self.send_command("heal_dashboard", {"reason": "beacon"})
+            except HomeAssistantError as err:
+                _LOGGER.warning("Could not heal the dashboard on %s: %s", self.name, err)
+                return
+            self.beacon.healed(now)
+            _LOGGER.info("Dashboard beacon of %s went silent: heal %s", self.name, result)

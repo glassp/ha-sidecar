@@ -5,7 +5,9 @@
   "config_flow": true,
   "dependencies": [
     "http",
-    "network"
+    "network",
+    "frontend",
+    "websocket_api"
   ],
   "documentation": "https://github.com/glassp/ha-sidecar",
   "integration_type": "device",

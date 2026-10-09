@@ -32,7 +32,7 @@ SENSORS = [
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
-    add_entities(device, "binary_sensor", async_add_entities, [*(SidecarBinarySensor(device, *s) for s in SENSORS), CompanionResponsiveSensor(device)])
+    add_entities(device, "binary_sensor", async_add_entities, [*(SidecarBinarySensor(device, *s) for s in SENSORS), CompanionResponsiveSensor(device), DashboardResponsiveSensor(device)])
 
 
 class SidecarBinarySensor(SidecarEntity, BinarySensorEntity):
@@ -61,3 +61,22 @@ class CompanionResponsiveSensor(SidecarEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         return (self._state.get("watchdog") or {}).get("responsive")
+
+
+class DashboardResponsiveSensor(SidecarEntity, BinarySensorEntity):
+    """Is the dashboard on the tablet alive? Needs a beacon card on the dashboard; unknown until its first ping."""
+
+    _attr_name = "Dashboard responsive"
+    _attr_icon = "mdi:monitor-eye"
+
+    def __init__(self, device) -> None:
+        super().__init__(device, "dashboard_responsive")
+
+    @property
+    def is_on(self) -> bool | None:
+        state = self._device.beacon_state
+        return {"ok": True, "stale": False}.get(str(state))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str]:
+        return {"beacon": str(self._device.beacon_state)}

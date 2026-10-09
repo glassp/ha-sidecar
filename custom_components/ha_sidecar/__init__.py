@@ -15,8 +15,10 @@ from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util, slugify
 
-from .const import DOMAIN
+from .const import DOMAIN, VERSION
+from . import beacon_api
 from .device import SidecarDevice
+from .frontend import async_register_card
 from .websocket_view import SidecarWebSocketView
 
 PLATFORMS = [
@@ -90,6 +92,8 @@ SERVICES: dict[str, vol.Schema] = {
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.data.setdefault(DOMAIN, {"devices": {}})
     hass.http.register_view(SidecarWebSocketView())
+    beacon_api.async_register(hass)
+    await async_register_card(hass, VERSION)
 
     async def handle_service(call: ServiceCall) -> None:
         for device in _resolve_devices(hass, call.data["device_id"]):
@@ -185,6 +189,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN]["devices"][device.device_id] = device
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     device.async_start_input_tracking()
+    device.async_start_beacon_monitor()
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     return True
 

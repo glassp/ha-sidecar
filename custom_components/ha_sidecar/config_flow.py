@@ -24,6 +24,8 @@ from homeassistant.util import slugify
 
 from .const import (
     CONF_DEVICE_ID,
+    CONF_BEACON_HEAL,
+    CONF_BEACON_TIMEOUT,
     CONF_ENTITY_PREFIX,
     CONF_GLANCE_ENTITIES,
     CONF_NIGHT_ENTITY,
@@ -207,6 +209,14 @@ class SidecarOptionsFlow(OptionsFlow):
                         CONF_GLANCE_ENTITIES,
                         description={"suggested_value": opts.get(CONF_GLANCE_ENTITIES, [])},
                     ): selector.EntitySelector(selector.EntitySelectorConfig(multiple=True)),
+                    vol.Optional(
+                        CONF_BEACON_HEAL, default=bool(opts.get(CONF_BEACON_HEAL, False))
+                    ): selector.BooleanSelector(),
+                    vol.Optional(
+                        CONF_BEACON_TIMEOUT, default=int(opts.get(CONF_BEACON_TIMEOUT, 4))
+                    ): selector.NumberSelector(
+                        selector.NumberSelectorConfig(min=1, max=30, step=1, unit_of_measurement="min", mode=selector.NumberSelectorMode.BOX)
+                    ),
                     vol.Optional(
                         CONF_NIGHT_ENTITY,
                         description={"suggested_value": opts.get(CONF_NIGHT_ENTITY)},

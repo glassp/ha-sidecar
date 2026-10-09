@@ -31,7 +31,7 @@ SENSORS = [
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
     add_entities(device, "sensor", async_add_entities, 
-        [*(SidecarSensor(device, *s) for s in SENSORS), CompanionRestartsSensor(device), CompanionLastRestartSensor(device), WatchdogStateSensor(device), TargetBrightnessSensor(device, raw=False), TargetBrightnessSensor(device, raw=True), NextTimerSensor(device), ActiveTimersSensor(device), AlarmsSensor(device)]
+        [*(SidecarSensor(device, *s) for s in SENSORS), CompanionRestartsSensor(device), DashboardLastBeaconSensor(device), CompanionLastRestartSensor(device), WatchdogStateSensor(device), TargetBrightnessSensor(device, raw=False), TargetBrightnessSensor(device, raw=True), NextTimerSensor(device), ActiveTimersSensor(device), AlarmsSensor(device)]
     )
 
 
@@ -221,3 +221,23 @@ class WatchdogStateSensor(_WatchdogSensor):
     @property
     def native_value(self) -> str | None:
         return self._watchdog.get("state")
+
+
+class DashboardLastBeaconSensor(SidecarEntity, SensorEntity):
+    """When the beacon card on the tablet's dashboard last pinged."""
+
+    _attr_name = "Dashboard last beacon"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:radar"
+
+    def __init__(self, device) -> None:
+        super().__init__(device, "dashboard_last_beacon")
+
+    @property
+    def available(self) -> bool:
+        return True  # the last ping stays meaningful while the tablet is offline
+
+    @property
+    def native_value(self):
+        return self._device.last_beacon
