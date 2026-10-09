@@ -1,0 +1,73 @@
+package dev.glassp.ha_sidecar
+
+import android.content.Context
+import android.content.Intent
+import android.graphics.PixelFormat
+import android.os.SystemClock
+import android.view.Gravity
+import android.view.MotionEvent
+import android.view.View
+import android.view.WindowManager
+
+/**
+ * Invisible touch target in the top-left corner. Tapping it [TAPS] times within [WINDOW_MS]
+ * opens the PIN screen. Uses an accessibility overlay when available (no extra permission),
+ * otherwise a regular application overlay (needs "draw over other apps").
+ */
+object HotCorner {
+    private const val TAPS = 5
+    private const val WINDOW_MS = 5_000L
+    private const val SIZE_DP = 72
+
+    private var view: View? = null
+    private var windowManager: WindowManager? = null
+
+    fun show(ctx: Context, accessibility: Boolean) {
+        if (view != null) return
+        if (!accessibility && !android.provider.Settings.canDrawOverlays(ctx)) return
+
+        val wm = ctx.getSystemService(WindowManager::class.java)
+        val size = (SIZE_DP * ctx.resources.displayMetrics.density).toInt()
+        var count = 0
+        var windowStart = 0L
+
+        val v = View(ctx)
+        v.setOnTouchListener { _, ev ->
+            if (ev.action == MotionEvent.ACTION_DOWN) {
+                val now = SystemClock.elapsedRealtime()
+                if (now - windowStart > WINDOW_MS) {
+                    windowStart = now
+                    count = 0
+                }
+                if (++count >= TAPS) {
+                    count = 0
+                    ctx.startActivity(
+                        Intent(ctx, PinActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                }
+            }
+            true
+        }
+
+        val type = if (accessibility) WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
+        else WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        val lp = WindowManager.LayoutParams(
+            size, size, type,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT,
+        ).apply { gravity = Gravity.TOP or Gravity.START }
+
+        runCatching {
+            wm.addView(v, lp)
+            view = v
+            windowManager = wm
+        }
+    }
+
+    fun hide() {
+        val v = view ?: return
+        runCatching { windowManager?.removeView(v) }
+        view = null
+        windowManager = null
+    }
+}
