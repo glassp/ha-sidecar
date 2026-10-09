@@ -7,6 +7,8 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
 
+from homeassistant.util import slugify
+
 from .const import DOMAIN
 from .device import SidecarDevice
 
@@ -40,3 +42,16 @@ class SidecarEntity(Entity):
     @callback
     def _handle_update(self) -> None:
         self.async_write_ha_state()
+
+
+def add_entities(device: SidecarDevice, domain: str, async_add_entities, entities) -> None:
+    """Add [entities] with ids of the form `<domain>.<prefix>_<name>`.
+
+    The prefix is chosen when the tablet is set up. Entities already in the registry keep their ids.
+    (Home Assistant rejects a double underscore in entity ids, so a single one separates prefix and name.)
+    """
+    entities = list(entities)
+    for entity in entities:
+        name = entity.name if isinstance(entity.name, str) else None
+        entity.entity_id = f"{domain}.{device.entity_prefix}_{slugify(name or entity._key)}"  # noqa: SLF001
+    async_add_entities(entities)

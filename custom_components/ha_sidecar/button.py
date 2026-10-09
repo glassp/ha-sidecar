@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_DEVICE_ID, DOMAIN
-from .entity import SidecarEntity
+from .entity import SidecarEntity, add_entities
 
 # key, name, command, device_class, category, icon
 BUTTONS = [
@@ -28,7 +28,7 @@ BUTTONS = [
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
-    async_add_entities(SidecarButton(device, *b) for b in BUTTONS)
+    add_entities(device, "button", async_add_entities, [SidecarButton(device, *b) for b in BUTTONS])
 
 
 class SidecarButton(SidecarEntity, ButtonEntity):

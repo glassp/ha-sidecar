@@ -16,12 +16,12 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_DEVICE_ID, DOMAIN
-from .entity import SidecarEntity
+from .entity import SidecarEntity, add_entities
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
-    async_add_entities([SidecarOsUpdate(device)])
+    add_entities(device, "update", async_add_entities, [SidecarOsUpdate(device)])
 
 
 class SidecarOsUpdate(SidecarEntity, UpdateEntity):

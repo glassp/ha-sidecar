@@ -3,15 +3,20 @@
     "step": {
       "user": {
         "title": "Add a tablet",
-        "description": "Give the tablet a name. A pairing token is generated on the next screen.",
+        "description": "In the HA Sidecar app enter this Home Assistant URL and the token below. Then name the tablet.\n\n**Token:** `{token}`\n\nThe entity prefix makes every entity id `<domain>.<prefix>_<entity>`, for example `sensor.wallpanel_timers`, so several tablets never collide. It cannot be changed later.",
         "data": {
-          "name": "Name"
+          "name": "Name",
+          "entity_prefix": "Entity prefix"
+        },
+        "data_description": {
+          "name": "The device name shown in Home Assistant.",
+          "entity_prefix": "Lower-case letters, digits and single underscores, e.g. wallpanel."
         }
-      },
-      "pair": {
-        "title": "Pair the HA Sidecar app",
-        "description": "In the HA Sidecar app enter this Home Assistant URL and the token below, then press Submit here.\n\n**Token:** `{token}`"
       }
+    },
+    "error": {
+      "invalid_prefix": "Use lower-case letters and digits, with single underscores between words, starting with a letter.",
+      "prefix_in_use": "Another tablet already uses this prefix."
     }
   },
   "services": {
@@ -234,6 +239,20 @@
         "seconds": {
           "name": "Seconds",
           "description": "Seconds to add; negative to remove."
+        }
+      }
+    },
+    "enter_night_mode": {
+      "name": "Enter night mode",
+      "description": "Switches the tablet to night brightness now, regardless of the Night starts / Night ends times, until exit_night_mode is called. Overrides a configured night entity. Applies while the Brightness mode is Auto."
+    },
+    "exit_night_mode": {
+      "name": "Exit night mode",
+      "description": "Switches the tablet back to day brightness now, until enter_night_mode is called. Applies while the Brightness mode is Auto.",
+      "fields": {
+        "follow_schedule": {
+          "name": "Follow schedule",
+          "description": "Instead of forcing day, hand control back to the Night starts / Night ends times."
         }
       }
     }

@@ -12,12 +12,12 @@ from homeassistant.util import dt as dt_util
 
 from .config_entities import SWITCHES, ConfigSwitch
 from .const import CONF_DEVICE_ID, DOMAIN
-from .entity import SidecarEntity
+from .entity import SidecarEntity, add_entities
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
-    async_add_entities(
+    add_entities(device, "switch", async_add_entities, 
         [
             SidecarSwitch(device, "lockdown", "Kiosk lockdown", "set_lockdown", "mdi:lock"),
             SidecarSwitch(device, "keep_screen_on", "Keep screen on", "set_keep_screen_on", "mdi:brightness-7"),

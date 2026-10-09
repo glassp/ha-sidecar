@@ -217,3 +217,18 @@ adjust_timer:
           min: -86400
           max: 86400
           unit_of_measurement: s
+
+enter_night_mode:
+  target:
+    device:
+      integration: ha_sidecar
+
+exit_night_mode:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    follow_schedule:
+      default: false
+      selector:
+        boolean:

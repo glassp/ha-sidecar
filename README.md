@@ -29,6 +29,18 @@ needs attention), **Kiosk** (dashboards, lock, PIN, allowed apps, start-up), **D
 camera), **Alarms**, **System** (connection, permissions, updates, theme, language). A global **search** finds any setting.
 English and German; light/dark theme. See [docs/UI.md](docs/UI.md).
 
+## Naming
+
+When you add a tablet in Home Assistant you get a pairing token to type into the app, and choose the device name and an
+**entity prefix** (for example `wallpanel`). Every entity is then `<domain>.<prefix>_<entity>`: `sensor.wallpanel_timers`,
+`number.wallpanel_night_brightness`, so several tablets never collide. (Home Assistant itself forbids a double underscore in
+entity ids, so a single underscore separates prefix and name.) The prefix is fixed once created; the name can be renamed.
+
+Brightness is a percentage everywhere by default. Raw Android values (0-255) are an opt-in under System > Developer
+options, which also switches the Home Assistant entities. Night mode can be driven from automations with the
+`ha_sidecar.enter_night_mode` and `ha_sidecar.exit_night_mode` actions (the latter can also hand control back to the
+night start/end times).
+
 ## Timers, stopwatches and remote alarm control
 
 Labeled countdowns ("Batch 1") and count-ups ("Treadmill") run on the tablet and show on the idle screen. A finished

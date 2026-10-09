@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_DEVICE_ID, DOMAIN
-from .entity import SidecarEntity
+from .entity import SidecarEntity, add_entities
 
 # key, name, device_class, entity_category, icon
 SENSORS = [
@@ -32,7 +32,7 @@ SENSORS = [
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
-    async_add_entities(SidecarBinarySensor(device, *s) for s in SENSORS)
+    add_entities(device, "binary_sensor", async_add_entities, [SidecarBinarySensor(device, *s) for s in SENSORS])
 
 
 class SidecarBinarySensor(SidecarEntity, BinarySensorEntity):

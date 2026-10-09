@@ -53,7 +53,7 @@ Events: `app_blocked`, `pin_failed`, `guard_disabled`, `device_admin_disabled`, 
 | `set_config` | `config{key: value}` | any display/presence/camera/glance/theme setting (see `cfg` in state, docs/DISPLAY.md) |
 | (`set_config` result) | | returns `{config: {...}}`, the validated config; dashboard values are reduced to paths, invalid ones fail with `invalid_value` |
 | `external_presence` | `present` | HA presence entities → tablet |
-| `external_night` | `night` (bool or null) | HA night entity → tablet; null falls back to the schedule |
+| `external_night` | `night` (bool or null) | HA night entity or the `enter_night_mode` / `exit_night_mode` actions → tablet; null falls back to the schedule |
 | `glance_items` | `items[{name,value}]` | values for the glance screen |
 | `show_glance` / `hide_glance` | | |
 | `set_alarm` | `alarm{id,hour,minute,days[1-7],label,enabled,snooze_minutes}` | empty `days` = once |

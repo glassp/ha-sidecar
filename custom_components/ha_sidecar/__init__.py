@@ -63,6 +63,8 @@ SERVICES: dict[str, vol.Schema] = {
     "cancel_alarm": vol.Schema({**_TARGET, vol.Required("alarm_id"): cv.string}),
     "stop_alarm": vol.Schema(_TARGET),
     "snooze_alarm": vol.Schema(_TARGET),
+    "enter_night_mode": vol.Schema(_TARGET),
+    "exit_night_mode": vol.Schema({**_TARGET, vol.Optional("follow_schedule", default=False): cv.boolean}),
     "set_alarm_enabled": vol.Schema({**_TARGET, vol.Required("alarm_id"): cv.string, vol.Required("enabled"): cv.boolean}),
     "skip_next_alarm": vol.Schema({**_TARGET, vol.Optional("alarm_id"): cv.string}),
     "mute_alarms": vol.Schema({**_TARGET, vol.Optional("duration"): cv.time_period}),
@@ -137,6 +139,11 @@ def _build_command(service: str, data: dict) -> tuple[str, dict]:
         return "cancel_alarm", {"id": data["alarm_id"]}
     if service == "install_system_update":
         return "install_system_update", {"uri": data["uri"]}
+    if service == "enter_night_mode":
+        return "external_night", {"night": True}
+    if service == "exit_night_mode":
+        # False forces day until changed again; follow_schedule hands control back to the night start/end times
+        return "external_night", {"night": None if data["follow_schedule"] else False}
     if service == "set_alarm_enabled":
         return "set_alarm_enabled", {"id": data["alarm_id"], "enabled": data["enabled"]}
     if service == "skip_next_alarm":

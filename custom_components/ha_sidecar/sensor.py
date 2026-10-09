@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_DEVICE_ID, DOMAIN
-from .entity import SidecarEntity
+from .entity import SidecarEntity, add_entities
 
 # key, name, device_class, unit, entity_category, icon
 # (battery, charging, Android version, security patch, next alarm and storage are already exposed by the
@@ -20,7 +20,6 @@ from .entity import SidecarEntity
 SENSORS = [
     ("last_interaction", "Last interaction", SensorDeviceClass.TIMESTAMP, None, None, "mdi:gesture-tap"),
     ("foreground_app", "Foreground app", None, None, None, "mdi:application"),
-    ("target_brightness", "Target brightness", None, None, EntityCategory.DIAGNOSTIC, "mdi:brightness-percent"),
     ("last_blocked_app", "Last blocked app", None, None, EntityCategory.DIAGNOSTIC, "mdi:shield-alert"),
     ("blocked_count", "Blocked app launches", None, None, EntityCategory.DIAGNOSTIC, "mdi:counter"),
     ("pin_failures", "PIN failures", None, None, EntityCategory.DIAGNOSTIC, "mdi:lock-alert"),
@@ -31,8 +30,8 @@ SENSORS = [
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
-    async_add_entities(
-        [*(SidecarSensor(device, *s) for s in SENSORS), NextTimerSensor(device), ActiveTimersSensor(device), AlarmsSensor(device)]
+    add_entities(device, "sensor", async_add_entities, 
+        [*(SidecarSensor(device, *s) for s in SENSORS), TargetBrightnessSensor(device), NextTimerSensor(device), ActiveTimersSensor(device), AlarmsSensor(device)]
     )
 
 
@@ -150,3 +149,27 @@ class AlarmsSensor(SidecarEntity, SensorEntity):
             ],
             "muted": self._state.get("alarms_muted", False),
         }
+
+
+class TargetBrightnessSensor(SidecarEntity, SensorEntity):
+    """The brightness the sidecar is aiming for (percent; raw 0..255 with the developer option)."""
+
+    _attr_name = "Target brightness"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:brightness-percent"
+
+    def __init__(self, device) -> None:
+        super().__init__(device, "target_brightness")
+
+    @property
+    def _raw_mode(self) -> bool:
+        return bool((self._state.get("cfg") or {}).get("raw_brightness"))
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        return None if self._raw_mode else "%"
+
+    @property
+    def native_value(self) -> int | None:
+        raw = self._state.get("target_brightness")
+        return raw if raw is None or self._raw_mode else round(raw * 100 / 255)

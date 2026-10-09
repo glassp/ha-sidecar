@@ -14,11 +14,12 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.core import Event, EventStateChangedData
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_state_change_event
-from homeassistant.util import dt as dt_util
+from homeassistant.util import dt as dt_util, slugify
 
 from .const import (
     COMMAND_TIMEOUT,
     CONF_DEVICE_ID,
+    CONF_ENTITY_PREFIX,
     CONF_GLANCE_ENTITIES,
     CONF_NIGHT_ENTITY,
     CONF_PRESENCE_ENTITIES,
@@ -38,6 +39,8 @@ class SidecarDevice:
         self.device_id: str = entry.data[CONF_DEVICE_ID]
         self.token: str = entry.data[CONF_TOKEN]
         self.name: str = entry.title
+        # entries created before the prefix existed fall back to the slug of their name
+        self.entity_prefix: str = entry.data.get(CONF_ENTITY_PREFIX) or slugify(entry.title)
         self.state: dict[str, Any] = {}
         self.info: dict[str, Any] = {}
         self._ws: web.WebSocketResponse | None = None

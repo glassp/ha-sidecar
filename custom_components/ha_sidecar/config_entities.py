@@ -39,13 +39,28 @@ class _ConfigMixin:
         self.async_write_ha_state()  # type: ignore[attr-defined]
 
 
+# Brightness levels live on the tablet as raw Android values 0..255. They are shown as percent unless the
+# "Brightness as 0-255" developer option is on (then entities show the raw value).
+# key, name, icon
+LEVELS = [
+    ("day_level", "Day brightness", "mdi:brightness-7"),
+    ("day_dim_level", "Day idle brightness", "mdi:brightness-5"),
+    ("night_level", "Night brightness", "mdi:brightness-3"),
+    ("night_light_level", "Night light brightness", "mdi:lightbulb-night"),
+    ("night_touch_level", "Night brightness after touch", "mdi:gesture-tap"),
+]
+
+
+def pct_from_raw(raw: float | None) -> int | None:
+    return None if raw is None else round(raw * 100 / 255)
+
+
+def raw_from_pct(pct: float) -> int:
+    return round(pct * 255 / 100)
+
+
 # key, name, min, max, step, unit, icon
 NUMBERS = [
-    ("day_level", "Day brightness", 0, 255, 1, None, "mdi:brightness-7"),
-    ("day_dim_level", "Day idle brightness", 0, 255, 1, None, "mdi:brightness-5"),
-    ("night_level", "Night brightness", 0, 255, 1, None, "mdi:brightness-3"),
-    ("night_light_level", "Night light brightness", 0, 255, 1, None, "mdi:lightbulb-night"),
-    ("night_touch_level", "Night brightness after touch", 0, 255, 1, None, "mdi:gesture-tap"),
     ("dim_after_s", "Dim after", 10, 1800, 5, UnitOfTime.SECONDS, "mdi:timer-sand"),
     ("presence_hold_s", "Presence hold time", 5, 300, 5, UnitOfTime.SECONDS, "mdi:timer-outline"),
     ("night_hold_s", "Night touch hold time", 5, 300, 5, UnitOfTime.SECONDS, "mdi:timer-outline"),
@@ -58,6 +73,7 @@ NUMBERS = [
 # key, name, icon
 SWITCHES = [
     ("auto_dim", "Dim when idle", "mdi:brightness-auto"),
+    ("raw_brightness", "Brightness as 0-255 (developer)", "mdi:numeric"),
     ("night_light", "Night light", "mdi:lightbulb-night-outline"),
     ("camera_presence", "Camera presence detection", "mdi:camera-account"),
     ("glance", "At-a-glance screen", "mdi:clock-digital"),
@@ -103,6 +119,41 @@ class ConfigNumber(_ConfigMixin, SidecarEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         await self._write(int(value) if float(self._attr_native_step).is_integer() else value)
+
+
+class ConfigLevelNumber(_ConfigMixin, SidecarEntity, NumberEntity):
+    """A brightness level: percent by default, raw 0..255 with the developer option."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_mode = NumberMode.BOX
+    _attr_native_min_value = 0
+    _attr_native_step = 1
+
+    def __init__(self, device, key, name, icon) -> None:
+        super().__init__(device, f"cfg_{key}")
+        self._key = key
+        self._attr_name = name
+        self._attr_icon = icon
+
+    @property
+    def _raw_mode(self) -> bool:
+        return bool((self._device.state.get("cfg") or {}).get("raw_brightness"))
+
+    @property
+    def native_max_value(self) -> float:
+        return 255 if self._raw_mode else 100
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        return None if self._raw_mode else "%"
+
+    @property
+    def native_value(self) -> float | None:
+        value = self._cfg_value
+        return value if self._raw_mode else pct_from_raw(value)
+
+    async def async_set_native_value(self, value: float) -> None:
+        await self._write(int(value) if self._raw_mode else raw_from_pct(value))
 
 
 class ConfigSwitch(_ConfigMixin, SidecarEntity, SwitchEntity):
