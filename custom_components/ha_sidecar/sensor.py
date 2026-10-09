@@ -31,7 +31,7 @@ SENSORS = [
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
     add_entities(device, "sensor", async_add_entities, 
-        [*(SidecarSensor(device, *s) for s in SENSORS), TargetBrightnessSensor(device), NextTimerSensor(device), ActiveTimersSensor(device), AlarmsSensor(device)]
+        [*(SidecarSensor(device, *s) for s in SENSORS), TargetBrightnessSensor(device, raw=False), TargetBrightnessSensor(device, raw=True), NextTimerSensor(device), ActiveTimersSensor(device), AlarmsSensor(device)]
     )
 
 
@@ -152,24 +152,18 @@ class AlarmsSensor(SidecarEntity, SensorEntity):
 
 
 class TargetBrightnessSensor(SidecarEntity, SensorEntity):
-    """The brightness the sidecar is aiming for (percent; raw 0..255 with the developer option)."""
+    """The brightness the sidecar is aiming for: `Target brightness percentage` (0-100) and `... raw` (0-255)."""
 
-    _attr_name = "Target brightness"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_icon = "mdi:brightness-percent"
 
-    def __init__(self, device) -> None:
-        super().__init__(device, "target_brightness")
-
-    @property
-    def _raw_mode(self) -> bool:
-        return bool((self._state.get("cfg") or {}).get("raw_brightness"))
-
-    @property
-    def native_unit_of_measurement(self) -> str | None:
-        return None if self._raw_mode else "%"
+    def __init__(self, device, raw: bool) -> None:
+        super().__init__(device, f"target_brightness_{'raw' if raw else 'percentage'}")
+        self._raw = raw
+        self._attr_name = f"Target brightness {'raw' if raw else 'percentage'}"
+        self._attr_native_unit_of_measurement = None if raw else "%"
 
     @property
     def native_value(self) -> int | None:
         raw = self._state.get("target_brightness")
-        return raw if raw is None or self._raw_mode else round(raw * 100 / 255)
+        return raw if raw is None or self._raw else round(raw * 100 / 255)

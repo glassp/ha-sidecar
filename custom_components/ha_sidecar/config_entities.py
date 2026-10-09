@@ -39,8 +39,8 @@ class _ConfigMixin:
         self.async_write_ha_state()  # type: ignore[attr-defined]
 
 
-# Brightness levels live on the tablet as raw Android values 0..255. They are shown as percent unless the
-# "Brightness as 0-255" developer option is on (then entities show the raw value).
+# Brightness levels live on the tablet as raw Android values 0..255. Each level has two entities: percentage (0-100)
+# and raw (0-255); both write the same setting.
 # key, name, icon
 LEVELS = [
     ("day_level", "Day brightness", "mdi:brightness-7"),
@@ -73,7 +73,7 @@ NUMBERS = [
 # key, name, icon
 SWITCHES = [
     ("auto_dim", "Dim when idle", "mdi:brightness-auto"),
-    ("raw_brightness", "Brightness as 0-255 (developer)", "mdi:numeric"),
+    ("raw_brightness", "Show brightness as 0-255 in the app", "mdi:numeric"),
     ("night_light", "Night light", "mdi:lightbulb-night-outline"),
     ("camera_presence", "Camera presence detection", "mdi:camera-account"),
     ("glance", "At-a-glance screen", "mdi:clock-digital"),
@@ -122,38 +122,29 @@ class ConfigNumber(_ConfigMixin, SidecarEntity, NumberEntity):
 
 
 class ConfigLevelNumber(_ConfigMixin, SidecarEntity, NumberEntity):
-    """A brightness level: percent by default, raw 0..255 with the developer option."""
+    """A brightness level, as two entities: `<name> percentage` (0-100) and `<name> raw` (Android's 0-255)."""
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_mode = NumberMode.BOX
     _attr_native_min_value = 0
     _attr_native_step = 1
 
-    def __init__(self, device, key, name, icon) -> None:
-        super().__init__(device, f"cfg_{key}")
+    def __init__(self, device, key, name, icon, raw: bool) -> None:
+        super().__init__(device, f"cfg_{key}_{'raw' if raw else 'percentage'}")
         self._key = key
-        self._attr_name = name
+        self._raw = raw
+        self._attr_name = f"{name} {'raw' if raw else 'percentage'}"
         self._attr_icon = icon
-
-    @property
-    def _raw_mode(self) -> bool:
-        return bool((self._device.state.get("cfg") or {}).get("raw_brightness"))
-
-    @property
-    def native_max_value(self) -> float:
-        return 255 if self._raw_mode else 100
-
-    @property
-    def native_unit_of_measurement(self) -> str | None:
-        return None if self._raw_mode else "%"
+        self._attr_native_max_value = 255 if raw else 100
+        self._attr_native_unit_of_measurement = None if raw else "%"
 
     @property
     def native_value(self) -> float | None:
         value = self._cfg_value
-        return value if self._raw_mode else pct_from_raw(value)
+        return value if self._raw else pct_from_raw(value)
 
     async def async_set_native_value(self, value: float) -> None:
-        await self._write(int(value) if self._raw_mode else raw_from_pct(value))
+        await self._write(int(value) if self._raw else raw_from_pct(value))
 
 
 class ConfigSwitch(_ConfigMixin, SidecarEntity, SwitchEntity):

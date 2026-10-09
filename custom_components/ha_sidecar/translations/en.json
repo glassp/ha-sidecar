@@ -1,9 +1,24 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
-        "title": "Add a tablet",
-        "description": "In the HA Sidecar app enter this Home Assistant URL and the token below. Then name the tablet.\n\n**Token:** `{token}`\n\nThe entity prefix makes every entity id `<domain>.<prefix>_<entity>`, for example `sensor.wallpanel_timers`, so several tablets never collide. It cannot be changed later.",
+        "title": "Pair a tablet by address",
+        "description": "Open the HA Sidecar app, choose Pair with Home Assistant, and enter the address and the code it shows. Normally the tablet is found automatically and you do not need this.",
+        "data": {
+          "host": "Address",
+          "port": "Port",
+          "code": "Code"
+        },
+        "data_description": {
+          "host": "IP address or host name of the tablet.",
+          "port": "Shown on the tablet next to the address.",
+          "code": "The code on the tablet. Leave empty to confirm on the tablet instead."
+        }
+      },
+      "details": {
+        "title": "Add {name}",
+        "description": "Found at {host}. Choose how the tablet appears in Home Assistant.\n\nThe entity prefix makes every entity id `<domain>.<prefix>_<entity>`, for example `sensor.wallpanel_timers`, so several tablets never collide. It cannot be changed later.",
         "data": {
           "name": "Name",
           "entity_prefix": "Entity prefix"
@@ -12,11 +27,37 @@
           "name": "The device name shown in Home Assistant.",
           "entity_prefix": "Lower-case letters, digits and single underscores, e.g. wallpanel."
         }
+      },
+      "verify": {
+        "title": "Confirm on the tablet",
+        "description": "{name} now shows a request from Home Assistant.\n\nCheck that it shows this number, press **Allow** on the tablet, then press Submit here:\n\n# {sas}"
       }
     },
     "error": {
       "invalid_prefix": "Use lower-case letters and digits, with single underscores between words, starting with a letter.",
-      "prefix_in_use": "Another tablet already uses this prefix."
+      "prefix_in_use": "Another tablet already uses this prefix.",
+      "cannot_connect": "Could not reach the tablet. Is pairing mode on, and are both on the same network?",
+      "not_pairing": "The tablet is not in pairing mode.",
+      "bad_token": "That code is not right.",
+      "bad_response": "The tablet answered something unexpected.",
+      "pairing_failed": "Pairing failed.",
+      "bad_request": "The tablet rejected the request.",
+      "no_session": "The tablet lost the pairing session. Try again.",
+      "decrypt_failed": "The secure exchange failed. Try again."
+    },
+    "abort": {
+      "already_configured": "This tablet is already set up.",
+      "not_ha_sidecar": "That is not an HA Sidecar tablet.",
+      "denied": "The request was denied on the tablet.",
+      "timeout": "Nobody allowed the request on the tablet in time.",
+      "cannot_connect": "Lost contact with the tablet.",
+      "not_pairing": "The tablet left pairing mode.",
+      "no_session": "The tablet lost the pairing session. Start again.",
+      "decrypt_failed": "The secure exchange failed. Start again.",
+      "bad_response": "The tablet answered something unexpected.",
+      "pairing_failed": "Pairing failed.",
+      "bad_request": "The tablet rejected the request.",
+      "bad_token": "That code is not right."
     }
   },
   "services": {
