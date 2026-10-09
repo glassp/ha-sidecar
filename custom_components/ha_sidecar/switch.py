@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .config_entities import SWITCHES, ConfigSwitch
 from .const import CONF_DEVICE_ID, DOMAIN
 from .entity import SidecarEntity
 
@@ -20,6 +21,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             SidecarSwitch(device, "lockdown", "Kiosk lockdown", "set_lockdown", "mdi:lock"),
             SidecarSwitch(device, "keep_screen_on", "Keep screen on", "set_keep_screen_on", "mdi:brightness-7"),
             SidecarSwitch(device, "kiosk_launcher", "Act as home app", "set_kiosk_launcher", "mdi:home-lock"),
+            *(ConfigSwitch(device, *s) for s in SWITCHES),
         ]
     )
 

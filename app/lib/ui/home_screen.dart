@@ -4,6 +4,7 @@ import '../app_controller.dart';
 import '../ha/sidecar_client.dart';
 import '../platform/kiosk_platform.dart';
 import 'allowlist_screen.dart';
+import 'display_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, required this.controller});
@@ -24,6 +25,15 @@ class HomeScreen extends StatelessWidget {
             _connectionCard(context),
             _enforcementCard(context),
             _kioskCard(context),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.brightness_6),
+                title: const Text('Display & presence'),
+                subtitle: Text(
+                    '${(s.cfg['mode'] ?? 'manual')} · ${s.isNight ? 'night' : 'day'}${s.presence ? ' · someone near' : ''}'),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => DisplayScreen(controller: controller))),
+              ),
+            ),
             _alarmsCard(context),
             _updateCard(context),
             const Card(

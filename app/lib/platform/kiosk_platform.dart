@@ -25,6 +25,13 @@ class DeviceStatus {
   bool get hasPin => _b('has_pin');
   bool get keepScreenOn => _b('keep_screen_on');
   bool get kioskLauncher => _b('kiosk_launcher');
+  bool get isNight => _b('is_night');
+  bool get presence => _b('presence');
+  bool get cameraInUse => _b('camera_in_use');
+  bool get micInUse => _b('mic_in_use');
+  int? get targetBrightness => raw['target_brightness'] as int?;
+  String? get displayError => raw['display_error'] as String?;
+  Map<String, dynamic> get cfg => Map<String, dynamic>.from((raw['cfg'] as Map?) ?? const {});
   bool get isHomeApp => _b('is_home_app');
   bool get alarmRinging => _b('alarm_ringing');
   String? get targetPackage => raw['target_package'] as String?;
@@ -118,6 +125,11 @@ abstract class KioskPlatform {
   Future<void> wakeScreen();
   Future<void> sleepScreen();
   Future<void> setBrightness(int level);
+
+  // Display / presence (brightness controller runs natively; see BrightnessController.kt)
+  Future<void> setDisplayConfig(Map<String, dynamic> config);
+  Future<void> setExternalPresence(bool present);
+  Future<void> setExternalNight(bool? night);
 
   // Alarms
   Future<List<AlarmSpec>> getAlarms();

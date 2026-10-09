@@ -12,3 +12,7 @@ WS_PATH = "/api/ha_sidecar/ws"
 EVENT_SIDECAR = "ha_sidecar_event"
 
 COMMAND_TIMEOUT = 20
+
+# Options (Configure on the integration card)
+CONF_PRESENCE_ENTITIES = "presence_entities"  # on = someone is near the tablet (mmWave, PIR, ...)
+CONF_NIGHT_ENTITY = "night_entity"  # sun.sun (below_horizon) or any on/off entity: on = night

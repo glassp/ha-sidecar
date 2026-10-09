@@ -11,9 +11,18 @@ from aiohttp import web
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.core import Event, EventStateChangedData
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.event import async_track_state_change_event
 
-from .const import COMMAND_TIMEOUT, CONF_DEVICE_ID, CONF_TOKEN, EVENT_SIDECAR
+from .const import (
+    COMMAND_TIMEOUT,
+    CONF_DEVICE_ID,
+    CONF_NIGHT_ENTITY,
+    CONF_PRESENCE_ENTITIES,
+    CONF_TOKEN,
+    EVENT_SIDECAR,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -110,3 +119,46 @@ class SidecarDevice:
             suffix = f" ({detail})" if detail and detail != error else ""
             raise HomeAssistantError(f"{command} failed on {self.name}: {error}{suffix}")
         return msg.get("data") or {}
+
+    # --- HA entities that drive the tablet (presence, night) ---------------------------------
+
+    @property
+    def _presence_entities(self) -> list[str]:
+        return list(self.entry.options.get(CONF_PRESENCE_ENTITIES) or [])
+
+    @property
+    def _night_entity(self) -> str | None:
+        return self.entry.options.get(CONF_NIGHT_ENTITY) or None
+
+    @callback
+    def async_start_input_tracking(self) -> None:
+        """Forward the chosen presence / night entities to the tablet whenever they change."""
+        entities = [*self._presence_entities, *([self._night_entity] if self._night_entity else [])]
+        if not entities:
+            return
+
+        @callback
+        def _changed(event: Event[EventStateChangedData]) -> None:
+            if self.connected:
+                self.hass.async_create_task(self.async_sync_inputs())
+
+        self.entry.async_on_unload(async_track_state_change_event(self.hass, entities, _changed))
+
+    async def async_sync_inputs(self) -> None:
+        """Push current presence / night state (also called right after the tablet connects)."""
+        try:
+            if self._presence_entities:
+                present = any(self.hass.states.is_state(e, "on") for e in self._presence_entities)
+                await self.send_command("external_presence", {"present": present})
+            if self._night_entity:
+                state = self.hass.states.get(self._night_entity)
+                night: bool | None
+                if state is None or state.state in ("unavailable", "unknown"):
+                    night = None
+                elif state.domain == "sun":
+                    night = state.state == "below_horizon"
+                else:
+                    night = state.state == "on"
+                await self.send_command("external_night", {"night": night})
+        except HomeAssistantError as err:
+            _LOGGER.debug("Could not sync inputs to %s: %s", self.name, err)

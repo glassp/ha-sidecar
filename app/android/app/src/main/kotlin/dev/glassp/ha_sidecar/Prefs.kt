@@ -26,6 +26,11 @@ object Prefs {
     fun kioskLauncher(ctx: Context) = sp(ctx).getBoolean("kiosk_launcher", false)
     fun setKioskLauncher(ctx: Context, v: Boolean) = sp(ctx).edit().putBoolean("kiosk_launcher", v).apply()
 
+    fun displayConfigJson(ctx: Context): String = sp(ctx).getString("display_cfg", "{}")!!
+    fun setDisplayConfigJson(ctx: Context, v: String) = sp(ctx).edit().putString("display_cfg", v).apply()
+
+    fun pinFails(ctx: Context): Int = sp(ctx).getInt("pin_fails", 0)
+
     fun keepScreenOn(ctx: Context) = sp(ctx).getBoolean("keep_screen_on", false)
     fun setKeepScreenOn(ctx: Context, v: Boolean) = sp(ctx).edit().putBoolean("keep_screen_on", v).apply()
 

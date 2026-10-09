@@ -40,6 +40,12 @@ class CommandRouter {
         await platform.setBrightness(d['level'] as int);
       case 'set_keep_screen_on':
         await platform.setKeepScreenOn(d['enabled'] == true);
+      case 'set_config':
+        await platform.setDisplayConfig(Map<String, dynamic>.from(d['config'] as Map));
+      case 'external_presence':
+        await platform.setExternalPresence(d['present'] == true);
+      case 'external_night':
+        await platform.setExternalNight(d['night'] as bool?);
       case 'set_alarm':
         await platform.upsertAlarm(AlarmSpec.fromMap((d['alarm'] as Map).cast<String, dynamic>()));
       case 'cancel_alarm':

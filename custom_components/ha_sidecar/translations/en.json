@@ -107,5 +107,21 @@
         }
       }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Display inputs",
+        "description": "Entities that drive the tablet's brightness logic. Everything else is configured with the entities of the device.",
+        "data": {
+          "presence_entities": "Presence entities",
+          "night_entity": "Night entity"
+        },
+        "data_description": {
+          "presence_entities": "Any of these being on means someone is near the tablet (mmWave, PIR, ...). Optional: the tablet can also use its camera.",
+          "night_entity": "On = night. A sun entity counts as night while below the horizon. Leave empty to use the night schedule on the tablet."
+        }
+      }
+    }
   }
 }

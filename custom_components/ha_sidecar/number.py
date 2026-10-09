@@ -7,17 +7,18 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .config_entities import NUMBERS, ConfigNumber
 from .const import CONF_DEVICE_ID, DOMAIN
 from .entity import SidecarEntity
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
-    async_add_entities([SidecarBrightness(device)])
+    async_add_entities([SidecarBrightness(device), *(ConfigNumber(device, *n) for n in NUMBERS)])
 
 
 class SidecarBrightness(SidecarEntity, NumberEntity):
-    _attr_name = "Screen brightness"
+    _attr_name = "Screen brightness (manual)"
     _attr_icon = "mdi:brightness-6"
     _attr_native_min_value = 0
     _attr_native_max_value = 255

@@ -68,6 +68,15 @@ class AndroidKioskPlatform implements KioskPlatform {
   Future<void> setBrightness(int level) => _call('setBrightness', {'level': level});
 
   @override
+  Future<void> setDisplayConfig(Map<String, dynamic> config) => _call('setDisplayConfig', {'config': config});
+
+  @override
+  Future<void> setExternalPresence(bool present) => _call('setExternalPresence', {'present': present});
+
+  @override
+  Future<void> setExternalNight(bool? night) => _call('setExternalNight', {'night': night});
+
+  @override
   Future<List<AlarmSpec>> getAlarms() async {
     final list = await _call<List>('getAlarms') ?? const [];
     return [for (final e in list) AlarmSpec.fromMap(e as Map)];

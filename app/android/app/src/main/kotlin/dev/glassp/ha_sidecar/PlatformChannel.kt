@@ -83,6 +83,18 @@ object PlatformChannel {
                 if (err == null) result.success(null) else result.error(err, err, null)
             }
 
+            // display / presence -----------------------------------------------------------
+            "setDisplayConfig" -> result.success(DisplayConfig.set(ctx, call.argument<Map<String, Any?>>("config").orEmpty()))
+            "setExternalPresence" -> {
+                BrightnessController.setExternalPresence(call.argument<Boolean>("present") == true)
+                result.success(null)
+            }
+            "setExternalNight" -> {
+                BrightnessController.extNight = call.argument<Boolean>("night")
+                BrightnessController.poke()
+                result.success(null)
+            }
+
             // alarms -----------------------------------------------------------------------
             "getAlarms" -> result.success(AlarmStore.all(ctx).map { it.toMap() })
             "upsertAlarm" -> {

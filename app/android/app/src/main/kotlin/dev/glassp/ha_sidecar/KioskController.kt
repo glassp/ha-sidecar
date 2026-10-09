@@ -204,15 +204,18 @@ object KioskController {
 
     fun refreshOverlay(ctx: Context) {
         main.post {
-            if (!Prefs.lockdown(ctx)) {
-                HotCorner.hide()
-                return@post
-            }
             val svc = SidecarAccessibilityService.instance
-            if (svc != null) HotCorner.show(svc, accessibility = true)
-            else HotCorner.show(ctx.applicationContext, accessibility = false)
+            val owner: Context = svc ?: ctx.applicationContext
+            // touch watcher: always (interaction sensor, dimming, glance)
+            TouchWatcher.show(owner, accessibility = svc != null)
+            if (Prefs.lockdown(ctx)) HotCorner.show(owner, accessibility = svc != null) else HotCorner.hide()
         }
     }
+
+    // --- security counters (reported to HA) ----------------------------------------------------
+
+    @Volatile var lastBlockedApp: String? = null
+    @Volatile var blockedCount = 0
 
     // --- screen -----------------------------------------------------------------------------
 
@@ -309,7 +312,14 @@ object KioskController {
             "pending_update" to pending?.let { JSONObject(it).toMap() },
             "next_alarm" to AlarmScheduler.nextAlarmMillis(ctx),
             "alarm_ringing" to (AlarmService.ringingId != null),
-        )
+            "last_interaction" to InteractionTracker.lastMs,
+            "camera_in_use" to PrivacyMonitor.cameraInUse,
+            "mic_in_use" to PrivacyMonitor.micInUse,
+            "last_blocked_app" to lastBlockedApp,
+            "blocked_count" to blockedCount,
+            "pin_failures" to Prefs.pinFails(ctx),
+            "cfg" to DisplayConfig.get(ctx),
+        ) + BrightnessController.snapshot()
     }
 
     private fun JSONObject.toMap(): Map<String, Any?> =

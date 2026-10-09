@@ -32,6 +32,10 @@ class AppController extends ChangeNotifier {
     'update_automation_step',
     'update_automation_finished',
     'lockdown_disabled_by_pin',
+    'app_blocked',
+    'pin_failed',
+    'guard_disabled',
+    'device_admin_disabled',
   };
 
   ValueListenable<LinkState>? get link => _client?.link;

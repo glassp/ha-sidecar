@@ -8,14 +8,21 @@ from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.core import callback
+from homeassistant.helpers import selector
 from homeassistant.const import CONF_NAME
 
-from .const import CONF_DEVICE_ID, CONF_TOKEN, DOMAIN
+from .const import CONF_DEVICE_ID, CONF_NIGHT_ENTITY, CONF_PRESENCE_ENTITIES, CONF_TOKEN, DOMAIN
 
 
 class SidecarConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
+        return SidecarOptionsFlow()
 
     def __init__(self) -> None:
         self._name = ""
@@ -44,4 +51,34 @@ class SidecarConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="pair",
             data_schema=vol.Schema({}),
             description_placeholders={"token": self._token},
+        )
+
+
+class SidecarOptionsFlow(OptionsFlow):
+    """Entities that drive the tablet's brightness logic."""
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+        opts = self.config_entry.options
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_PRESENCE_ENTITIES,
+                        description={"suggested_value": opts.get(CONF_PRESENCE_ENTITIES, [])},
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(
+                            domain=["binary_sensor", "input_boolean", "switch", "group"], multiple=True
+                        )
+                    ),
+                    vol.Optional(
+                        CONF_NIGHT_ENTITY,
+                        description={"suggested_value": opts.get(CONF_NIGHT_ENTITY)},
+                    ): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain=["sun", "binary_sensor", "input_boolean", "switch"])
+                    ),
+                }
+            ),
         )

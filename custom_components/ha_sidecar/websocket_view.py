@@ -60,6 +60,7 @@ class SidecarWebSocketView(HomeAssistantView):
 
             device.attach(ws, hello.get("device") or {})
             await ws.send_json({"type": "hello_ok", "device_id": device.device_id, "protocol": PROTOCOL_VERSION})
+            hass.async_create_task(device.async_sync_inputs())
 
             async for raw in ws:
                 if raw.type != WSMsgType.TEXT:
