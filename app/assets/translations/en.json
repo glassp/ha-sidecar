@@ -76,7 +76,8 @@
     "appearance": "Appearance",
     "permissions": "Permissions",
     "updates": "Updates",
-    "setup": "Setup"
+    "setup": "Setup",
+    "developer": "Developer options"
   },
   "settings": {
     "kiosk_dashboard": {
@@ -163,8 +164,8 @@
     },
     "night_start": {
       "title": "Night starts",
-      "desc": "From this time the night brightness is used.",
-      "kw": "schedule, sleep, bedtime, hours"
+      "desc": "From this time the night brightness is used. Home Assistant can also switch night mode directly with the enter_night_mode and exit_night_mode actions.",
+      "kw": "schedule, sleep, bedtime, hours, enter_night_mode, exit_night_mode, automation"
     },
     "night_end": {
       "title": "Night ends",
@@ -269,6 +270,11 @@
       "title": "Run the setup wizard again",
       "desc": "Walks through connection, dashboard, PIN and permissions step by step.",
       "kw": "wizard, onboarding, guide, setup, reset, first run, help"
+    },
+    "raw_brightness": {
+      "title": "Brightness as 0–255",
+      "desc": "Show and set brightness levels as raw Android values (0–255) instead of percent. This also changes the Home Assistant entities.",
+      "kw": "percent, raw, value, 255, level, developer"
     }
   },
   "pin": {
@@ -331,7 +337,7 @@
     "day": "Day",
     "night": "Night",
     "brightness_unmanaged": "Brightness is not managed (Display → Brightness control)",
-    "brightness_target": "Brightness {level} of 255 · {mode}",
+    "brightness_target": "Brightness {level} · {mode}",
     "someone_near": "Someone is near",
     "nobody_near": "Nobody near",
     "camera_running": "Camera running",

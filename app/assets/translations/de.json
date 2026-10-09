@@ -76,7 +76,8 @@
     "appearance": "Darstellung",
     "permissions": "Berechtigungen",
     "updates": "Updates",
-    "setup": "Einrichtung"
+    "setup": "Einrichtung",
+    "developer": "Entwickleroptionen"
   },
   "settings": {
     "kiosk_dashboard": {
@@ -163,8 +164,8 @@
     },
     "night_start": {
       "title": "Nacht beginnt",
-      "desc": "Ab dieser Uhrzeit gilt die Nachthelligkeit.",
-      "kw": "zeitplan, schlafen, schlafenszeit, uhrzeit"
+      "desc": "Ab dieser Uhrzeit gilt die Nachthelligkeit. Home Assistant kann den Nachtmodus auch direkt mit den Aktionen enter_night_mode und exit_night_mode schalten.",
+      "kw": "zeitplan, schlafen, schlafenszeit, uhrzeit, enter_night_mode, exit_night_mode, automatisierung"
     },
     "night_end": {
       "title": "Nacht endet",
@@ -269,6 +270,11 @@
       "title": "Einrichtungsassistent erneut starten",
       "desc": "Führt Schritt für Schritt durch Verbindung, Dashboard, PIN und Berechtigungen.",
       "kw": "assistent, wizard, einführung, anleitung, einrichtung, zurücksetzen, hilfe"
+    },
+    "raw_brightness": {
+      "title": "Helligkeit als 0–255",
+      "desc": "Helligkeitsstufen als rohe Android-Werte (0–255) statt in Prozent anzeigen und setzen. Ändert auch die Entitäten in Home Assistant.",
+      "kw": "prozent, roh, wert, 255, stufe, entwickler"
     }
   },
   "pin": {
@@ -331,7 +337,7 @@
     "day": "Tag",
     "night": "Nacht",
     "brightness_unmanaged": "Helligkeit wird nicht gesteuert (Anzeige → Helligkeitssteuerung)",
-    "brightness_target": "Helligkeit {level} von 255 · {mode}",
+    "brightness_target": "Helligkeit {level} · {mode}",
     "someone_near": "Jemand ist in der Nähe",
     "nobody_near": "Niemand in der Nähe",
     "camera_running": "Kamera läuft",

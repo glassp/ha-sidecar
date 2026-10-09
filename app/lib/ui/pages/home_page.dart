@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../app_controller.dart';
+import '../../settings/registry.dart';
 import '../../ha/sidecar_client.dart';
 import '../../health.dart';
 import '../../platform/kiosk_platform.dart';
@@ -83,7 +84,10 @@ class HomePage extends StatelessWidget {
                         ? 'home.brightness_unmanaged'.tr()
                         : 'home.brightness_target'.tr(
                             namedArgs: {
-                              'level': '${s.targetBrightness ?? '–'}',
+                              'level': brightnessText(
+                                s.targetBrightness,
+                                rawMode: s.cfg['raw_brightness'] == true,
+                              ),
                               'mode': 'mode.${s.cfg['mode']}'.tr(),
                             },
                           ),

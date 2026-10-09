@@ -15,6 +15,8 @@ object DisplayConfig {
         // dashboards (paths in the HA frontend, e.g. "lovelace/wall-panel"; a pasted browser URL is reduced to its path)
         "kiosk_dashboard" to "", // required to enable lockdown; opened on boot, Home press and lockdown start
         "glance_dashboard" to "", // optional: shown instead of the native clock screen when idle
+        // developer option: levels are shown and set as raw Android values (0..255) instead of percent
+        "raw_brightness" to false,
         "auto_dim" to true,
         "night_light" to true,
         "day_level" to 200,

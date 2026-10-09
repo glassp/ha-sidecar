@@ -127,11 +127,23 @@ List<SettingEntry> buildRegistry(AppController c) {
     int? divisions,
     String Function(double)? format,
     bool asDouble = false,
-  }) => base(
-    id,
-    sec,
-    group,
-    (ctx) => SliderSetting(
+
+    /// A brightness level: stored as 0..255, shown as percent unless the developer option is on.
+    bool brightness = false,
+  }) => base(id, sec, group, (ctx) {
+    if (brightness && !b('raw_brightness')) {
+      return SliderSetting(
+        icon: icon,
+        title: _t(id, 'title'),
+        subtitle: _t(id, 'desc'),
+        value: brightnessPercent(n(key, fallback).round()).toDouble(),
+        min: 0,
+        max: 100,
+        format: (v) => '${v.round()} %',
+        onChanged: (v) => set(ctx, key, brightnessRaw(v.round())),
+      );
+    }
+    return SliderSetting(
       icon: icon,
       title: _t(id, 'title'),
       subtitle: _t(id, 'desc'),
@@ -145,8 +157,8 @@ List<SettingEntry> buildRegistry(AppController c) {
         key,
         asDouble ? double.parse(v.toStringAsFixed(1)) : v.round(),
       ),
-    ),
-  );
+    );
+  });
 
   SettingEntry timeEntry(String id, String key, IconData icon) => base(
     id,
@@ -415,6 +427,7 @@ List<SettingEntry> buildRegistry(AppController c) {
       min: 0,
       max: 255,
       fallback: 200,
+      brightness: true,
     ),
     switchEntry(
       'auto_dim',
@@ -432,6 +445,7 @@ List<SettingEntry> buildRegistry(AppController c) {
       min: 0,
       max: 255,
       fallback: 60,
+      brightness: true,
     ),
     sliderEntry(
       'dim_after',
@@ -457,6 +471,7 @@ List<SettingEntry> buildRegistry(AppController c) {
       min: 0,
       max: 255,
       fallback: 6,
+      brightness: true,
     ),
     switchEntry(
       'night_light',
@@ -474,6 +489,7 @@ List<SettingEntry> buildRegistry(AppController c) {
       min: 0,
       max: 255,
       fallback: 50,
+      brightness: true,
     ),
     sliderEntry(
       'night_touch_level',
@@ -484,6 +500,7 @@ List<SettingEntry> buildRegistry(AppController c) {
       min: 0,
       max: 255,
       fallback: 120,
+      brightness: true,
     ),
     sliderEntry(
       'night_hold',
@@ -767,8 +784,28 @@ List<SettingEntry> buildRegistry(AppController c) {
         onTap: () => c.restartSetup(),
       ),
     ),
+
+    // ---------------------------------------------------------------- System › Developer options
+    switchEntry(
+      'raw_brightness',
+      Section.system,
+      _g('developer'),
+      Icons.code,
+      'raw_brightness',
+    ),
   ];
 }
+
+/// Brightness is stored as the raw Android value 0..255 and shown as percent unless the developer option is on.
+int brightnessPercent(int raw) => (raw * 100 / 255).round();
+int brightnessRaw(int percent) => (percent * 255 / 100).round();
+
+/// Brightness as text for a status line: `80 %`, or `204 / 255` with the developer option.
+String brightnessText(int? raw, {required bool rawMode}) => raw == null
+    ? '–'
+    : rawMode
+    ? '$raw / 255'
+    : '${brightnessPercent(raw)} %';
 
 /// Free-text search over title, description, keywords, group and section; every word must match.
 List<SettingEntry> searchSettings(List<SettingEntry> all, String query) {
