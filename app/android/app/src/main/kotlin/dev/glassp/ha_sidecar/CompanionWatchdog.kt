@@ -92,6 +92,8 @@ object CompanionWatchdog {
             state = "off"
             responsive = null
             bad = 0
+            gaveUpUntil = 0
+            restartTimes.clear()
             EventBus.emit("status_changed")
             return
         }
@@ -138,6 +140,11 @@ object CompanionWatchdog {
     private fun probe(c: Context) {
         val now = SystemClock.elapsedRealtime()
         val target = KioskController.targetPackage(c) ?: run { state = "idle"; return }
+        if (now < gaveUpUntil) { // stays visible (UI, Home Assistant) however the app is doing meanwhile
+            state = "gave_up"
+            responsive = null
+            return
+        }
         idleReason(c)?.let { why ->
             state = why
             if (why != "no_accessibility") bad = 0
@@ -149,13 +156,13 @@ object CompanionWatchdog {
         if (fg == target) lastTargetForeground = now
         // the ANR dialog replaces the foreground package with "android"
         val maybeAnr = fg == ANR_PACKAGE && now - lastTargetForeground < 5 * 60_000L
-        if (fg != target && !maybeAnr) {
+        // right after a launch we issued the app may not have reported a window yet (or froze while starting)
+        val launching = !healthySinceLaunch && launchedAt > 0 && now - launchedAt < startupMs(c) + 3 * probeMs(c)
+        if (fg != target && !maybeAnr && !launching) {
             state = "idle"; responsive = null; bad = 0
             EventBus.emit("status_changed")
             return
         }
-        if (now < gaveUpUntil) { state = "gave_up"; return }
-
         val service = SidecarAccessibilityService.instance ?: return
         val snap = fetch(service, target)
         Log.d(TAG, "probe fg=$fg root=${snap.root} pkg=${snap.pkg} nodes=${snap.nodes} bad=$bad settled=$healthySinceLaunch")
@@ -250,6 +257,7 @@ object CompanionWatchdog {
         if (!force && restartTimes.size >= MAX_RESTARTS) {
             gaveUpUntil = now + GIVE_UP_MS
             state = "gave_up"
+            Log.w(TAG, "giving up on $target after ${restartTimes.size} restarts in ${WINDOW_MS / 60_000} minutes ($reason)")
             EventBus.emit(
                 "companion_restart_gave_up",
                 mapOf("reason" to reason, "package" to target, "restarts_in_window" to restartTimes.size),
