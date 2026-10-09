@@ -84,7 +84,7 @@ app). A *frozen* app is not: it is still "running" so nothing relaunches it. Fai
 |---|---|---|---|
 | F1 | Cold-start hang (splash forever, never reaches the dashboard) | process alive, UI never changes | no |
 | F2 | UI-thread freeze / ANR | touches ignored, system may show "App isn't responding" | no |
-| F3 | WebView renderer hang or blank/white page (UI thread alive) | app responds, page is dead or stale | no |
+| F3 | WebView renderer hang or blank/white page (UI thread alive) | app responds, page is dead or stale | no (beacon designed, signal 4) |
 | F4 | Crash / kill / lock-task exit | app gone | yes |
 
 **Spike results (emulator, Android 15, companion 2026.8.4, process frozen with `kill -STOP`):**
@@ -116,9 +116,25 @@ device-owner recovery ~3.5 s, the ANR dialog answered by view id, the 3-per-10-m
 3. *Visual freeze* (F3, optional, off by default): accessibility screenshot (Android 11+, needs the screenshot capability)
    hashed on a tiny grid; identical for `visual_timeout` while the screen is on and brightness is unchanged.
    Needs a live element on the dashboard (a clock card); otherwise static dashboards false-positive.
-4. *HA-side heartbeat* (F2/F3, optional): the integration flags the tablet when a companion-app sensor with a short update
-   interval (Fast Always = 1 min) or a heartbeat card has not updated for N minutes, and sends `restart_companion`.
-   Slow and needs user setup, but independent of the tablet.
+4. *Dashboard beacon* (F3, and a dashboard that lost its connection; designed, not built). The integration serves a small
+   frontend module (`frontend.add_extra_js_url`, so it is loaded by every dashboard in the companion app without editing any
+   dashboard; a card with the same code is the manual alternative). It runs *inside the page*: every 30 s it sends
+   `ha_sidecar/beacon` over the page's own authenticated WebSocket (`window.hassConnection`) and waits for the answer. Because it
+   lives in the WebView, it stops when the page's JS hangs, the renderer process dies, the page stays blank after a failed
+   load, or the page's connection to Home Assistant is dead; it also skips the ping when no animation frame ran
+   (`requestAnimationFrame`), which catches a stuck compositor. The integration keeps `last_beacon` per tablet
+   (sensor + binary sensor *Dashboard responsive*, event `dashboard_unresponsive`) and, if enabled, tells the tablet to heal.
+   - *Which tablet?* The page does not know. v1: the card/module is configured with the entity prefix; v2: the sidecar opens the
+     dashboard with `?ha_sidecar=<device id>` and the module keeps it in `localStorage` (needs checking that the companion
+     app keeps query parameters of `homeassistant://navigate/...`).
+   - *When is silence a problem?* Only while the tablet reports the screen on, the companion app in front, its own link to Home
+     Assistant up and Home Assistant not freshly (re)started, and only after the first beacon was seen since the app was
+     launched (so a tablet without the module never gets restarted). Timeout about 3-5 minutes, configurable.
+   - *Heal:* a new `heal_dashboard` command, handled by the tablet's watchdog so there is one rate limiter and one set of
+     gating rules (reason `beacon`; relaunch with the dashboard link, hide + unhide as device owner).
+   - *Why through Home Assistant and not straight to the tablet?* It also shows up as a sensor and works wherever the dashboard
+     works. A beacon to a local port on the tablet would heal even while Home Assistant is down, but needs a local HTTP server
+     on the tablet and has to get past mixed-content / private-network rules of the WebView; possible later.
 5. *Scheduled restart* (blunt, also fixes stale dashboards): restart the HA app on a schedule in a quiet period.
 
 **Recovery (rate limited):**
