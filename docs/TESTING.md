@@ -126,6 +126,28 @@ text field did not follow a value changed by pairing.
 reviewed only), the Deny and timeout paths, Wi-Fi name matching (needs the location permission and a real SSID), a real VPN,
 two tablets, IPv6-only networks.
 
+### Companion app watchdog (emulator, Android 15, companion 2026.8.4, process frozen with `kill -STOP`)
+
+| Area | Result |
+|---|---|
+| Healthy app in front: probe sees its window (16 accessibility nodes), no action over several minutes | ✅ |
+| Frozen UI (`ui_frozen`): window cannot be read, three bad probes in a row; with a 5 s interval recovery ran about 30 s after the freeze, with ~20 s about 70-80 s | ✅ |
+| Recovery as device owner: hide + unhide + relaunch took ~3.5 s; new process, healthy tree, in front | ✅ (7 times) |
+| ANR dialog: after a touch the system showed "Home Assistant isn't responding" ~15-25 s later; the probe saw package `android` with `android:id/aerr_close`, tapped "Close app" (`anr_close`), relaunched | ✅ |
+| Rate limit: three restarts within 10 minutes, the fourth freeze was detected and **not** restarted (`giving up ... after 3 restarts`, state `gave_up`, `companion_restart_gave_up` event) | ✅ |
+| Settings UI: switch, action, interval and start-up sliders, status tile | ✅ screenshots |
+
+Bugs found: the accessibility call goes to the frozen app and can block for a long time, which stalled the watchdog thread
+once -> probes now run on a worker thread with an 8 s timeout (no answer = bad probe); a process that froze while still
+starting never reported a window, so no probe ran -> after a launch we issued the app is expected for the start-up window;
+the `gave_up` state was overwritten by the idle gating -> it now persists. The relaunch with a kiosk dashboard uses the
+`homeassistant://navigate/...` deep link, which crashed the (not signed-in) companion in this lab; recovery then ended with the
+sidecar in front and the app dead (that is F4, handled only in lockdown by the home role).
+**Not verified:** gating while the screen is off / an alarm rings / the PIN is open (code only), false positives on a healthy
+device over a day (dimming, glance, Wi-Fi changes), a start-up hang that is *not* a frozen UI (F1 proper), the non-device-owner
+paths (`relaunch_only`), the Home Assistant entities (the integration was only compiled; the test Home Assistant was removed
+before this phase), a physical tablet and localized ANR dialogs.
+
 ## Not verified
 
 - Update **detection** (`onSystemUpdatePending`) and the download/install/restart taps: need a real pending OTA.

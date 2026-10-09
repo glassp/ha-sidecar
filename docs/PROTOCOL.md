@@ -67,6 +67,13 @@ Events: `app_blocked`, `pin_failed`, `guard_disabled`, `device_admin_disabled`, 
 | `pause_timer` / `resume_timer` / `cancel_timer` | `id` | `cancel_timer` removes without ringing |
 | `adjust_timer` | `id`, `delta_s` | add/remove time on a countdown; on a finished one it runs again |
 | `get_timers` | | |
+| `restart_companion` | | closes and relaunches the Home Assistant app now (device owner: hide + unhide) |
+
+**Companion app watchdog** (settings `watchdog`, `watchdog_action` = `restart`/`notify`, `watchdog_probe_s`, `watchdog_startup_s`
+via `set_config`). State carries `watchdog`: `{enabled, state (off|ok|idle|no_accessibility|unresponsive|restarting|gave_up),
+responsive, restarts, last_reason, last_restart_at}`. Events: `companion_unresponsive` (`reason`: `ui_frozen`|`anr`|
+`startup_hang`|`manual`, `action`), `companion_restarted` (`reason`, `method`: `anr_close`|`hide_unhide`|`relaunch_only`, `count`),
+`companion_restart_gave_up` (after 3 restarts in 10 minutes).
 
 **Timers.** A countdown rings when it ends (native alarm sound, full-screen page, "+1 min" snooze). It then stays `finished`
 with `finished_at` set, and the UI shows the time over (`+0:24`) counting up until it is dismissed (dismiss = remove). If

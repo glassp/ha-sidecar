@@ -47,6 +47,15 @@ options). In Home Assistant every brightness has two entities, `..._brightness_p
 `ha_sidecar.enter_night_mode` and `ha_sidecar.exit_night_mode` actions (the latter can also hand control back to the
 night start/end times).
 
+## Companion app watchdog
+
+Optional (*Kiosk → Watchdog*, needs the accessibility service). While the Home Assistant app is in front the sidecar checks
+every few seconds that it still answers (it only counts the app's screen elements, never reads content). If the app freezes,
+Android shows "isn't responding", or a fresh start never reaches its screen, the sidecar closes and relaunches it (device
+owner: hide + unhide; otherwise via the dialog's "Close app"), at most three times in ten minutes, and tells Home Assistant
+(`companion_unresponsive` / `companion_restarted` / `companion_restart_gave_up` events, a *Companion app responsive* sensor,
+a restart counter and a *Restart companion app* button). See the 2.5 section of [docs/ROADMAP.md](docs/ROADMAP.md).
+
 ## Timers, stopwatches and remote alarm control
 
 Labeled countdowns ("Batch 1") and count-ups ("Treadmill") run on the tablet and show on the idle screen. A finished

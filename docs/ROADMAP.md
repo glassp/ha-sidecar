@@ -35,7 +35,7 @@ Assistant (see [TESTING.md](TESTING.md)); nothing has run on a physical tablet y
 | 2.1 App UI: wizard, search, translations, Flutter-only screens | done |
 | 2.3 Timers, stopwatches and remote alarm control | done |
 | 2.4 Naming, brightness units, night mode actions | done |
-| 2.5 Companion app watchdog | design only |
+| 2.5 Companion app watchdog | done for F1/F2 (UI probe, ANR dialog, start-up hang); F3 and the optional signals open |
 | 2.7 Discovery, pairing and network-aware connection | done (discovery itself unverified on a real LAN) |
 | 3 Voice | not started |
 | 4 Optional | not started |
@@ -75,7 +75,7 @@ Brightness is a percentage by default in the app (raw 0-255 is a developer optio
 `..._percentage` and a `..._raw` entity. `enter_night_mode` / `exit_night_mode` actions drive the night state from
 automations.
 
-### 2.5 Companion app watchdog (frozen / non-responsive HA app) - design, not built
+### 2.5 Companion app watchdog (frozen / non-responsive HA app) - built, F3 and extras open
 
 **Problem.** Crashes and kills are already handled (home role: Android returns to the sidecar, which relaunches the HA
 app). A *frozen* app is not: it is still "running" so nothing relaunches it. Failure modes:
@@ -97,6 +97,16 @@ app). A *frozen* app is not: it is still "running" so nothing relaunches it. Fai
   `setApplicationHidden(true)` did, and `unhide` + relaunch gave a healthy process with data intact. A device owner can
   use `setApplicationHidden(admin, pkg, true/false)`.
 - Not covered by any of this: F3 (the UI thread is fine, the page is dead). Needs a content-level signal.
+
+**Status (built).** Opt-in (*Kiosk -> Watchdog*, off by default; needs the accessibility service, which now also reports view
+ids). Implemented: signal 1 (UI probe, with the cold-start expectation), signal 2 (ANR dialog, matched by view id
+`android:id/aerr_close`, not by text), recovery by "Close app" or device-owner hide + unhide + relaunch, the rate limit, the
+gating rules, the HA surface below, and a manual restart (button / service / app). Probes run on a worker thread with a
+timeout because the accessibility call goes to the frozen app and can hang; a probe that does not answer counts as a bad probe.
+Without device owner and without the dialog the watchdog can only bring the app to the front and tell Home Assistant
+(`method: relaunch_only`); the Settings force-stop automation was not built. Measured on the emulator in
+[TESTING.md](TESTING.md): frozen UI detected after three bad probes (~30 s at a 5 s interval, ~75 s at the default 20 s),
+device-owner recovery ~3.5 s, the ANR dialog answered by view id, the 3-per-10-minutes limit verified. Not built: signals 3-5 (visual freeze, HA-side heartbeat, scheduled restart) and F3.
 
 **Detection signals (combine, each with a grace period):**
 1. *UI probe* (F1, F2): every 15-30 s while the HA app is foreground, the screen is on and nothing else is running,
@@ -120,15 +130,17 @@ app). A *frozen* app is not: it is still "running" so nothing relaunches it. Fai
   10 minutes with back-off, then stop restarting and raise an HA event instead (a boot loop must not hide a real problem).
   A restart is reported with its reason.
 
-**HA surface.** `binary_sensor` Companion app responsive (problem class), `sensor` Companion restarts (total increasing)
-and Last restart reason, `switch` Watchdog, numbers for the probe interval / startup timeout / visual timeout, `select`
-action (`restart` | `notify only`), `button` Restart companion app, bus events `companion_unresponsive`,
-`companion_restarted`, `companion_restart_gave_up`.
+**HA surface (built).** `binary_sensor` Companion app responsive, `sensor` Companion app restarts (total increasing, last
+reason as attribute), Companion app last restart (timestamp) and Watchdog state, `switch` Companion app watchdog, numbers for
+the check interval and start-up timeout, `select` Watchdog action (`restart` | `notify`), `button` and service
+`restart_companion`, bus events `companion_unresponsive`, `companion_restarted`, `companion_restart_gave_up`
+(see [PROTOCOL.md](PROTOCOL.md)).
 
 **Evaluation plan (this is why it is a half phase).**
-1. Freeze lab on the emulator: `kill -STOP` (F2), a page that blocks the renderer (F3), a launch that never finishes (F1).
-   Measure detection latency and false positives on a healthy device over a day (dimming, glance dashboard, screen off).
-2. Implement signals 1 and 2 plus the device-owner recovery first; decide on 3-5 from the false-positive data.
+1. Freeze lab on the emulator: `kill -STOP` (F2) done, a launch that never finishes (F1) not yet reproduced, a page that
+   blocks the renderer (F3) not covered. Still to measure: false positives on a healthy device over a day (dimming, glance
+   dashboard, screen off).
+2. Signals 1 and 2 plus the device-owner recovery are implemented; decide on 3-5 from the false-positive data.
 3. Tune probe interval vs battery; confirm the accessibility probe does not wake the screen or reset dimming.
 4. Real tablet: low memory, slow storage, OEM ANR dialog wording (the dialog text is localized: match by package +
    button roles, not only English text).
@@ -179,3 +191,4 @@ Steps 2-5 (partly 7) were run on an emulator, see [TESTING.md](TESTING.md); all 
 8. Android 14/15/16/17 foreground-service-type and full-screen-intent permission behavior.
 9. Timers: a countdown rings on time with the screen off and in Doze, survives a reboot (a timer that ended while off rings at boot), count-ups keep counting; muted alarms stay silent and keep their schedule.
 10. Network: home-Wi-Fi detection (needs the location permission and a real SSID), VPN-as-home, Ethernet, switching internal/external address while moving between networks, *home network only* idling away from home.
+11. Watchdog: false-positive check on a real tablet over a day (screen dimming, idle screen, Wi-Fi changes, low memory); a real start-up hang; ANR dialog wording/ids on the tablet's Android version; non-device-owner behaviour (accessibility only).
