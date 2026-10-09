@@ -28,7 +28,12 @@ based on its **public docs only**; everything here is implemented independently.
 ### 1. Kiosk core (this scaffold)
 Lockdown (DO + accessibility), allowlist, PIN, alarms, OS update signal, entities/services.
 
-### 2. Smart-display surface
+### 2. Smart-display surface (brightness, presence, glance, camera: done, see [DISPLAY.md](DISPLAY.md))
+Done: time-of-day brightness, idle dim, night light on presence, HA presence/night inputs, camera motion presence (menu),
+at-a-glance screen, last-interaction and camera/mic sensors. Still open from the original list: screenshot entity,
+ambient-light scaling, glance variants (photos/Immich), face/person detection (needs an ML model), per-hour brightness curve.
+
+Original plan:
 - Dart "idle screen" shown when the dashboard is idle: clock, next alarm, weather/camera/photo slideshow.
 - Idle detection: no touch for N s (needs a transparent touch-observer overlay or accessibility events).
 - Dimming curve + presence wake (HA `binary_sensor` → `screen` command already works).

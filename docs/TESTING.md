@@ -40,6 +40,23 @@ Observed flakiness (emulator, heavily loaded Mac): one recovery right after firs
 stock launcher, and fixed-delay sampling sometimes caught the transition; polling shows 4-5 s recovery. After a reboot
 the emulator once lost its network (not the app; the client reconnected on its own once Wi-Fi was toggled).
 
+### Display / presence / glance run
+
+| Area | Result |
+|---|---|
+| Brightness: `day` level, idle dim after `Dim after`, wake on HA presence (input_boolean), hold time, back to dim | ✅ |
+| Touch detection through the 1px overlay (`last_interaction`, wakes from dim) | ✅ (HA shows the timestamp with up to 10 s delay; brightness reacts immediately) |
+| Night: base level, night light with presence, brightness after touch + hold, night light switch off | ✅ |
+| Options flow (presence + glance entities), entry reload | ✅ |
+| Camera presence: device owner grants the permission silently, service starts from a background command, motion toggles (emulated camera), own camera excluded from `camera_in_use` | ✅ |
+| Glance screen over lock-task: appears after idle, touch dismisses, presence dismisses (slowly on the emulator), not shown while present | ✅ |
+| `App theme` select: dark on a light system, light, dark-at-night in night/day | ✅ (screenshots) |
+| Failed PIN → `pin_failed` events and `PIN failures` sensor | ✅ |
+
+Bugs found: glance state was not pushed when the screen appeared/disappeared; glance values showed raw ISO timestamps and
+repeated the device name (both fixed); `Camera app` on the emulator image cannot hold the camera, so `camera_in_use` and
+`mic_in_use` stay **unverified**; `app_blocked` / `guard_disabled` need the accessibility route and were not re-run.
+
 ## Not verified
 
 - Update **detection** (`onSystemUpdatePending`) and the download/install/restart taps: need a real pending OTA.

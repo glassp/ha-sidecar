@@ -14,6 +14,11 @@ companion app** for the dashboard and a small **sidecar app** for everything the
 | Native alarms | `AlarmManager.setAlarmClock` - shows up as the system "next alarm", rings over lock screen/kiosk, snooze/dismiss, HA services + entities |
 | OS update | `update` entity; detection via the device-owner `onSystemUpdatePending` callback; "install" taps through the system update screen via the accessibility service |
 | Screen control, brightness, reboot | Buttons/numbers in HA |
+| Brightness | Day / idle-dim / night / **night light on presence**, fading, all settable as entities ([docs/DISPLAY.md](docs/DISPLAY.md)) |
+| Presence | HA presence entities and/or an optional on-device camera motion detector (menu in the app) |
+| At a glance | Clock, next alarm and chosen HA values after idle; dismissed by touch or presence |
+| Extra sensors | last interaction, camera/mic in use, blocked apps, PIN failures (the companion app's own sensors are not duplicated) |
+| Theme | `App theme` select: system / light / dark / dark at night |
 | Voice assistant (planned) | Assist satellite, see [docs/ROADMAP.md](docs/ROADMAP.md) |
 
 ## Repository layout

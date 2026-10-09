@@ -27,7 +27,11 @@ State keys: `mode` (`device_owner|accessibility|none`), `lockdown`, `has_pin`, `
 `security_patch`, `build`, `manufacturer`, `model`, `device_owner`, `accessibility_enabled`, `overlay_granted`,
 `write_settings_granted`, `pending_update` (object or null), `next_alarm` (epoch ms), `alarm_ringing`.
 
-Events: `alarm_ringing`, `alarm_stopped` (`reason`: dismissed/snoozed/timeout), `system_update_pending`,
+Additional state keys: `cfg{...}`, `is_night`, `presence`, `camera_motion`, `camera_active`, `camera_error`,
+`camera_permission`, `target_brightness`, `display_error`, `last_interaction` (epoch ms), `camera_in_use`, `mic_in_use`,
+`last_blocked_app`, `blocked_count`, `pin_failures`, `glance_showing`.
+
+Events: `app_blocked`, `pin_failed`, `guard_disabled`, `device_admin_disabled`, `alarm_ringing`, `alarm_stopped` (`reason`: dismissed/snoozed/timeout), `system_update_pending`,
 `system_update_install_error`, `update_automation_started`, `update_automation_step`, `update_automation_finished` (`reason`: idle) (`label` = button tapped), `lockdown_disabled_by_pin`.
 
 ## HA → app
@@ -46,6 +50,11 @@ Events: `alarm_ringing`, `alarm_stopped` (`reason`: dismissed/snoozed/timeout), 
 | `screen` | `on` | off needs device owner or accessibility |
 | `set_brightness` | `level` 0-255 | needs *modify system settings* |
 | `set_keep_screen_on` | `enabled` | |
+| `set_config` | `config{key: value}` | any display/presence/camera/glance/theme setting (see `cfg` in state, docs/DISPLAY.md) |
+| `external_presence` | `present` | HA presence entities → tablet |
+| `external_night` | `night` (bool or null) | HA night entity → tablet; null falls back to the schedule |
+| `glance_items` | `items[{name,value}]` | values for the glance screen |
+| `show_glance` / `hide_glance` | | |
 | `set_alarm` | `alarm{id,hour,minute,days[1-7],label,enabled,snooze_minutes}` | empty `days` = once |
 | `cancel_alarm` / `stop_alarm` / `snooze_alarm` / `get_alarms` | | |
 | `open_system_update` | | opens the screen only; temporarily allowlists Settings |
