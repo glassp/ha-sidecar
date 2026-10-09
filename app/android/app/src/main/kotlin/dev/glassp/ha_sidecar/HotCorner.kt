@@ -41,9 +41,7 @@ object HotCorner {
                 }
                 if (++count >= TAPS) {
                     count = 0
-                    ctx.startActivity(
-                        Intent(ctx, PinActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    )
+                    UiHost.show(ctx, UiHost.PIN)
                 }
             }
             true

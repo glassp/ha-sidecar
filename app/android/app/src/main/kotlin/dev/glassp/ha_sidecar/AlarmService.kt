@@ -85,9 +85,7 @@ class AlarmService : Service() {
         }
         playSound()
         vibrate()
-        runCatching {
-            startActivity(Intent(this, AlarmActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        }
+        UiHost.show(this, UiHost.ALARM)
         handler.postDelayed(autoStop, AUTO_STOP_MS)
         EventBus.emit("alarm_ringing", mapOf("id" to alarm.id, "label" to alarm.label))
         EventBus.emit("status_changed")
@@ -150,7 +148,7 @@ class AlarmService : Service() {
         ).build()
 
         val fullScreen = PendingIntent.getActivity(
-            this, 0, Intent(this, AlarmActivity::class.java),
+            this, 0, Intent(this, MainActivity::class.java).putExtra("route", UiHost.ALARM),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         return Notification.Builder(this, CHANNEL)

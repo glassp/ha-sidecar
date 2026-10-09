@@ -332,8 +332,15 @@ object KioskController {
             "full_screen_intent_granted" to
                 (Build.VERSION.SDK_INT < 34 || ctx.getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()),
             "companion_packages" to COMPANION_PACKAGES.filter { isInstalled(ctx, it) },
-            "glance_showing" to (GlanceActivity.showing || BrightnessController.dashboardGlanceShowing),
+            "glance_items" to glanceItems(ctx),
+            "ringing_alarm" to AlarmService.ringingId?.let { AlarmStore.get(ctx, it)?.toMap() },
+            "glance_showing" to (UiHost.isShowing(UiHost.GLANCE) || BrightnessController.dashboardGlanceShowing),
         ) + BrightnessController.snapshot() + PresenceCamera.snapshot(ctx)
+    }
+
+    private fun glanceItems(ctx: Context): List<Map<String, Any?>> {
+        val arr = runCatching { org.json.JSONArray(Prefs.glanceItemsJson(ctx)) }.getOrDefault(org.json.JSONArray())
+        return (0 until arr.length()).map { arr.getJSONObject(it).toMap() }
     }
 
     private fun JSONObject.toMap(): Map<String, Any?> =

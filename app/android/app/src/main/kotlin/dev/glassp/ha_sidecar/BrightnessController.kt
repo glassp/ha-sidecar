@@ -128,7 +128,7 @@ object BrightnessController {
     @Volatile var dashboardGlanceShowing = false
         private set
 
-    private fun glanceShowing() = GlanceActivity.showing || dashboardGlanceShowing
+    private fun glanceShowing() = UiHost.isShowing(UiHost.GLANCE) || dashboardGlanceShowing
 
     /**
      * At-a-glance when idle and nobody is near; dismissed by touch (see [onTouch]) or presence.
@@ -150,7 +150,7 @@ object BrightnessController {
         val idleMs = now - InteractionTracker.lastMs
         val pm = c.getSystemService(PowerManager::class.java)
         if (idleMs <= (cfg["glance_after_s"] as Int) * 1000L || present || !pm.isInteractive ||
-            AlarmService.ringingId != null || PinActivity.visible
+            AlarmService.ringingId != null || UiHost.isShowing(UiHost.PIN)
         ) return
 
         val glancePath = cfg["glance_dashboard"] as String
@@ -165,12 +165,12 @@ object BrightnessController {
                 EventBus.emit("status_changed")
             }
         } else {
-            GlanceActivity.show(c)
+            UiHost.show(c, UiHost.GLANCE)
         }
     }
 
     fun dismissGlance(c: Context) {
-        if (GlanceActivity.showing) GlanceActivity.dismiss()
+        UiHost.close(UiHost.GLANCE)
         if (dashboardGlanceShowing) {
             dashboardGlanceShowing = false
             // back to the kiosk dashboard

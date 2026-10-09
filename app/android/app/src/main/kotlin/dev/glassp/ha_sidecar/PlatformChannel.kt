@@ -101,15 +101,31 @@ object PlatformChannel {
                 result.success(null)
             }
 
+            "closeUi" -> result.success(UiHost.close(call.argument<String>("route").orEmpty()))
+            "reportTouch" -> {
+                InteractionTracker.touch()
+                result.success(null)
+            }
+            "unlockWithPin" -> {
+                val r = Prefs.verifyPin(ctx, call.argument<String>("pin").orEmpty())
+                when {
+                    r == 0L -> {
+                        KioskController.setLockdown(ctx, false)
+                        EventBus.emit("lockdown_disabled_by_pin")
+                    }
+                    r == -1L -> EventBus.emit("pin_failed", mapOf("failures" to Prefs.pinFails(ctx)))
+                }
+                result.success(r)
+            }
             "setGlanceItems" -> {
                 val items = org.json.JSONArray(call.argument<List<Map<String, Any?>>>("items").orEmpty().map { org.json.JSONObject(it) })
                 Prefs.setGlanceItemsJson(ctx, items.toString())
-                GlanceActivity.refresh()
+                EventBus.emit("status_changed")
                 result.success(null)
             }
-            "showGlance" -> result.success(GlanceActivity.show(ctx))
+            "showGlance" -> result.success(UiHost.show(ctx, UiHost.GLANCE))
             "hideGlance" -> {
-                GlanceActivity.dismiss()
+                UiHost.close(UiHost.GLANCE)
                 result.success(null)
             }
             "requestPermission" -> {
