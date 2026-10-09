@@ -139,6 +139,8 @@ class CommandRouter {
               },
           ],
         };
+      case 'restart_companion':
+        await platform.restartCompanion();
       case 'open_system_update':
         await platform.openSettings('system_update');
       case 'run_system_update':

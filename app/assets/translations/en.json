@@ -78,7 +78,8 @@
     "updates": "Updates",
     "setup": "Setup",
     "developer": "Developer options",
-    "network": "Network"
+    "network": "Network",
+    "watchdog": "Watchdog"
   },
   "settings": {
     "kiosk_dashboard": {
@@ -316,6 +317,36 @@
       "title": "Keep the connection",
       "desc": "Always stay connected, or only while on a home network.",
       "kw": "persistent, always, home only, battery, vpn, network"
+    },
+    "watchdog": {
+      "title": "Relaunch a frozen Home Assistant app",
+      "desc": "Watches the Home Assistant app while it is in front and restarts it when it freezes or hangs while starting. Needs the accessibility service. It only counts the app’s screen elements and never reads its content.",
+      "kw": "freeze, frozen, hang, not responding, anr, restart, relaunch, watchdog, crash, stuck"
+    },
+    "watchdog_action": {
+      "title": "When it freezes",
+      "desc": "Restart the app, or only tell Home Assistant.",
+      "kw": "restart, notify, action, recovery"
+    },
+    "watchdog_probe": {
+      "title": "Check every",
+      "desc": "How often the app is checked while it is in front.",
+      "kw": "interval, probe, check, frequency, battery"
+    },
+    "watchdog_startup": {
+      "title": "Start-up timeout",
+      "desc": "After a launch the app must show its screen within this time.",
+      "kw": "startup, launch, splash, timeout, cold start"
+    },
+    "watchdog_status": {
+      "title": "Watchdog status",
+      "desc": "Watchdog status",
+      "kw": "status, restarts, responsive"
+    },
+    "watchdog_restart": {
+      "title": "Restart the Home Assistant app now",
+      "desc": "Closes and starts it again.",
+      "kw": "restart, relaunch, kill, force stop"
     }
   },
   "pin": {
@@ -749,5 +780,21 @@
     "policy_home": "Home network only",
     "allow_location": "Allow location to read the Wi-Fi name",
     "add_current": "Add “{name}\\u201d"
+  },
+  "wd": {
+    "action_restart": "Restart it",
+    "action_notify": "Only notify",
+    "state_off": "Off",
+    "state_ok": "Watching",
+    "state_idle": "Waiting (the app is not in front)",
+    "state_no_accessibility": "Needs the accessibility service",
+    "state_unresponsive": "App is frozen (notify only)",
+    "state_restarting": "Restarting",
+    "state_gave_up": "Gave up after repeated restarts",
+    "restarts": "{count} restarts, last: {reason}",
+    "reason_ui_frozen": "frozen",
+    "reason_anr": "not responding",
+    "reason_startup_hang": "stuck at start",
+    "reason_manual": "manual"
   }
 }

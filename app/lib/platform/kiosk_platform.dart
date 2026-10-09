@@ -65,6 +65,11 @@ class DeviceStatus {
   /// Pairing mode state (see docs/PAIRING.md); null while it is off.
   Map<String, dynamic>? get pairing =>
       (raw['pairing'] as Map?)?.cast<String, dynamic>();
+
+  /// Companion app watchdog: `enabled`, `state` (off | ok | idle | no_accessibility | unresponsive | restarting |
+  /// gave_up), `responsive`, `restarts`, `last_reason`, `last_restart_at`.
+  Map<String, dynamic> get watchdog =>
+      Map<String, dynamic>.from((raw['watchdog'] as Map?) ?? const {});
   Map<String, dynamic>? get network =>
       (raw['network'] as Map?)?.cast<String, dynamic>();
 
@@ -273,6 +278,9 @@ abstract class KioskPlatform {
 
   /// Silences alarms until [until] / [forever]; neither unmutes. Muted alarms do not ring but keep their schedule.
   Future<void> setAlarmsMuted({DateTime? until, bool forever = false});
+
+  /// Restarts the Home Assistant companion app now (device owner: hide + unhide; otherwise relaunch).
+  Future<void> restartCompanion();
 
   // Pairing with Home Assistant: the tablet listens and advertises itself while this is on.
   Future<Map<String, dynamic>> startPairing();

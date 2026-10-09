@@ -400,6 +400,87 @@ List<SettingEntry> buildRegistry(AppController c) {
       );
     }),
 
+    // ---------------------------------------------------------------- Kiosk › Watchdog
+    switchEntry(
+      'watchdog',
+      Section.kiosk,
+      _g('watchdog'),
+      Icons.pets_outlined,
+      'watchdog',
+    ),
+    base(
+      'watchdog_action',
+      Section.kiosk,
+      _g('watchdog'),
+      (ctx) => SegmentedSetting(
+        icon: Icons.build_circle_outlined,
+        title: _t('watchdog_action', 'title'),
+        subtitle: _t('watchdog_action', 'desc'),
+        options: {
+          'restart': 'wd.action_restart'.tr(),
+          'notify': 'wd.action_notify'.tr(),
+        },
+        value: str('watchdog_action', 'restart'),
+        onChanged: (v) => set(ctx, 'watchdog_action', v),
+      ),
+    ),
+    sliderEntry(
+      'watchdog_probe',
+      Section.kiosk,
+      _g('watchdog'),
+      Icons.timer_outlined,
+      'watchdog_probe_s',
+      min: 5,
+      max: 300,
+      fallback: 20,
+      format: fmtSeconds,
+    ),
+    sliderEntry(
+      'watchdog_startup',
+      Section.kiosk,
+      _g('watchdog'),
+      Icons.hourglass_bottom,
+      'watchdog_startup_s',
+      min: 20,
+      max: 600,
+      fallback: 90,
+      format: fmtSeconds,
+    ),
+    base('watchdog_status', Section.kiosk, _g('watchdog'), (ctx) {
+      final w = c.status.watchdog;
+      final state = (w['state'] ?? 'off') as String;
+      final restarts = (w['restarts'] ?? 0) as int;
+      final reason = w['last_reason'] as String?;
+      return Tile(
+        icon: Icons.monitor_heart_outlined,
+        title: _t('watchdog_status', 'title'),
+        subtitle: [
+          'wd.state_$state'.tr(),
+          if (restarts > 0)
+            'wd.restarts'.tr(
+              namedArgs: {
+                'count': '$restarts',
+                'reason': reason == null ? '' : 'wd.reason_$reason'.tr(),
+              },
+            ),
+        ].join(' · '),
+      );
+    }),
+    base(
+      'watchdog_restart',
+      Section.kiosk,
+      _g('watchdog'),
+      (ctx) => ActionSetting(
+        icon: Icons.restart_alt,
+        title: _t('watchdog_restart', 'title'),
+        subtitle: _t('watchdog_restart', 'desc'),
+        onTap: () async {
+          await c.platform.restartCompanion();
+          await c.refresh();
+        },
+      ),
+    ),
+
     // ---------------------------------------------------------------- Display › Brightness
     base(
       'brightness_mode',

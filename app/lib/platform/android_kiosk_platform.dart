@@ -153,6 +153,9 @@ class AndroidKioskPlatform implements KioskPlatform {
   );
 
   @override
+  Future<void> restartCompanion() => _call('restartCompanion');
+
+  @override
   Future<Map<String, dynamic>> startPairing() async =>
       Map<String, dynamic>.from(await _call<Map>('startPairing') ?? const {});
 

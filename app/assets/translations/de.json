@@ -78,7 +78,8 @@
     "updates": "Updates",
     "setup": "Einrichtung",
     "developer": "Entwickleroptionen",
-    "network": "Netzwerk"
+    "network": "Netzwerk",
+    "watchdog": "Überwachung"
   },
   "settings": {
     "kiosk_dashboard": {
@@ -316,6 +317,36 @@
       "title": "Verbindung halten",
       "desc": "Immer verbunden bleiben oder nur im Heimnetz.",
       "kw": "dauerhaft, immer, nur zuhause, akku, vpn, netzwerk"
+    },
+    "watchdog": {
+      "title": "Eingefrorene Home-Assistant-App neu starten",
+      "desc": "Beobachtet die Home-Assistant-App, solange sie im Vordergrund ist, und startet sie neu, wenn sie einfriert oder beim Start hängt. Braucht den Bedienungshilfen-Dienst. Es werden nur die Bildschirmelemente gezählt, Inhalte werden nie gelesen.",
+      "kw": "einfrieren, eingefroren, hängt, reagiert nicht, anr, neustart, watchdog, absturz"
+    },
+    "watchdog_action": {
+      "title": "Wenn sie einfriert",
+      "desc": "Die App neu starten oder nur Home Assistant benachrichtigen.",
+      "kw": "neustart, benachrichtigen, aktion, wiederherstellung"
+    },
+    "watchdog_probe": {
+      "title": "Prüfen alle",
+      "desc": "Wie oft die App geprüft wird, solange sie im Vordergrund ist.",
+      "kw": "intervall, prüfen, häufigkeit, akku"
+    },
+    "watchdog_startup": {
+      "title": "Start-Zeitlimit",
+      "desc": "Nach dem Start muss die App innerhalb dieser Zeit ihren Bildschirm zeigen.",
+      "kw": "start, splash, zeitlimit, kaltstart"
+    },
+    "watchdog_status": {
+      "title": "Status der Überwachung",
+      "desc": "Status der Überwachung",
+      "kw": "status, neustarts, reagiert"
+    },
+    "watchdog_restart": {
+      "title": "Home-Assistant-App jetzt neu starten",
+      "desc": "Beendet sie und startet sie erneut.",
+      "kw": "neustart, beenden, erzwingen"
     }
   },
   "pin": {
@@ -749,5 +780,21 @@
     "policy_home": "Nur Heimnetz",
     "allow_location": "Standort erlauben, um den WLAN-Namen zu lesen",
     "add_current": "„{name}“ hinzufügen"
+  },
+  "wd": {
+    "action_restart": "Neu starten",
+    "action_notify": "Nur benachrichtigen",
+    "state_off": "Aus",
+    "state_ok": "Überwacht",
+    "state_idle": "Wartet (die App ist nicht im Vordergrund)",
+    "state_no_accessibility": "Braucht den Bedienungshilfen-Dienst",
+    "state_unresponsive": "App ist eingefroren (nur benachrichtigen)",
+    "state_restarting": "Startet neu",
+    "state_gave_up": "Aufgegeben nach wiederholten Neustarts",
+    "restarts": "{count} Neustarts, zuletzt: {reason}",
+    "reason_ui_frozen": "eingefroren",
+    "reason_anr": "reagiert nicht",
+    "reason_startup_hang": "beim Start hängengeblieben",
+    "reason_manual": "manuell"
   }
 }

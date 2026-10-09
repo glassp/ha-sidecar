@@ -114,7 +114,8 @@ List<Issue> computeIssues(
 
   for (final p in permissionSpecs) {
     if (p.granted(s)) continue;
-    if (p.id == 'accessibility' && (s.deviceOwner || !kiosk)) {
+    final watchdogOn = s.cfg['watchdog'] == true;
+    if (p.id == 'accessibility' && (s.deviceOwner || !kiosk) && !watchdogOn) {
       continue; // optional with device owner / in extras mode
     }
     if (p.id == 'overlay' && !kiosk) continue;

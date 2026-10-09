@@ -42,6 +42,9 @@ class AppController extends ChangeNotifier {
   static const _forwarded = {
     'alarm_ringing',
     'alarm_stopped',
+    'companion_unresponsive',
+    'companion_restarted',
+    'companion_restart_gave_up',
     'alarm_skipped',
     'alarms_muted',
     'alarms_unmuted',
