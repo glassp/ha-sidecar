@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 
 import '../app_controller.dart';
@@ -7,7 +8,14 @@ import 'design.dart';
 /// One widget per kind of setting; the settings registry composes them.
 
 class SwitchSetting extends StatelessWidget {
-  const SwitchSetting({super.key, required this.icon, required this.title, this.subtitle, required this.value, required this.onChanged});
+  const SwitchSetting({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
   final IconData icon;
   final String title;
   final String? subtitle;
@@ -16,12 +24,12 @@ class SwitchSetting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Tile(
-        icon: icon,
-        title: title,
-        subtitle: subtitle,
-        trailing: Switch(value: value, onChanged: onChanged),
-        onTap: () => onChanged(!value),
-      );
+    icon: icon,
+    title: title,
+    subtitle: subtitle,
+    trailing: Switch(value: value, onChanged: onChanged),
+    onTap: () => onChanged(!value),
+  );
 }
 
 class SliderSetting extends StatefulWidget {
@@ -64,16 +72,31 @@ class _SliderSettingState extends State<SliderSetting> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            IconBadge(widget.icon),
-            const SizedBox(width: 16),
-            Expanded(child: Text(widget.title, style: t.textTheme.titleMedium)),
-            Text(label, style: t.textTheme.titleMedium?.copyWith(color: t.colorScheme.primary, fontWeight: FontWeight.w700)),
-          ]),
+          Row(
+            children: [
+              IconBadge(widget.icon),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(widget.title, style: t.textTheme.titleMedium),
+              ),
+              Text(
+                label,
+                style: t.textTheme.titleMedium?.copyWith(
+                  color: t.colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
           if (widget.subtitle != null)
             Padding(
               padding: const EdgeInsets.only(left: 56, top: 2),
-              child: Text(widget.subtitle!, style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurfaceVariant)),
+              child: Text(
+                widget.subtitle!,
+                style: t.textTheme.bodyMedium?.copyWith(
+                  color: t.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
           Padding(
             padding: const EdgeInsets.only(left: 40),
@@ -96,7 +119,15 @@ class _SliderSettingState extends State<SliderSetting> {
 }
 
 class SegmentedSetting extends StatelessWidget {
-  const SegmentedSetting({super.key, required this.icon, required this.title, this.subtitle, required this.options, required this.value, required this.onChanged});
+  const SegmentedSetting({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.options,
+    required this.value,
+    required this.onChanged,
+  });
   final IconData icon;
   final String title;
   final String? subtitle;
@@ -112,19 +143,35 @@ class SegmentedSetting extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [IconBadge(icon), const SizedBox(width: 16), Expanded(child: Text(title, style: t.textTheme.titleMedium))]),
+          Row(
+            children: [
+              IconBadge(icon),
+              const SizedBox(width: 16),
+              Expanded(child: Text(title, style: t.textTheme.titleMedium)),
+            ],
+          ),
           if (subtitle != null)
             Padding(
               padding: const EdgeInsets.only(left: 56, top: 2),
-              child: Text(subtitle!, style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurfaceVariant)),
+              child: Text(
+                subtitle!,
+                style: t.textTheme.bodyMedium?.copyWith(
+                  color: t.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: SegmentedButton<String>(
               showSelectedIcon: false,
-              segments: [for (final e in options.entries) ButtonSegment(value: e.key, label: Text(e.value))],
-              selected: {options.containsKey(value) ? value : options.keys.first},
+              segments: [
+                for (final e in options.entries)
+                  ButtonSegment(value: e.key, label: Text(e.value)),
+              ],
+              selected: {
+                options.containsKey(value) ? value : options.keys.first,
+              },
               onSelectionChanged: (s) => onChanged(s.first),
             ),
           ),
@@ -135,7 +182,14 @@ class SegmentedSetting extends StatelessWidget {
 }
 
 class TimeSetting extends StatelessWidget {
-  const TimeSetting({super.key, required this.icon, required this.title, this.subtitle, required this.minutes, required this.onChanged});
+  const TimeSetting({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.minutes,
+    required this.onChanged,
+  });
   final IconData icon;
   final String title;
   final String? subtitle;
@@ -151,7 +205,10 @@ class TimeSetting extends StatelessWidget {
       subtitle: subtitle,
       trailing: Pill(time.format(context)),
       onTap: () async {
-        final picked = await showTimePicker(context: context, initialTime: time);
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: time,
+        );
         if (picked != null) onChanged(picked.hour * 60 + picked.minute);
       },
     );
@@ -159,7 +216,15 @@ class TimeSetting extends StatelessWidget {
 }
 
 class ActionSetting extends StatelessWidget {
-  const ActionSetting({super.key, required this.icon, required this.title, this.subtitle, required this.onTap, this.trailing, this.color});
+  const ActionSetting({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.onTap,
+    this.trailing,
+    this.color,
+  });
   final IconData icon;
   final String title;
   final String? subtitle;
@@ -169,13 +234,18 @@ class ActionSetting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Tile(
-        icon: icon,
-        title: title,
-        subtitle: subtitle,
-        color: color,
-        trailing: trailing ?? Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
-        onTap: onTap,
-      );
+    icon: icon,
+    title: title,
+    subtitle: subtitle,
+    color: color,
+    trailing:
+        trailing ??
+        Icon(
+          Icons.chevron_right,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+    onTap: onTap,
+  );
 }
 
 /// Dashboard link: paste the address from the browser, only the path is kept.
@@ -203,7 +273,9 @@ class DashboardSetting extends StatefulWidget {
 }
 
 class _DashboardSettingState extends State<DashboardSetting> {
-  late final TextEditingController _text = TextEditingController(text: widget.value);
+  late final TextEditingController _text = TextEditingController(
+    text: widget.value,
+  );
   final FocusNode _focus = FocusNode();
   String? _error;
   bool _saved = false;
@@ -211,7 +283,9 @@ class _DashboardSettingState extends State<DashboardSetting> {
   @override
   void didUpdateWidget(covariant DashboardSetting old) {
     super.didUpdateWidget(old);
-    if (!_focus.hasFocus && widget.value != _text.text) _text.text = widget.value;
+    if (!_focus.hasFocus && widget.value != _text.text) {
+      _text.text = widget.value;
+    }
   }
 
   @override
@@ -227,12 +301,13 @@ class _DashboardSettingState extends State<DashboardSetting> {
     if (!mounted) return;
     if (err != null) {
       setState(() {
-        _error = 'That is not a dashboard address. Paste the address from your browser, e.g. https://home.example.org/lovelace/wall-panel';
+        _error = 'dashboard.invalid'.tr();
         _saved = false;
       });
       return;
     }
-    final stored = (widget.controller.status.cfg[widget.configKey] ?? '') as String;
+    final stored =
+        (widget.controller.status.cfg[widget.configKey] ?? '') as String;
     setState(() {
       _error = null;
       _saved = true;
@@ -240,10 +315,23 @@ class _DashboardSettingState extends State<DashboardSetting> {
     });
     final pasted = Uri.tryParse(input);
     final paired = Uri.tryParse(widget.controller.settings.haUrl);
-    if (pasted != null && pasted.hasAuthority && paired != null && pasted.host != paired.host) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('That address is on ${pasted.host}, not on your paired Home Assistant (${paired.host}). Only the path "$stored" is used.'),
-      ));
+    if (pasted != null &&
+        pasted.hasAuthority &&
+        paired != null &&
+        pasted.host != paired.host) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'dashboard.host_mismatch'.tr(
+              namedArgs: {
+                'host': pasted.host,
+                'paired': paired.host,
+                'path': stored,
+              },
+            ),
+          ),
+        ),
+      );
     }
   }
 
@@ -256,16 +344,31 @@ class _DashboardSettingState extends State<DashboardSetting> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            IconBadge(widget.icon),
-            const SizedBox(width: 16),
-            Expanded(child: Text(widget.title, style: t.textTheme.titleMedium)),
-            if (widget.required && empty) const Pill('Required', color: Semantic.warn, icon: Icons.priority_high),
-            if (!empty) const Pill('Set', color: Semantic.ok, icon: Icons.check),
-          ]),
+          Row(
+            children: [
+              IconBadge(widget.icon),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(widget.title, style: t.textTheme.titleMedium),
+              ),
+              if (widget.required && empty)
+                Pill(
+                  'common.required'.tr(),
+                  color: Semantic.warn,
+                  icon: Icons.priority_high,
+                ),
+              if (!empty)
+                Pill('common.set'.tr(), color: Semantic.ok, icon: Icons.check),
+            ],
+          ),
           Padding(
             padding: const EdgeInsets.only(left: 56, top: 2, bottom: 12),
-            child: Text(widget.help, style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurfaceVariant)),
+            child: Text(
+              widget.help,
+              style: t.textTheme.bodyMedium?.copyWith(
+                color: t.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           TextField(
             controller: _text,
@@ -277,13 +380,23 @@ class _DashboardSettingState extends State<DashboardSetting> {
             onChanged: (_) => setState(() => _saved = false),
             decoration: InputDecoration(
               hintText: 'https://home.example.org/lovelace/wall-panel',
+              hintStyle: TextStyle(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withValues(alpha: .45),
+              ),
               errorText: _error,
               errorMaxLines: 3,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               prefixIcon: const Icon(Icons.link),
               suffixIcon: IconButton(
-                icon: Icon(_saved ? Icons.check_circle : Icons.save_outlined, color: _saved ? Semantic.ok : null),
-                tooltip: 'Save',
+                icon: Icon(
+                  _saved ? Icons.check_circle : Icons.save_outlined,
+                  color: _saved ? Semantic.ok : null,
+                ),
+                tooltip: 'common.save'.tr(),
                 onPressed: _save,
               ),
             ),
@@ -291,12 +404,26 @@ class _DashboardSettingState extends State<DashboardSetting> {
           if (!empty)
             Padding(
               padding: const EdgeInsets.only(top: 8, left: 4),
-              child: Row(children: [
-                Icon(Icons.subdirectory_arrow_right, size: 16, color: t.colorScheme.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text('Opens: ', style: t.textTheme.bodySmall),
-                Expanded(child: Text(widget.value, style: t.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontWeight: FontWeight.w700))),
-              ]),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.subdirectory_arrow_right,
+                    size: 16,
+                    color: t.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Text('dashboard.opens'.tr(), style: t.textTheme.bodySmall),
+                  Expanded(
+                    child: Text(
+                      widget.value,
+                      style: t.textTheme.bodySmall?.copyWith(
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
         ],
       ),
@@ -314,18 +441,30 @@ class CopyBlock extends StatelessWidget {
     final t = Theme.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
-      decoration: BoxDecoration(color: t.colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
-      child: Row(children: [
-        Expanded(child: SelectableText(text, style: t.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'))),
-        IconButton(
-          icon: const Icon(Icons.copy, size: 18),
-          tooltip: 'Copy',
-          onPressed: () {
-            Clipboard.setData(ClipboardData(text: text));
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied')));
-          },
-        ),
-      ]),
+      decoration: BoxDecoration(
+        color: t.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: SelectableText(
+              text,
+              style: t.textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.copy, size: 18),
+            tooltip: 'common.copy'.tr(),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: text));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('common.copied'.tr())));
+            },
+          ),
+        ],
+      ),
     );
   }
 }

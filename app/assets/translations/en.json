@@ -1,0 +1,647 @@
+{
+  "app": {
+    "name": "HA Sidecar"
+  },
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "copied": "Copied",
+    "copy": "Copy",
+    "on": "On",
+    "required": "Required",
+    "save": "Save",
+    "set": "Set",
+    "turn_on": "Turn on"
+  },
+  "nav": {
+    "home": "Home",
+    "kiosk": "Kiosk",
+    "display": "Display",
+    "alarms": "Alarms",
+    "system": "System"
+  },
+  "day": {
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun"
+  },
+  "mode": {
+    "manual": "Manual",
+    "auto": "Auto",
+    "day": "Day",
+    "night": "Night"
+  },
+  "theme": {
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "night": "Dark at night"
+  },
+  "link": {
+    "connected": "Connected",
+    "connecting": "Connecting…",
+    "rejected": "Token rejected",
+    "disconnected": "Disconnected",
+    "not_paired": "Not paired"
+  },
+  "section": {
+    "kiosk": {
+      "title": "Kiosk",
+      "subtitle": "Dashboards, lock, PIN and start-up"
+    },
+    "display": {
+      "title": "Display & presence",
+      "subtitle": "Brightness, night light, presence and camera"
+    },
+    "system": {
+      "title": "System",
+      "subtitle": "Connection, permissions, updates and appearance"
+    }
+  },
+  "group": {
+    "dashboards": "Dashboards",
+    "lock": "Lock",
+    "start_screen": "Start & screen",
+    "brightness": "Brightness",
+    "day": "Day",
+    "night": "Night",
+    "presence": "Presence",
+    "camera": "Presence camera",
+    "home_assistant": "Home Assistant",
+    "appearance": "Appearance",
+    "permissions": "Permissions",
+    "updates": "Updates",
+    "setup": "Setup"
+  },
+  "settings": {
+    "kiosk_dashboard": {
+      "title": "Main dashboard (kiosk)",
+      "desc": "The Home Assistant dashboard that stays on screen. Required before you can lock the kiosk.",
+      "help": "Opened after a restart, when you press Home and when the lock starts. Paste the address from your browser.",
+      "kw": "url, link, lovelace, page, default, wall panel, address, home screen, path, kiosk dashboard"
+    },
+    "glance_enabled": {
+      "title": "Show an idle screen",
+      "desc": "When nobody touches or stands near the tablet for a while, show a calm screen instead of the main dashboard.",
+      "kw": "screensaver, at a glance, idle, clock, screen saver"
+    },
+    "glance_dashboard": {
+      "title": "Idle dashboard (at a glance)",
+      "desc": "Optional second dashboard for the idle screen, e.g. weather and temperatures. Empty = built-in clock screen.",
+      "help": "Build it in Home Assistant with any cards (weather, cameras, floor temperatures). A touch or someone nearby returns to the main dashboard. Leave empty for the built-in clock screen.",
+      "kw": "url, link, lovelace, screensaver, weather, idle dashboard, glance dashboard, address"
+    },
+    "glance_after": {
+      "title": "Show the idle screen after",
+      "desc": "How long nobody uses or stands near the tablet.",
+      "kw": "screensaver, timeout, delay, idle time"
+    },
+    "lockdown": {
+      "title": "Lock the kiosk",
+      "desc": "Keeps the dashboard on screen and blocks other apps, the notification shade and recents.",
+      "kw": "lockdown, lock, kiosk mode, block, pin, lock task, pinning"
+    },
+    "pin": {
+      "title": "PIN",
+      "desc": "Tap the top-left corner 5 times on the locked screen, then enter your PIN.",
+      "kw": "password, code, unlock, exit, secret"
+    },
+    "allowed_apps": {
+      "title": "Allowed apps",
+      "desc": "Other apps that may be opened while the kiosk is locked (the Home Assistant app and the keyboard are always allowed).",
+      "kw": "allowlist, whitelist, apps, spotify, permit"
+    },
+    "protection": {
+      "title": "Kiosk protection",
+      "desc": "How strongly the lock is enforced: device owner (strongest) or the accessibility guard.",
+      "kw": "device owner, accessibility, enforcement, lock task, adb, dpm, guard"
+    },
+    "home_app": {
+      "title": "Start automatically",
+      "desc": "Starts after a reboot and brings the Home Assistant app back if it closes or crashes (acts as the home app).",
+      "kw": "launcher, boot, autostart, home app, crash, recover, startup, default home"
+    },
+    "keep_screen_on": {
+      "title": "Keep the screen on",
+      "desc": "Stops the screen from switching off by itself.",
+      "kw": "awake, sleep, timeout, screen off, wake lock"
+    },
+    "companion_app": {
+      "title": "Home Assistant app",
+      "desc": "The official Home Assistant companion app that shows your dashboard.",
+      "kw": "companion, install, package, app"
+    },
+    "brightness_mode": {
+      "title": "Brightness control",
+      "desc": "Manual leaves brightness alone. Auto follows day and night. Day or Night forces one of them.",
+      "kw": "auto dim, dimming, night mode, day mode, automatic, backlight"
+    },
+    "day_level": {
+      "title": "Day brightness",
+      "desc": "While the tablet is in use or someone is near.",
+      "kw": "bright, backlight, high"
+    },
+    "auto_dim": {
+      "title": "Dim when idle",
+      "desc": "Lower the brightness when nobody uses or stands near the tablet.",
+      "kw": "autodim, auto dim, idle"
+    },
+    "day_dim_level": {
+      "title": "Idle brightness",
+      "desc": "Brightness while dimmed during the day.",
+      "kw": "dim level"
+    },
+    "dim_after": {
+      "title": "Dim after",
+      "desc": "How long without touch or presence before dimming.",
+      "kw": "idle time, timeout"
+    },
+    "night_start": {
+      "title": "Night starts",
+      "desc": "From this time the night brightness is used.",
+      "kw": "schedule, sleep, bedtime, hours"
+    },
+    "night_end": {
+      "title": "Night ends",
+      "desc": "From this time the day brightness is used again.",
+      "kw": "schedule, sleep, bedtime, hours"
+    },
+    "night_level": {
+      "title": "Night brightness",
+      "desc": "Very dim base brightness at night.",
+      "kw": "dark, low"
+    },
+    "night_light": {
+      "title": "Night light",
+      "desc": "Brighten the screen a little when someone walks past, so you can see the floor.",
+      "kw": "nightlight, walk past, floor, presence, path light"
+    },
+    "night_light_level": {
+      "title": "Night light brightness",
+      "desc": "Brightness while someone is near at night.",
+      "kw": "floor"
+    },
+    "night_touch_level": {
+      "title": "Brightness after a touch",
+      "desc": "Brightness for a moment after you touch the screen at night.",
+      "kw": "touch"
+    },
+    "night_hold": {
+      "title": "Keep after a touch",
+      "desc": "How long the touch brightness stays.",
+      "kw": "touch, duration"
+    },
+    "presence_sources": {
+      "title": "Presence sources",
+      "desc": "Who counts as \"near the tablet\": Home Assistant presence sensors and/or the camera.",
+      "help": "Choose presence sensors in Home Assistant: Settings → Devices & services → HA Sidecar → Configure. The camera below is optional.",
+      "kw": "mmwave, pir, sensor, occupancy, motion, entities"
+    },
+    "presence_hold": {
+      "title": "Keep \"present\" for",
+      "desc": "How long presence is kept after the last detection.",
+      "kw": "presence, duration"
+    },
+    "fade": {
+      "title": "Fade time",
+      "desc": "How smoothly brightness changes.",
+      "kw": "transition, smooth"
+    },
+    "camera_presence": {
+      "title": "Detect presence with the camera",
+      "desc": "Notices movement near the tablet. Nothing is recorded, stored or sent; a notification shows while it runs.",
+      "kw": "camera, motion, privacy, detect, webcam, front camera"
+    },
+    "camera_status": {
+      "title": "Camera status",
+      "desc": "Whether the presence camera is running and sees movement.",
+      "kw": "camera, permission, error, running"
+    },
+    "camera_facing": {
+      "title": "Which camera",
+      "desc": "Front or back camera.",
+      "kw": "camera, front, back, selfie"
+    },
+    "camera_sensitivity": {
+      "title": "Sensitivity",
+      "desc": "Higher notices smaller movements (and more false alarms).",
+      "kw": "camera, motion, threshold"
+    },
+    "camera_fps": {
+      "title": "Frame rate",
+      "desc": "Lower saves battery.",
+      "kw": "camera, battery, fps"
+    },
+    "connection": {
+      "title": "Connection",
+      "desc": "The link to your Home Assistant server (pairing token).",
+      "kw": "pair, token, url, server, unpair, reconnect, integration, link"
+    },
+    "theme": {
+      "title": "Theme",
+      "desc": "Light, dark, follow the system, or dark only at night.",
+      "kw": "dark mode, light mode, night mode, colors, appearance"
+    },
+    "language": {
+      "title": "Language",
+      "desc": "The language of this app.",
+      "kw": "english, german, deutsch, translation, locale"
+    },
+    "permission": {
+      "kw": "android"
+    },
+    "device_owner": {
+      "title": "Device owner",
+      "desc": "Optional, strongest kiosk lock. Needs a one-time adb command on a freshly reset tablet.",
+      "kw": "dpm, adb, provision, managed, lock task"
+    },
+    "update": {
+      "title": "Android system update",
+      "desc": "Opens the system update screen and, with the accessibility guard, taps through it.",
+      "kw": "os update, upgrade, security patch, version, firmware"
+    },
+    "run_setup": {
+      "title": "Run the setup wizard again",
+      "desc": "Walks through connection, dashboard, PIN and permissions step by step.",
+      "kw": "wizard, onboarding, guide, setup, reset, first run, help"
+    }
+  },
+  "pin": {
+    "set": "Set PIN",
+    "change": "Change PIN",
+    "new": "New PIN",
+    "repeat": "Repeat PIN",
+    "dialog_intro": "At least 4 digits. You will enter it by tapping the top-left corner of the locked screen 5 times.",
+    "too_short": "Use at least 4 digits",
+    "mismatch": "The PINs do not match",
+    "required_desc": "Required before the kiosk can be locked.",
+    "page": {
+      "title": "Enter PIN to leave the kiosk",
+      "wrong": "Wrong PIN",
+      "locked": "Too many tries. Try again in {seconds} s"
+    }
+  },
+  "lock": {
+    "need_pin": "a PIN",
+    "need_dashboard": "the kiosk dashboard",
+    "need_protection": "kiosk protection",
+    "first_setup": "First set up: {items}.",
+    "locked_only_ha": "Locked. Only the Home Assistant app can be used.",
+    "locked_with_allowed": "Locked. Only the Home Assistant app and your allowed apps can be used.",
+    "err_dashboard": "Choose the kiosk dashboard first (Kiosk → Dashboards).",
+    "err_pin": "Set a PIN first.",
+    "err_protection": "Turn on the accessibility guard or make this tablet a device owner first.",
+    "err_other": "Could not change the lock: {error}"
+  },
+  "allowed": {
+    "none": "Only the Home Assistant app",
+    "count": {
+      "one": "{} extra app",
+      "other": "{} extra apps"
+    },
+    "intro": "While the kiosk is locked only these apps can be opened. The Home Assistant app and the keyboard are always allowed.",
+    "search": "Search apps"
+  },
+  "prot": {
+    "device_owner": "Device owner",
+    "accessibility": "Accessibility guard",
+    "none": "Not protected",
+    "device_owner_desc": "Strongest: Android itself blocks the system UI.",
+    "accessibility_desc": "Good: other apps are sent back. Device owner is stronger.",
+    "none_desc": "Turn on the accessibility guard or become device owner to lock the kiosk."
+  },
+  "home": {
+    "active": "Active. This app is the default home app.",
+    "applying": "Applying…",
+    "choose": "Almost done: choose \"HA Sidecar\" as the default home app in Android.",
+    "needs_attention": "Needs attention",
+    "needs_attention_sub": {
+      "one": "{} thing to fix before this works properly",
+      "other": "{} things to fix before this works properly"
+    },
+    "all_set": "Everything is set up",
+    "all_set_desc": "The kiosk is ready. Use the lock above to start it.",
+    "suggestions": "Suggestions",
+    "right_now": "Right now",
+    "day": "Day",
+    "night": "Night",
+    "brightness_unmanaged": "Brightness is not managed (Display → Brightness control)",
+    "brightness_target": "Brightness {level} of 255 · {mode}",
+    "someone_near": "Someone is near",
+    "nobody_near": "Nobody near",
+    "camera_running": "Camera running",
+    "camera_starting": "Camera starting",
+    "presence_from_ha": "Presence from Home Assistant sensors",
+    "no_alarm": "No alarm set",
+    "next_alarm": "Next alarm {time}",
+    "ringing": "Ringing now",
+    "quick_actions": "Quick actions",
+    "qa_dashboard": "Open dashboard",
+    "qa_idle": "Show idle screen",
+    "qa_screen_off": "Screen off",
+    "link_connected": "Home Assistant connected",
+    "kiosk_locked": "Kiosk locked",
+    "kiosk_unlocked": "Kiosk unlocked",
+    "extras_title": "Sensors and alarms",
+    "extras_desc": "This device reports sensors and rings alarms for Home Assistant.",
+    "no_dashboard": "No dashboard chosen yet",
+    "showing": "Showing {path}",
+    "unlock": "Unlock",
+    "lock": "Lock the kiosk",
+    "finish_setup": "Finish setup to lock"
+  },
+  "companion": {
+    "missing": "Not found. Install the Home Assistant companion app and sign in to your server.",
+    "found": "Found: {builds}",
+    "minimal": "minimal version",
+    "full": "full version",
+    "missing_pill": "Missing",
+    "installed": "Installed",
+    "still_missing": "Still not installed.",
+    "now_found": "Home Assistant app found."
+  },
+  "presence": {
+    "near": "Someone near",
+    "nobody": "Nobody near"
+  },
+  "camera": {
+    "off": "Off",
+    "front": "Front",
+    "back": "Back",
+    "permission_title": "Camera permission needed",
+    "permission_desc": "Allow camera access so movement can be detected.",
+    "problem": "Camera problem",
+    "change": "Picture change {pct} %",
+    "movement": "Movement",
+    "running": "Running",
+    "starting": "Starting…"
+  },
+  "owner": {
+    "active": "Active",
+    "not_set": "Not set",
+    "active_desc": "This tablet is a device owner: Android itself hides and blocks the system UI.",
+    "optional_desc": "Optional. Tap to see how."
+  },
+  "update": {
+    "available": "An Android update is available",
+    "android": "Android {version}",
+    "patch": "Security patch {patch}.",
+    "needs_owner": "Update detection needs device owner.",
+    "check": "Check"
+  },
+  "perm": {
+    "grant": "Grant",
+    "granted": "Granted",
+    "needed": "Needed",
+    "recommended": "Recommended",
+    "overlay": {
+      "title": "Display over other apps",
+      "why": "Lets the sidecar bring the Home Assistant app back to the front, track touches for dimming and show the hidden PIN corner.",
+      "hint": "On the next screen switch on \"Allow display over other apps\" for HA Sidecar."
+    },
+    "accessibility": {
+      "title": "Accessibility guard",
+      "why": "Keeps other apps, the notification shade and the recents screen away from the dashboard when this tablet is not a device owner, and reports which app is in front. It does not read your screen.",
+      "hint": "Open \"Installed apps\" / \"Downloaded apps\", choose the HA Sidecar kiosk guard and switch it on. If Android says \"restricted setting\": App info → ⋮ → Allow restricted settings, then try again."
+    },
+    "write_settings": {
+      "title": "Modify system settings",
+      "why": "Needed to change the screen brightness for auto dimming, the night light and remote brightness.",
+      "hint": "On the next screen switch on \"Allow modifying system settings\"."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "why": "Alarms and the camera indicator are shown as notifications, and Android needs one to keep the sidecar running.",
+      "hint": "Choose \"Allow\" in the dialog."
+    },
+    "battery": {
+      "title": "No battery restrictions",
+      "why": "Stops Android from pausing the sidecar in the background, which would silence alarms and drop the Home Assistant connection.",
+      "hint": "Choose \"All apps\", find HA Sidecar and set it to \"Don't optimize\"."
+    },
+    "full_screen_intent": {
+      "title": "Full-screen alarms",
+      "why": "Lets a ringing alarm take over the screen, also while the kiosk is locked.",
+      "hint": "On the next screen switch on \"Allow full-screen notifications\"."
+    }
+  },
+  "dashboard": {
+    "invalid": "That is not a dashboard address. Paste the address from your browser, e.g. https://home.example.org/lovelace/wall-panel",
+    "host_mismatch": "That address is on {host}, not on your paired Home Assistant ({paired}). Only the path \"{path}\" is used.",
+    "opens": "Opens: "
+  },
+  "sheet": {
+    "protection": {
+      "title": "Kiosk protection",
+      "intro": "Two ways to keep other apps away from the dashboard. You can use both.",
+      "accessibility_desc": "Works on any tablet. Sends other apps back and closes the notification shade within a moment.",
+      "owner_title": "Device owner (strongest)",
+      "owner_desc": "Android itself hides and blocks the system UI. Needs a factory-reset tablet with no accounts and a computer with adb.",
+      "how_title": "To become device owner",
+      "how_steps": "1. Factory reset the tablet and skip adding any account.\n2. Install this app and the Home Assistant app.\n3. Enable USB debugging and, on a computer, run:",
+      "warning": "A device owner cannot be removed afterwards except by a factory reset. Fire tablets are not supported."
+    },
+    "connection": {
+      "paired_with": "Paired with {url}",
+      "pair_again": "Pair again with a new token"
+    }
+  },
+  "search": {
+    "title": "Search settings",
+    "try": "Try searching for",
+    "browse": "Browse",
+    "suggestions": "night light, dashboard, dim, PIN, camera, permission, brightness, idle screen, theme, update",
+    "none": "No setting matches \"{query}\"",
+    "none_hint": "Try a shorter word, like \"dim\", \"night\" or \"url\".",
+    "open": "Open",
+    "results": {
+      "one": "{} result",
+      "other": "{} results"
+    }
+  },
+  "issue": {
+    "link": {
+      "title": "Not connected to Home Assistant",
+      "detail": "Remote control, sensors and alarms in Home Assistant need the connection. Local features keep working.",
+      "fix": "Connection"
+    },
+    "link_rejected": {
+      "title": "Home Assistant rejected the token",
+      "detail": "Create a new pairing token in the integration and pair again."
+    },
+    "companion": {
+      "title": "Home Assistant app not installed",
+      "detail": "The kiosk shows your dashboard with the official Home Assistant companion app. Install it and sign in.",
+      "fix": "Details"
+    },
+    "dashboard": {
+      "title": "Choose the kiosk dashboard",
+      "detail": "Paste the address of the dashboard that should stay on screen. Lockdown needs it.",
+      "fix": "Set dashboard"
+    },
+    "pin": {
+      "title": "Set a PIN",
+      "detail": "The PIN is the only way to leave the locked kiosk on the tablet.",
+      "fix": "Set PIN"
+    },
+    "protection": {
+      "title": "No kiosk protection available",
+      "detail": "Turn on the accessibility guard, or make this tablet a device owner for the strongest lock.",
+      "fix": "Protection"
+    },
+    "permission": "Allow: {name}",
+    "home_app": {
+      "title": "Start automatically after a restart",
+      "detail": "Act as the home app so the kiosk comes back after a reboot or when the Home Assistant app closes.",
+      "fix": "Turn on"
+    }
+  },
+  "alarms": {
+    "title": "Alarms",
+    "add": "Add alarm",
+    "intro": "These alarms ring on this tablet, also while the kiosk is locked. Home Assistant can create, snooze and stop them too.",
+    "empty_title": "No alarms yet",
+    "empty_desc": "Tap \"Add alarm\" or create one from a Home Assistant automation.",
+    "once": "Once",
+    "every_day": "Every day",
+    "swipe_hint": "Swipe an alarm to the left to delete it.",
+    "new": "New alarm",
+    "edit": "Edit alarm",
+    "label": "Label (optional)",
+    "repeat": "Repeat",
+    "rings_once": "Rings once",
+    "repeats_days": "Repeats on the chosen days",
+    "snooze": "Snooze"
+  },
+  "alarm": {
+    "ringing": "Alarm",
+    "snooze": "Snooze",
+    "dismiss": "Dismiss"
+  },
+  "wiz": {
+    "progress": "Step {n} of {total}",
+    "skip": "Skip for now",
+    "get_started": "Get started",
+    "lock_now": "Lock the kiosk now",
+    "open_app": "Open the app",
+    "step": {
+      "welcome": "Welcome",
+      "connect": "Connect",
+      "mode": "Purpose",
+      "companion": "Home Assistant app",
+      "dashboard": "Dashboard",
+      "pin": "PIN",
+      "protection": "Protection",
+      "permissions": "Permissions",
+      "startup": "Start-up",
+      "display": "Display",
+      "done": "Done"
+    },
+    "welcome": {
+      "title": "Turn this tablet into a Home Assistant display",
+      "intro": "HA Sidecar adds what the Home Assistant app does not: a lockable kiosk, smart brightness, alarms and extra sensors. Setup takes about five minutes.",
+      "b1_title": "Kiosk lock",
+      "b1_text": "Keeps your dashboard on screen. Leave it with a PIN.",
+      "b2_title": "Smart brightness",
+      "b2_text": "Dims when idle, night light when someone walks past.",
+      "b3_title": "Alarms and sensors",
+      "b3_text": "Alarms that Home Assistant can set, plus touch, camera and security sensors."
+    },
+    "connect": {
+      "title": "Connect to Home Assistant",
+      "intro": "This tablet talks to the HA Sidecar integration in Home Assistant.",
+      "s1_title": "Install the integration",
+      "s1_text": "In HACS add the HA Sidecar repository (Custom repositories → Integration) and restart Home Assistant.",
+      "s2_title": "Add this tablet",
+      "s2_text": "Settings → Devices & services → Add integration → HA Sidecar. Name the tablet.",
+      "s3_title": "Copy the token",
+      "s3_text": "Home Assistant shows a pairing token. Enter it below with the address of your server.",
+      "address": "Home Assistant address",
+      "token": "Pairing token",
+      "connect": "Connect",
+      "reconnect": "Reconnect",
+      "ok": "Connected to Home Assistant",
+      "rejected": "Home Assistant rejected the token. Check it and try again.",
+      "not_yet": "Not connected yet"
+    },
+    "mode": {
+      "title": "What is this device for?",
+      "intro": "You can change this later by running the setup again.",
+      "kiosk_title": "Wall display (kiosk)",
+      "kiosk_text": "A tablet that permanently shows a Home Assistant dashboard, locked with a PIN.",
+      "extras_title": "Sensors and alarms only",
+      "extras_text": "A phone or tablet you also use normally. No lock; Home Assistant gets extra sensors and can set alarms."
+    },
+    "companion": {
+      "title": "The Home Assistant app",
+      "intro": "The kiosk shows your dashboard with the official Home Assistant companion app. HA Sidecar keeps it on screen.",
+      "missing": "Not installed yet",
+      "installed": "Installed",
+      "minimal": "Minimal build",
+      "full": "Full build",
+      "missing_text": "Install \"Home Assistant\" from Google Play, or the minimal build from the Home Assistant GitHub / F-Droid.",
+      "check_again": "Check again",
+      "b1_title": "Sign in",
+      "b1_text": "Open the app once, sign in to your server and let it finish loading. Then come back here.",
+      "b2_title": "Fullscreen",
+      "b2_text": "In its settings, turn on fullscreen so no bars show. Do not set it as the launcher; HA Sidecar does that."
+    },
+    "dashboard": {
+      "title": "Which dashboard stays on screen?",
+      "intro": "Open the dashboard in a browser, copy its address and paste it here. Only the path is kept.",
+      "example": "Example: https://home.example.org/lovelace/wall-panel  →  lovelace/wall-panel",
+      "later": "You can add an idle dashboard (weather, temperatures) later under Kiosk → Dashboards."
+    },
+    "pin": {
+      "title": "Choose a PIN",
+      "intro": "The PIN is the only way to leave the locked kiosk on the tablet itself.",
+      "is_set": "PIN is set",
+      "not_set": "No PIN yet",
+      "change": "Change",
+      "b1_title": "How to unlock",
+      "b1_text": "On the locked screen tap the top-left corner 5 times, then enter the PIN. After 5 wrong tries there is a short waiting time.",
+      "b2_title": "From Home Assistant",
+      "b2_text": "You can also unlock remotely from Home Assistant. Remote locking needs a PIN to exist."
+    },
+    "protection": {
+      "title": "How strong should the lock be?",
+      "intro": "Android has two ways to keep other apps away from the dashboard. Device owner is strongest; the accessibility guard works on any tablet.",
+      "owner_text": "Needs a factory-reset tablet with no accounts and a one-time computer command. Optional.",
+      "guard_text": "Sends other apps and the notification shade away within a moment. Does not read your screen.",
+      "command": "Device owner command",
+      "command_help": "Run it once on a computer with the tablet connected by USB debugging. It cannot be undone except by a factory reset.",
+      "none": "Without either, the kiosk cannot be locked."
+    },
+    "permissions": {
+      "title": "Allow what the kiosk needs",
+      "intro": "Tap Grant, follow the Android screen that opens, then come back. This list updates by itself.",
+      "skip_help": "You can skip anything and finish it later; the Home screen lists what is still missing."
+    },
+    "startup": {
+      "title": "Start by itself",
+      "intro": "Let HA Sidecar be the home app. After a reboot, or if the Home Assistant app closes or crashes, Android returns to HA Sidecar, which opens the dashboard again.",
+      "recommended": "Recommended for a wall display."
+    },
+    "display": {
+      "title": "Brightness",
+      "intro": "Should the display manage its own brightness? Every detail can be fine-tuned later under Display.",
+      "smart_title": "Smart brightness",
+      "smart_text": "Bright by day, dims when nobody uses it, very dim at night with a night light when someone walks past.",
+      "manual_title": "Leave brightness alone",
+      "manual_text": "The sidecar never changes the screen brightness.",
+      "note": "Night hours are 22:00 to 06:30 by default. Presence sensors are chosen in the Home Assistant integration options."
+    },
+    "done": {
+      "title_ok": "You are all set",
+      "title_open": "Almost there",
+      "intro_kiosk": "Lock the kiosk now, or open the app first and look around. You can change everything later, and search finds any setting.",
+      "intro_extras": "Home Assistant now gets sensors and can set alarms on this device.",
+      "intro_open": "A few things are still open. You can finish them later from the Home screen."
+    }
+  }
+}

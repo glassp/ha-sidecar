@@ -1,3 +1,4 @@
+import 'package:beamer/beamer.dart';
 import 'package:flutter/material.dart';
 
 /// Shared building blocks so every screen looks the same.
@@ -14,6 +15,7 @@ class AppPage extends StatelessWidget {
     this.floatingActionButton,
     this.leading,
     this.showAppBar = true,
+    this.back = false,
   });
 
   final String title;
@@ -23,6 +25,9 @@ class AppPage extends StatelessWidget {
   final Widget? leading;
   final bool showAppBar;
 
+  /// Show a back arrow that beams to the previous location (pushed pages).
+  final bool back;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,7 +35,9 @@ class AppPage extends StatelessWidget {
           ? AppBar(
               title: Text(title),
               actions: actions,
-              leading: leading,
+              leading: back
+                  ? BackButton(onPressed: () => context.beamBack())
+                  : leading,
               scrolledUnderElevation: 0,
               centerTitle: false,
             )
@@ -65,11 +72,23 @@ class SectionTitle extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(text, style: t.textTheme.titleSmall?.copyWith(color: t.colorScheme.primary, fontWeight: FontWeight.w700, letterSpacing: .4)),
+          Text(
+            text,
+            style: t.textTheme.titleSmall?.copyWith(
+              color: t.colorScheme.primary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: .4,
+            ),
+          ),
           if (subtitle != null)
             Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: Text(subtitle!, style: t.textTheme.bodySmall?.copyWith(color: t.colorScheme.onSurfaceVariant)),
+              child: Text(
+                subtitle!,
+                style: t.textTheme.bodySmall?.copyWith(
+                  color: t.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
         ],
       ),
@@ -88,7 +107,15 @@ class GroupCard extends StatelessWidget {
     final t = Theme.of(context);
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
-      if (i > 0) rows.add(Divider(height: 1, indent: 72, color: t.colorScheme.outlineVariant.withValues(alpha: .5)));
+      if (i > 0) {
+        rows.add(
+          Divider(
+            height: 1,
+            indent: 72,
+            color: t.colorScheme.outlineVariant.withValues(alpha: .5),
+          ),
+        );
+      }
       rows.add(children[i]);
     }
     return Card(
@@ -114,7 +141,10 @@ class IconBadge extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: c.withValues(alpha: .14), borderRadius: BorderRadius.circular(size / 3)),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: .14),
+        borderRadius: BorderRadius.circular(size / 3),
+      ),
       child: Icon(icon, color: c, size: size * .55),
     );
   }
@@ -122,7 +152,15 @@ class IconBadge extends StatelessWidget {
 
 /// Standard row: icon badge, title, optional subtitle, trailing widget.
 class Tile extends StatelessWidget {
-  const Tile({super.key, required this.icon, required this.title, this.subtitle, this.trailing, this.onTap, this.color});
+  const Tile({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+    this.color,
+  });
   final IconData icon;
   final String title;
   final String? subtitle;
@@ -149,7 +187,12 @@ class Tile extends StatelessWidget {
                   if (subtitle != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Text(subtitle!, style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurfaceVariant)),
+                      child: Text(
+                        subtitle!,
+                        style: t.textTheme.bodyMedium?.copyWith(
+                          color: t.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -173,11 +216,26 @@ class Pill extends StatelessWidget {
     final c = color ?? Theme.of(context).colorScheme.primary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: c.withValues(alpha: .14), borderRadius: BorderRadius.circular(999)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        if (icon != null) ...[Icon(icon, size: 14, color: c), const SizedBox(width: 4)],
-        Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: c, fontWeight: FontWeight.w700)),
-      ]),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: .14),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: c),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: c,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -197,7 +255,12 @@ class HelpText extends StatelessWidget {
     final t = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-      child: Text(text, style: t.textTheme.bodySmall?.copyWith(color: t.colorScheme.onSurfaceVariant)),
+      child: Text(
+        text,
+        style: t.textTheme.bodySmall?.copyWith(
+          color: t.colorScheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }

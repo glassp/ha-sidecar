@@ -14,13 +14,21 @@ class ConnectionSettings {
   Uri get websocketUri {
     final base = Uri.parse(haUrl.trim());
     final secure = base.scheme == 'https' || base.scheme == 'wss';
-    final prefix = base.path.endsWith('/') ? base.path.substring(0, base.path.length - 1) : base.path;
-    return base.replace(scheme: secure ? 'wss' : 'ws', path: '$prefix/api/ha_sidecar/ws');
+    final prefix = base.path.endsWith('/')
+        ? base.path.substring(0, base.path.length - 1)
+        : base.path;
+    return base.replace(
+      scheme: secure ? 'wss' : 'ws',
+      path: '$prefix/api/ha_sidecar/ws',
+    );
   }
 
   static Future<ConnectionSettings> load() async {
     final p = await SharedPreferences.getInstance();
-    return ConnectionSettings(haUrl: p.getString('ha_url') ?? '', token: p.getString('token') ?? '');
+    return ConnectionSettings(
+      haUrl: p.getString('ha_url') ?? '',
+      token: p.getString('token') ?? '',
+    );
   }
 
   Future<void> save() async {

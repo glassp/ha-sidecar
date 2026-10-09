@@ -1,3 +1,5 @@
+import 'package:beamer/beamer.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
@@ -8,23 +10,33 @@ import 'pages/section_page.dart';
 
 /// Main navigation: a bottom bar on phones, a side rail on tablets.
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.controller});
+  const AppShell({super.key, required this.controller, required this.delegate});
   final AppController controller;
+  final BeamerDelegate delegate;
 
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
 class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
-  int _index = 0;
-
+  static const _paths = ['/', '/kiosk', '/display', '/alarms', '/system'];
   static const _items = [
-    (Icons.home_outlined, Icons.home, 'Home'),
-    (Icons.lock_outline, Icons.lock, 'Kiosk'),
-    (Icons.brightness_6_outlined, Icons.brightness_6, 'Display'),
-    (Icons.alarm_outlined, Icons.alarm, 'Alarms'),
-    (Icons.tune, Icons.tune, 'System'),
+    (Icons.home_outlined, Icons.home, 'nav.home'),
+    (Icons.lock_outline, Icons.lock, 'nav.kiosk'),
+    (Icons.brightness_6_outlined, Icons.brightness_6, 'nav.display'),
+    (Icons.alarm_outlined, Icons.alarm, 'nav.alarms'),
+    (Icons.tune, Icons.tune, 'nav.system'),
   ];
+
+  /// The tab comes from the router location, so this page is never recreated when switching tabs.
+  int get _index {
+    final path =
+        widget.delegate.currentBeamLocation.state.routeInformation.uri.path;
+    final i = _paths.indexOf(path);
+    return i < 0 ? 0 : i;
+  }
+
+  void _select(int i) => context.beamToNamed(_paths[i], stacked: false);
 
   @override
   void initState() {
@@ -56,31 +68,48 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: widget.delegate,
+    builder: (context, _) => _scaffold(context),
+  );
+
+  Widget _scaffold(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 840;
     if (wide) {
       return Scaffold(
-        body: Row(children: [
-          NavigationRail(
-            selectedIndex: _index,
-            onDestinationSelected: (i) => setState(() => _index = i),
-            labelType: NavigationRailLabelType.all,
-            destinations: [
-              for (final i in _items) NavigationRailDestination(icon: Icon(i.$1), selectedIcon: Icon(i.$2), label: Text(i.$3)),
-            ],
-          ),
-          const VerticalDivider(width: 1),
-          Expanded(child: _page()),
-        ]),
+        body: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: _index,
+              onDestinationSelected: _select,
+              labelType: NavigationRailLabelType.all,
+              destinations: [
+                for (final i in _items)
+                  NavigationRailDestination(
+                    icon: Icon(i.$1),
+                    selectedIcon: Icon(i.$2),
+                    label: Text(i.$3.tr()),
+                  ),
+              ],
+            ),
+            const VerticalDivider(width: 1),
+            Expanded(child: _page()),
+          ],
+        ),
       );
     }
     return Scaffold(
       body: _page(),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: _select,
         destinations: [
-          for (final i in _items) NavigationDestination(icon: Icon(i.$1), selectedIcon: Icon(i.$2), label: i.$3),
+          for (final i in _items)
+            NavigationDestination(
+              icon: Icon(i.$1),
+              selectedIcon: Icon(i.$2),
+              label: i.$3.tr(),
+            ),
         ],
       ),
     );

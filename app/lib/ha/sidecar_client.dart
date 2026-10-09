@@ -16,12 +16,21 @@ class CommandException implements Exception {
   String toString() => 'CommandException($code, $message)';
 }
 
-typedef CommandHandler = Future<Map<String, dynamic>?> Function(String command, Map<String, dynamic> data);
+typedef CommandHandler =
+    Future<Map<String, dynamic>?> Function(
+      String command,
+      Map<String, dynamic> data,
+    );
 
 /// Outbound WebSocket to the `ha_sidecar` integration (see docs/PROTOCOL.md).
 /// The tablet connects out, so no port has to be opened on the device.
 class SidecarClient {
-  SidecarClient({required this.settings, required this.deviceInfo, required this.onCommand, required this.onConnected});
+  SidecarClient({
+    required this.settings,
+    required this.deviceInfo,
+    required this.onCommand,
+    required this.onConnected,
+  });
 
   final ConnectionSettings settings;
   final Map<String, dynamic> Function() deviceInfo;
@@ -51,9 +60,11 @@ class SidecarClient {
     link.value = LinkState.disconnected;
   }
 
-  void sendState(Map<String, dynamic> state) => _send({'type': 'state', 'state': state});
+  void sendState(Map<String, dynamic> state) =>
+      _send({'type': 'state', 'state': state});
 
-  void sendEvent(String event, Map<String, dynamic> data) => _send({'type': 'event', 'event': event, 'data': data});
+  void sendEvent(String event, Map<String, dynamic> data) =>
+      _send({'type': 'event', 'event': event, 'data': data});
 
   void _send(Map<String, dynamic> msg) {
     if (link.value != LinkState.connected) return;
@@ -68,7 +79,14 @@ class SidecarClient {
       _channel = ch;
       await ch.ready.timeout(const Duration(seconds: 10));
 
-      ch.sink.add(jsonEncode({'type': 'hello', 'protocol': 1, 'token': settings.token, 'device': deviceInfo()}));
+      ch.sink.add(
+        jsonEncode({
+          'type': 'hello',
+          'protocol': 1,
+          'token': settings.token,
+          'device': deviceInfo(),
+        }),
+      );
       final done = Completer<void>();
       var authenticated = false;
 
@@ -83,7 +101,8 @@ class SidecarClient {
               await onConnected();
             case 'auth_failed':
               link.value = LinkState.authFailed;
-              _running = false; // retrying with a wrong token only spams the server
+              _running =
+                  false; // retrying with a wrong token only spams the server
               await ch.sink.close();
             case 'command':
               await _handleCommand(msg);
@@ -107,12 +126,32 @@ class SidecarClient {
   Future<void> _handleCommand(Map<String, dynamic> msg) async {
     final id = msg['id'];
     try {
-      final data = await onCommand(msg['command'] as String, Map<String, dynamic>.from((msg['data'] as Map?) ?? const {}));
-      _send({'type': 'result', 'id': id, 'success': true, 'data': data ?? const {}});
+      final data = await onCommand(
+        msg['command'] as String,
+        Map<String, dynamic>.from((msg['data'] as Map?) ?? const {}),
+      );
+      _send({
+        'type': 'result',
+        'id': id,
+        'success': true,
+        'data': data ?? const {},
+      });
     } on CommandException catch (e) {
-      _send({'type': 'result', 'id': id, 'success': false, 'error': e.code, 'message': e.message});
+      _send({
+        'type': 'result',
+        'id': id,
+        'success': false,
+        'error': e.code,
+        'message': e.message,
+      });
     } catch (e) {
-      _send({'type': 'result', 'id': id, 'success': false, 'error': 'exception', 'message': '$e'});
+      _send({
+        'type': 'result',
+        'id': id,
+        'success': false,
+        'error': 'exception',
+        'message': '$e',
+      });
     }
   }
 

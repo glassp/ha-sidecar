@@ -1,0 +1,647 @@
+{
+  "app": {
+    "name": "HA Sidecar"
+  },
+  "common": {
+    "back": "Zurück",
+    "cancel": "Abbrechen",
+    "continue": "Weiter",
+    "copied": "Kopiert",
+    "copy": "Kopieren",
+    "on": "An",
+    "required": "Erforderlich",
+    "save": "Speichern",
+    "set": "Gesetzt",
+    "turn_on": "Einschalten"
+  },
+  "nav": {
+    "home": "Start",
+    "kiosk": "Kiosk",
+    "display": "Anzeige",
+    "alarms": "Wecker",
+    "system": "System"
+  },
+  "day": {
+    "mon": "Mo",
+    "tue": "Di",
+    "wed": "Mi",
+    "thu": "Do",
+    "fri": "Fr",
+    "sat": "Sa",
+    "sun": "So"
+  },
+  "mode": {
+    "manual": "Manuell",
+    "auto": "Auto",
+    "day": "Tag",
+    "night": "Nacht"
+  },
+  "theme": {
+    "system": "System",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "night": "Nachts dunkel"
+  },
+  "link": {
+    "connected": "Verbunden",
+    "connecting": "Verbinde …",
+    "rejected": "Token abgelehnt",
+    "disconnected": "Getrennt",
+    "not_paired": "Nicht gekoppelt"
+  },
+  "section": {
+    "kiosk": {
+      "title": "Kiosk",
+      "subtitle": "Dashboards, Sperre, PIN und Start"
+    },
+    "display": {
+      "title": "Anzeige & Anwesenheit",
+      "subtitle": "Helligkeit, Nachtlicht, Anwesenheit und Kamera"
+    },
+    "system": {
+      "title": "System",
+      "subtitle": "Verbindung, Berechtigungen, Updates und Darstellung"
+    }
+  },
+  "group": {
+    "dashboards": "Dashboards",
+    "lock": "Sperre",
+    "start_screen": "Start & Bildschirm",
+    "brightness": "Helligkeit",
+    "day": "Tag",
+    "night": "Nacht",
+    "presence": "Anwesenheit",
+    "camera": "Anwesenheits-Kamera",
+    "home_assistant": "Home Assistant",
+    "appearance": "Darstellung",
+    "permissions": "Berechtigungen",
+    "updates": "Updates",
+    "setup": "Einrichtung"
+  },
+  "settings": {
+    "kiosk_dashboard": {
+      "title": "Haupt-Dashboard (Kiosk)",
+      "desc": "Das Home-Assistant-Dashboard, das dauerhaft angezeigt wird. Wird zum Sperren des Kiosks benötigt.",
+      "help": "Wird nach einem Neustart, beim Drücken von Home und beim Start der Sperre geöffnet. Füge die Adresse aus deinem Browser ein.",
+      "kw": "url, link, lovelace, seite, standard, wandpanel, adresse, startbildschirm, pfad, kiosk dashboard"
+    },
+    "glance_enabled": {
+      "title": "Ruhebildschirm anzeigen",
+      "desc": "Wenn eine Weile niemand das Tablet berührt oder in der Nähe steht, wird statt des Haupt-Dashboards ein ruhiger Bildschirm gezeigt.",
+      "kw": "bildschirmschoner, auf einen blick, ruhe, uhr, screensaver"
+    },
+    "glance_dashboard": {
+      "title": "Ruhe-Dashboard (auf einen Blick)",
+      "desc": "Optionales zweites Dashboard für den Ruhebildschirm, z. B. Wetter und Temperaturen. Leer = eingebaute Uhr.",
+      "help": "Baue es in Home Assistant mit beliebigen Karten (Wetter, Kameras, Temperaturen je Etage). Eine Berührung oder jemand in der Nähe führt zurück zum Haupt-Dashboard. Leer lassen für die eingebaute Uhr.",
+      "kw": "url, link, lovelace, bildschirmschoner, wetter, ruhe-dashboard, glance, adresse"
+    },
+    "glance_after": {
+      "title": "Ruhebildschirm nach",
+      "desc": "Wie lange niemand das Tablet benutzt oder in der Nähe ist.",
+      "kw": "bildschirmschoner, zeitlimit, verzögerung, leerlauf"
+    },
+    "lockdown": {
+      "title": "Kiosk sperren",
+      "desc": "Hält das Dashboard auf dem Bildschirm und blockiert andere Apps, die Benachrichtigungsleiste und die Übersicht.",
+      "kw": "sperre, lockdown, sperren, kioskmodus, blockieren, pin, lock task"
+    },
+    "pin": {
+      "title": "PIN",
+      "desc": "Tippe auf dem gesperrten Bildschirm 5-mal auf die obere linke Ecke und gib dann deine PIN ein.",
+      "kw": "passwort, code, entsperren, verlassen, geheim"
+    },
+    "allowed_apps": {
+      "title": "Erlaubte Apps",
+      "desc": "Weitere Apps, die bei gesperrtem Kiosk geöffnet werden dürfen (die Home-Assistant-App und die Tastatur sind immer erlaubt).",
+      "kw": "erlaubt, whitelist, apps, spotify, freigeben"
+    },
+    "protection": {
+      "title": "Kiosk-Schutz",
+      "desc": "Wie stark die Sperre durchgesetzt wird: Geräteeigentümer (am stärksten) oder die Bedienungshilfe.",
+      "kw": "geräteeigentümer, device owner, bedienungshilfe, barrierefreiheit, durchsetzung, adb, dpm, wächter"
+    },
+    "home_app": {
+      "title": "Automatisch starten",
+      "desc": "Startet nach einem Neustart und holt die Home-Assistant-App zurück, wenn sie sich schließt oder abstürzt (als Home-App).",
+      "kw": "launcher, boot, autostart, home-app, absturz, wiederherstellen, start, standard-home"
+    },
+    "keep_screen_on": {
+      "title": "Bildschirm anlassen",
+      "desc": "Verhindert, dass sich der Bildschirm von selbst ausschaltet.",
+      "kw": "wach, standby, zeitlimit, bildschirm aus, wake lock"
+    },
+    "companion_app": {
+      "title": "Home-Assistant-App",
+      "desc": "Die offizielle Home-Assistant-Companion-App, die dein Dashboard anzeigt.",
+      "kw": "companion, installieren, paket, app"
+    },
+    "brightness_mode": {
+      "title": "Helligkeitssteuerung",
+      "desc": "Manuell lässt die Helligkeit unangetastet. Auto folgt Tag und Nacht. Tag oder Nacht erzwingt einen der beiden.",
+      "kw": "auto dim, dimmen, nachtmodus, tagmodus, automatisch, hintergrundbeleuchtung"
+    },
+    "day_level": {
+      "title": "Helligkeit tagsüber",
+      "desc": "Solange das Tablet benutzt wird oder jemand in der Nähe ist.",
+      "kw": "hell, beleuchtung, hoch"
+    },
+    "auto_dim": {
+      "title": "Bei Leerlauf dimmen",
+      "desc": "Verringert die Helligkeit, wenn niemand das Tablet benutzt oder in der Nähe ist.",
+      "kw": "autodim, auto dim, leerlauf"
+    },
+    "day_dim_level": {
+      "title": "Helligkeit im Leerlauf",
+      "desc": "Helligkeit, solange tagsüber gedimmt ist.",
+      "kw": "dimmstufe"
+    },
+    "dim_after": {
+      "title": "Dimmen nach",
+      "desc": "Wie lange ohne Berührung oder Anwesenheit, bevor gedimmt wird.",
+      "kw": "leerlauf, zeitlimit"
+    },
+    "night_start": {
+      "title": "Nacht beginnt",
+      "desc": "Ab dieser Uhrzeit gilt die Nachthelligkeit.",
+      "kw": "zeitplan, schlafen, schlafenszeit, uhrzeit"
+    },
+    "night_end": {
+      "title": "Nacht endet",
+      "desc": "Ab dieser Uhrzeit gilt wieder die Tageshelligkeit.",
+      "kw": "zeitplan, schlafen, aufstehen, uhrzeit"
+    },
+    "night_level": {
+      "title": "Nachthelligkeit",
+      "desc": "Sehr dunkle Grundhelligkeit in der Nacht.",
+      "kw": "dunkel, niedrig"
+    },
+    "night_light": {
+      "title": "Nachtlicht",
+      "desc": "Hellt den Bildschirm etwas auf, wenn jemand vorbeigeht, damit man den Boden sieht.",
+      "kw": "nachtlicht, vorbeigehen, boden, anwesenheit, wegbeleuchtung"
+    },
+    "night_light_level": {
+      "title": "Nachtlicht-Helligkeit",
+      "desc": "Helligkeit, solange nachts jemand in der Nähe ist.",
+      "kw": "boden"
+    },
+    "night_touch_level": {
+      "title": "Helligkeit nach Berührung",
+      "desc": "Helligkeit für einen Moment, nachdem du nachts den Bildschirm berührst.",
+      "kw": "berührung, touch"
+    },
+    "night_hold": {
+      "title": "Nach Berührung halten",
+      "desc": "Wie lange die Berührungs-Helligkeit bleibt.",
+      "kw": "berührung, dauer"
+    },
+    "presence_sources": {
+      "title": "Anwesenheitsquellen",
+      "desc": "Was als \"in der Nähe des Tablets\" zählt: Home-Assistant-Anwesenheitssensoren und/oder die Kamera.",
+      "help": "Anwesenheitssensoren wählst du in Home Assistant: Einstellungen → Geräte & Dienste → HA Sidecar → Konfigurieren. Die Kamera unten ist optional.",
+      "kw": "mmwave, pir, sensor, belegung, bewegung, entitäten"
+    },
+    "presence_hold": {
+      "title": "\"Anwesend\" halten für",
+      "desc": "Wie lange Anwesenheit nach der letzten Erkennung gehalten wird.",
+      "kw": "anwesenheit, dauer"
+    },
+    "fade": {
+      "title": "Überblendzeit",
+      "desc": "Wie weich sich die Helligkeit ändert.",
+      "kw": "übergang, weich"
+    },
+    "camera_presence": {
+      "title": "Anwesenheit per Kamera erkennen",
+      "desc": "Bemerkt Bewegung in der Nähe des Tablets. Nichts wird aufgezeichnet, gespeichert oder gesendet; während des Betriebs wird eine Benachrichtigung angezeigt.",
+      "kw": "kamera, bewegung, datenschutz, erkennen, webcam, frontkamera"
+    },
+    "camera_status": {
+      "title": "Kamerastatus",
+      "desc": "Ob die Anwesenheits-Kamera läuft und Bewegung sieht.",
+      "kw": "kamera, berechtigung, fehler, läuft"
+    },
+    "camera_facing": {
+      "title": "Welche Kamera",
+      "desc": "Front- oder Rückkamera.",
+      "kw": "kamera, front, rück, selfie"
+    },
+    "camera_sensitivity": {
+      "title": "Empfindlichkeit",
+      "desc": "Höher erkennt kleinere Bewegungen (und mehr Fehlalarme).",
+      "kw": "kamera, bewegung, schwelle"
+    },
+    "camera_fps": {
+      "title": "Bildrate",
+      "desc": "Niedriger spart Akku.",
+      "kw": "kamera, akku, fps"
+    },
+    "connection": {
+      "title": "Verbindung",
+      "desc": "Die Verbindung zu deinem Home-Assistant-Server (Kopplungs-Token).",
+      "kw": "koppeln, token, url, server, trennen, neu verbinden, integration, link"
+    },
+    "theme": {
+      "title": "Design",
+      "desc": "Hell, dunkel, dem System folgen oder nur nachts dunkel.",
+      "kw": "dunkelmodus, hellmodus, nachtmodus, farben, darstellung"
+    },
+    "language": {
+      "title": "Sprache",
+      "desc": "Die Sprache dieser App.",
+      "kw": "englisch, deutsch, english, übersetzung, locale"
+    },
+    "permission": {
+      "kw": "android, erlauben, freigeben"
+    },
+    "device_owner": {
+      "title": "Geräteeigentümer",
+      "desc": "Optional, stärkste Kiosk-Sperre. Braucht einmalig einen adb-Befehl auf einem frisch zurückgesetzten Tablet.",
+      "kw": "dpm, adb, einrichten, verwaltet, lock task, device owner"
+    },
+    "update": {
+      "title": "Android-Systemupdate",
+      "desc": "Öffnet den Systemupdate-Bildschirm und tippt mit der Bedienungshilfe darin durch.",
+      "kw": "os update, aktualisierung, sicherheitspatch, version, firmware"
+    },
+    "run_setup": {
+      "title": "Einrichtungsassistent erneut starten",
+      "desc": "Führt Schritt für Schritt durch Verbindung, Dashboard, PIN und Berechtigungen.",
+      "kw": "assistent, wizard, einführung, anleitung, einrichtung, zurücksetzen, hilfe"
+    }
+  },
+  "pin": {
+    "set": "PIN festlegen",
+    "change": "PIN ändern",
+    "new": "Neue PIN",
+    "repeat": "PIN wiederholen",
+    "dialog_intro": "Mindestens 4 Ziffern. Du gibst sie ein, indem du 5-mal auf die obere linke Ecke des gesperrten Bildschirms tippst.",
+    "too_short": "Mindestens 4 Ziffern verwenden",
+    "mismatch": "Die PINs stimmen nicht überein",
+    "required_desc": "Erforderlich, bevor der Kiosk gesperrt werden kann.",
+    "page": {
+      "title": "PIN eingeben, um den Kiosk zu verlassen",
+      "wrong": "Falsche PIN",
+      "locked": "Zu viele Versuche. Erneut versuchen in {seconds} s"
+    }
+  },
+  "lock": {
+    "need_pin": "eine PIN",
+    "need_dashboard": "das Kiosk-Dashboard",
+    "need_protection": "Kiosk-Schutz",
+    "first_setup": "Zuerst einrichten: {items}.",
+    "locked_only_ha": "Gesperrt. Nur die Home-Assistant-App kann benutzt werden.",
+    "locked_with_allowed": "Gesperrt. Nur die Home-Assistant-App und deine erlaubten Apps können benutzt werden.",
+    "err_dashboard": "Wähle zuerst das Kiosk-Dashboard (Kiosk → Dashboards).",
+    "err_pin": "Lege zuerst eine PIN fest.",
+    "err_protection": "Schalte zuerst die Bedienungshilfe ein oder mache das Tablet zum Geräteeigentümer.",
+    "err_other": "Die Sperre konnte nicht geändert werden: {error}"
+  },
+  "allowed": {
+    "none": "Nur die Home-Assistant-App",
+    "count": {
+      "one": "{} weitere App",
+      "other": "{} weitere Apps"
+    },
+    "intro": "Bei gesperrtem Kiosk können nur diese Apps geöffnet werden. Die Home-Assistant-App und die Tastatur sind immer erlaubt.",
+    "search": "Apps suchen"
+  },
+  "prot": {
+    "device_owner": "Geräteeigentümer",
+    "accessibility": "Bedienungshilfe-Wächter",
+    "none": "Nicht geschützt",
+    "device_owner_desc": "Am stärksten: Android selbst blockiert die Systemoberfläche.",
+    "accessibility_desc": "Gut: Andere Apps werden zurückgeschickt. Geräteeigentümer ist stärker.",
+    "none_desc": "Schalte die Bedienungshilfe ein oder werde Geräteeigentümer, um den Kiosk zu sperren."
+  },
+  "home": {
+    "active": "Aktiv. Diese App ist die Standard-Home-App.",
+    "applying": "Wird angewendet …",
+    "choose": "Fast geschafft: Wähle in Android \"HA Sidecar\" als Standard-Home-App.",
+    "needs_attention": "Braucht Aufmerksamkeit",
+    "needs_attention_sub": {
+      "one": "{} Punkt zu erledigen, bevor alles richtig funktioniert",
+      "other": "{} Punkte zu erledigen, bevor alles richtig funktioniert"
+    },
+    "all_set": "Alles eingerichtet",
+    "all_set_desc": "Der Kiosk ist bereit. Starte ihn mit der Sperre oben.",
+    "suggestions": "Vorschläge",
+    "right_now": "Gerade jetzt",
+    "day": "Tag",
+    "night": "Nacht",
+    "brightness_unmanaged": "Helligkeit wird nicht gesteuert (Anzeige → Helligkeitssteuerung)",
+    "brightness_target": "Helligkeit {level} von 255 · {mode}",
+    "someone_near": "Jemand ist in der Nähe",
+    "nobody_near": "Niemand in der Nähe",
+    "camera_running": "Kamera läuft",
+    "camera_starting": "Kamera startet",
+    "presence_from_ha": "Anwesenheit von Home-Assistant-Sensoren",
+    "no_alarm": "Kein Wecker gestellt",
+    "next_alarm": "Nächster Wecker {time}",
+    "ringing": "Klingelt gerade",
+    "quick_actions": "Schnellaktionen",
+    "qa_dashboard": "Dashboard öffnen",
+    "qa_idle": "Ruhebildschirm zeigen",
+    "qa_screen_off": "Bildschirm aus",
+    "link_connected": "Home Assistant verbunden",
+    "kiosk_locked": "Kiosk gesperrt",
+    "kiosk_unlocked": "Kiosk entsperrt",
+    "extras_title": "Sensoren und Wecker",
+    "extras_desc": "Dieses Gerät meldet Sensoren und klingelt für Home Assistant.",
+    "no_dashboard": "Noch kein Dashboard gewählt",
+    "showing": "Zeigt {path}",
+    "unlock": "Entsperren",
+    "lock": "Kiosk sperren",
+    "finish_setup": "Einrichtung abschließen zum Sperren"
+  },
+  "companion": {
+    "missing": "Nicht gefunden. Installiere die Home-Assistant-Companion-App und melde dich an deinem Server an.",
+    "found": "Gefunden: {builds}",
+    "minimal": "Minimal-Version",
+    "full": "Voll-Version",
+    "missing_pill": "Fehlt",
+    "installed": "Installiert",
+    "still_missing": "Immer noch nicht installiert.",
+    "now_found": "Home-Assistant-App gefunden."
+  },
+  "presence": {
+    "near": "Jemand in der Nähe",
+    "nobody": "Niemand in der Nähe"
+  },
+  "camera": {
+    "off": "Aus",
+    "front": "Vorne",
+    "back": "Hinten",
+    "permission_title": "Kamera-Berechtigung nötig",
+    "permission_desc": "Erlaube den Kamerazugriff, damit Bewegung erkannt werden kann.",
+    "problem": "Kameraproblem",
+    "change": "Bildänderung {pct} %",
+    "movement": "Bewegung",
+    "running": "Läuft",
+    "starting": "Startet …"
+  },
+  "owner": {
+    "active": "Aktiv",
+    "not_set": "Nicht gesetzt",
+    "active_desc": "Dieses Tablet ist Geräteeigentümer: Android selbst blendet die Systemoberfläche aus und blockiert sie.",
+    "optional_desc": "Optional. Tippen, um zu sehen, wie."
+  },
+  "update": {
+    "available": "Ein Android-Update ist verfügbar",
+    "android": "Android {version}",
+    "patch": "Sicherheitspatch {patch}.",
+    "needs_owner": "Die Update-Erkennung braucht den Geräteeigentümer.",
+    "check": "Prüfen"
+  },
+  "perm": {
+    "grant": "Erlauben",
+    "granted": "Erteilt",
+    "needed": "Erforderlich",
+    "recommended": "Empfohlen",
+    "overlay": {
+      "title": "Über anderen Apps anzeigen",
+      "why": "Erlaubt dem Sidecar, die Home-Assistant-App in den Vordergrund zu holen, Berührungen für das Dimmen zu erfassen und die versteckte PIN-Ecke anzuzeigen.",
+      "hint": "Aktiviere auf dem nächsten Bildschirm \"Anzeige über anderen Apps zulassen\" für HA Sidecar."
+    },
+    "accessibility": {
+      "title": "Bedienungshilfe-Wächter",
+      "why": "Hält andere Apps, die Benachrichtigungsleiste und die Übersicht vom Dashboard fern, wenn das Tablet kein Geräteeigentümer ist, und meldet, welche App vorne ist. Er liest deinen Bildschirm nicht.",
+      "hint": "Öffne \"Installierte Apps\" / \"Heruntergeladene Apps\", wähle den HA-Sidecar-Kioskwächter und schalte ihn ein. Sagt Android \"eingeschränkte Einstellung\": App-Info → ⋮ → Eingeschränkte Einstellungen zulassen, dann erneut versuchen."
+    },
+    "write_settings": {
+      "title": "Systemeinstellungen ändern",
+      "why": "Nötig, um die Bildschirmhelligkeit für automatisches Dimmen, das Nachtlicht und die Fernsteuerung zu ändern.",
+      "hint": "Aktiviere auf dem nächsten Bildschirm \"Ändern von Systemeinstellungen zulassen\"."
+    },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "why": "Wecker und die Kameraanzeige erscheinen als Benachrichtigungen, und Android braucht eine, um den Sidecar am Laufen zu halten.",
+      "hint": "Wähle im Dialog \"Zulassen\"."
+    },
+    "battery": {
+      "title": "Keine Akkubeschränkungen",
+      "why": "Verhindert, dass Android den Sidecar im Hintergrund pausiert, wodurch Wecker verstummen und die Verbindung zu Home Assistant abreißen würde.",
+      "hint": "Wähle \"Alle Apps\", suche HA Sidecar und stelle es auf \"Nicht optimieren\"."
+    },
+    "full_screen_intent": {
+      "title": "Wecker im Vollbild",
+      "why": "Lässt einen klingelnden Wecker den Bildschirm übernehmen, auch bei gesperrtem Kiosk.",
+      "hint": "Aktiviere auf dem nächsten Bildschirm \"Vollbild-Benachrichtigungen zulassen\"."
+    }
+  },
+  "dashboard": {
+    "invalid": "Das ist keine Dashboard-Adresse. Füge die Adresse aus deinem Browser ein, z. B. https://home.example.org/lovelace/wall-panel",
+    "host_mismatch": "Diese Adresse liegt auf {host}, nicht auf deinem gekoppelten Home Assistant ({paired}). Nur der Pfad \"{path}\" wird verwendet.",
+    "opens": "Öffnet: "
+  },
+  "sheet": {
+    "protection": {
+      "title": "Kiosk-Schutz",
+      "intro": "Zwei Wege, andere Apps vom Dashboard fernzuhalten. Du kannst beide nutzen.",
+      "accessibility_desc": "Funktioniert auf jedem Tablet. Schickt andere Apps zurück und schließt die Benachrichtigungsleiste binnen Sekunden.",
+      "owner_title": "Geräteeigentümer (am stärksten)",
+      "owner_desc": "Android selbst blendet die Systemoberfläche aus und blockiert sie. Braucht ein zurückgesetztes Tablet ohne Konten und einen Computer mit adb.",
+      "how_title": "So wirst du Geräteeigentümer",
+      "how_steps": "1. Setze das Tablet auf Werkseinstellungen zurück und überspringe das Hinzufügen von Konten.\n2. Installiere diese App und die Home-Assistant-App.\n3. Aktiviere USB-Debugging und führe auf einem Computer aus:",
+      "warning": "Ein Geräteeigentümer lässt sich nur durch ein Zurücksetzen auf Werkseinstellungen entfernen. Fire-Tablets werden nicht unterstützt."
+    },
+    "connection": {
+      "paired_with": "Gekoppelt mit {url}",
+      "pair_again": "Mit neuem Token erneut koppeln"
+    }
+  },
+  "search": {
+    "title": "Einstellungen durchsuchen",
+    "try": "Suche zum Beispiel nach",
+    "browse": "Stöbern",
+    "suggestions": "Nachtlicht, Dashboard, dimmen, PIN, Kamera, Berechtigung, Helligkeit, Ruhebildschirm, Design, Update",
+    "none": "Keine Einstellung passt zu \"{query}\"",
+    "none_hint": "Versuche ein kürzeres Wort, z. B. \"dimm\", \"nacht\" oder \"url\".",
+    "open": "Öffnen",
+    "results": {
+      "one": "{} Ergebnis",
+      "other": "{} Ergebnisse"
+    }
+  },
+  "issue": {
+    "link": {
+      "title": "Nicht mit Home Assistant verbunden",
+      "detail": "Fernsteuerung, Sensoren und Wecker in Home Assistant brauchen die Verbindung. Lokale Funktionen laufen weiter.",
+      "fix": "Verbindung"
+    },
+    "link_rejected": {
+      "title": "Home Assistant hat das Token abgelehnt",
+      "detail": "Erstelle in der Integration ein neues Kopplungs-Token und koppel erneut."
+    },
+    "companion": {
+      "title": "Home-Assistant-App nicht installiert",
+      "detail": "Der Kiosk zeigt dein Dashboard mit der offiziellen Home-Assistant-Companion-App. Installiere sie und melde dich an.",
+      "fix": "Details"
+    },
+    "dashboard": {
+      "title": "Kiosk-Dashboard wählen",
+      "detail": "Füge die Adresse des Dashboards ein, das angezeigt bleiben soll. Die Sperre braucht es.",
+      "fix": "Dashboard festlegen"
+    },
+    "pin": {
+      "title": "PIN festlegen",
+      "detail": "Die PIN ist der einzige Weg, den gesperrten Kiosk am Tablet zu verlassen.",
+      "fix": "PIN festlegen"
+    },
+    "protection": {
+      "title": "Kein Kiosk-Schutz verfügbar",
+      "detail": "Schalte die Bedienungshilfe ein oder mache das Tablet zum Geräteeigentümer für die stärkste Sperre.",
+      "fix": "Schutz"
+    },
+    "permission": "Erlauben: {name}",
+    "home_app": {
+      "title": "Nach einem Neustart automatisch starten",
+      "detail": "Als Home-App arbeiten, damit der Kiosk nach einem Neustart oder wenn sich die Home-Assistant-App schließt zurückkommt.",
+      "fix": "Einschalten"
+    }
+  },
+  "alarms": {
+    "title": "Wecker",
+    "add": "Wecker hinzufügen",
+    "intro": "Diese Wecker klingeln auf diesem Tablet, auch bei gesperrtem Kiosk. Home Assistant kann sie ebenfalls erstellen, verschieben und stoppen.",
+    "empty_title": "Noch keine Wecker",
+    "empty_desc": "Tippe auf \"Wecker hinzufügen\" oder erstelle einen per Home-Assistant-Automation.",
+    "once": "Einmal",
+    "every_day": "Jeden Tag",
+    "swipe_hint": "Wische einen Wecker nach links, um ihn zu löschen.",
+    "new": "Neuer Wecker",
+    "edit": "Wecker bearbeiten",
+    "label": "Bezeichnung (optional)",
+    "repeat": "Wiederholen",
+    "rings_once": "Klingelt einmal",
+    "repeats_days": "Wiederholt sich an den gewählten Tagen",
+    "snooze": "Schlummern"
+  },
+  "alarm": {
+    "ringing": "Wecker",
+    "snooze": "Schlummern",
+    "dismiss": "Beenden"
+  },
+  "wiz": {
+    "progress": "Schritt {n} von {total}",
+    "skip": "Vorerst überspringen",
+    "get_started": "Los geht's",
+    "lock_now": "Kiosk jetzt sperren",
+    "open_app": "App öffnen",
+    "step": {
+      "welcome": "Willkommen",
+      "connect": "Verbinden",
+      "mode": "Zweck",
+      "companion": "Home-Assistant-App",
+      "dashboard": "Dashboard",
+      "pin": "PIN",
+      "protection": "Schutz",
+      "permissions": "Berechtigungen",
+      "startup": "Start",
+      "display": "Anzeige",
+      "done": "Fertig"
+    },
+    "welcome": {
+      "title": "Mach dieses Tablet zu einem Home-Assistant-Display",
+      "intro": "HA Sidecar ergänzt, was die Home-Assistant-App nicht kann: einen sperrbaren Kiosk, intelligente Helligkeit, Wecker und zusätzliche Sensoren. Die Einrichtung dauert etwa fünf Minuten.",
+      "b1_title": "Kiosk-Sperre",
+      "b1_text": "Hält dein Dashboard auf dem Bildschirm. Verlassen mit einer PIN.",
+      "b2_title": "Intelligente Helligkeit",
+      "b2_text": "Dimmt bei Leerlauf, Nachtlicht, wenn jemand vorbeigeht.",
+      "b3_title": "Wecker und Sensoren",
+      "b3_text": "Wecker, die Home Assistant stellen kann, dazu Touch-, Kamera- und Sicherheitssensoren."
+    },
+    "connect": {
+      "title": "Mit Home Assistant verbinden",
+      "intro": "Dieses Tablet spricht mit der HA-Sidecar-Integration in Home Assistant.",
+      "s1_title": "Integration installieren",
+      "s1_text": "Füge in HACS das HA-Sidecar-Repository hinzu (Benutzerdefinierte Repositories → Integration) und starte Home Assistant neu.",
+      "s2_title": "Dieses Tablet hinzufügen",
+      "s2_text": "Einstellungen → Geräte & Dienste → Integration hinzufügen → HA Sidecar. Gib dem Tablet einen Namen.",
+      "s3_title": "Token kopieren",
+      "s3_text": "Home Assistant zeigt ein Kopplungs-Token. Gib es unten zusammen mit der Adresse deines Servers ein.",
+      "address": "Home-Assistant-Adresse",
+      "token": "Kopplungs-Token",
+      "connect": "Verbinden",
+      "reconnect": "Neu verbinden",
+      "ok": "Mit Home Assistant verbunden",
+      "rejected": "Home Assistant hat das Token abgelehnt. Prüfe es und versuche es erneut.",
+      "not_yet": "Noch nicht verbunden"
+    },
+    "mode": {
+      "title": "Wofür ist dieses Gerät?",
+      "intro": "Das lässt sich später ändern, indem du die Einrichtung erneut startest.",
+      "kiosk_title": "Wanddisplay (Kiosk)",
+      "kiosk_text": "Ein Tablet, das dauerhaft ein Home-Assistant-Dashboard zeigt und mit einer PIN gesperrt ist.",
+      "extras_title": "Nur Sensoren und Wecker",
+      "extras_text": "Ein Handy oder Tablet, das du auch normal nutzt. Keine Sperre; Home Assistant erhält zusätzliche Sensoren und kann Wecker stellen."
+    },
+    "companion": {
+      "title": "Die Home-Assistant-App",
+      "intro": "Der Kiosk zeigt dein Dashboard mit der offiziellen Home-Assistant-Companion-App. HA Sidecar hält sie im Vordergrund.",
+      "missing": "Noch nicht installiert",
+      "installed": "Installiert",
+      "minimal": "Minimal-Version",
+      "full": "Voll-Version",
+      "missing_text": "Installiere \"Home Assistant\" aus Google Play oder die Minimal-Version von Home Assistant GitHub / F-Droid.",
+      "check_again": "Erneut prüfen",
+      "b1_title": "Anmelden",
+      "b1_text": "Öffne die App einmal, melde dich an deinem Server an und lass sie fertig laden. Komm dann hierher zurück.",
+      "b2_title": "Vollbild",
+      "b2_text": "Aktiviere in den App-Einstellungen den Vollbildmodus, damit keine Leisten erscheinen. Setze sie nicht als Launcher; das übernimmt HA Sidecar."
+    },
+    "dashboard": {
+      "title": "Welches Dashboard bleibt auf dem Bildschirm?",
+      "intro": "Öffne das Dashboard im Browser, kopiere die Adresse und füge sie hier ein. Nur der Pfad wird gespeichert.",
+      "example": "Beispiel: https://home.example.org/lovelace/wall-panel  →  lovelace/wall-panel",
+      "later": "Ein Ruhe-Dashboard (Wetter, Temperaturen) kannst du später unter Kiosk → Dashboards hinzufügen."
+    },
+    "pin": {
+      "title": "PIN wählen",
+      "intro": "Die PIN ist der einzige Weg, den gesperrten Kiosk am Tablet selbst zu verlassen.",
+      "is_set": "PIN ist gesetzt",
+      "not_set": "Noch keine PIN",
+      "change": "Ändern",
+      "b1_title": "So entsperrst du",
+      "b1_text": "Tippe auf dem gesperrten Bildschirm 5-mal auf die obere linke Ecke und gib dann die PIN ein. Nach 5 falschen Versuchen gibt es eine kurze Wartezeit.",
+      "b2_title": "Aus Home Assistant",
+      "b2_text": "Du kannst auch aus der Ferne über Home Assistant entsperren. Das Sperren aus der Ferne braucht eine vorhandene PIN."
+    },
+    "protection": {
+      "title": "Wie stark soll die Sperre sein?",
+      "intro": "Android hat zwei Wege, andere Apps vom Dashboard fernzuhalten. Geräteeigentümer ist am stärksten; die Bedienungshilfe funktioniert auf jedem Tablet.",
+      "owner_text": "Braucht ein zurückgesetztes Tablet ohne Konten und einen einmaligen Computerbefehl. Optional.",
+      "guard_text": "Schickt andere Apps und die Benachrichtigungsleiste binnen Sekunden weg. Liest deinen Bildschirm nicht.",
+      "command": "Geräteeigentümer-Befehl",
+      "command_help": "Einmalig auf einem Computer ausführen, an dem das Tablet per USB-Debugging hängt. Nur durch ein Zurücksetzen auf Werkseinstellungen rückgängig zu machen.",
+      "none": "Ohne eines von beiden lässt sich der Kiosk nicht sperren."
+    },
+    "permissions": {
+      "title": "Erlaube, was der Kiosk braucht",
+      "intro": "Tippe auf Erlauben, folge dem Android-Bildschirm, der sich öffnet, und komm zurück. Diese Liste aktualisiert sich von selbst.",
+      "skip_help": "Du kannst alles überspringen und später erledigen; der Startbildschirm listet, was noch fehlt."
+    },
+    "startup": {
+      "title": "Von selbst starten",
+      "intro": "Lass HA Sidecar die Home-App sein. Nach einem Neustart oder wenn sich die Home-Assistant-App schließt oder abstürzt, kehrt Android zu HA Sidecar zurück, das das Dashboard wieder öffnet.",
+      "recommended": "Für ein Wanddisplay empfohlen."
+    },
+    "display": {
+      "title": "Helligkeit",
+      "intro": "Soll das Display seine Helligkeit selbst steuern? Jedes Detail lässt sich später unter Anzeige feinjustieren.",
+      "smart_title": "Intelligente Helligkeit",
+      "smart_text": "Tagsüber hell, gedimmt wenn niemand es nutzt, nachts sehr dunkel mit Nachtlicht, wenn jemand vorbeigeht.",
+      "manual_title": "Helligkeit in Ruhe lassen",
+      "manual_text": "Der Sidecar ändert die Bildschirmhelligkeit nie.",
+      "note": "Die Nachtstunden sind standardmäßig 22:00 bis 06:30 Uhr. Anwesenheitssensoren wählst du in den Optionen der Home-Assistant-Integration."
+    },
+    "done": {
+      "title_ok": "Alles bereit",
+      "title_open": "Fast geschafft",
+      "intro_kiosk": "Sperre den Kiosk jetzt oder öffne zuerst die App und sieh dich um. Alles lässt sich später ändern, und die Suche findet jede Einstellung.",
+      "intro_extras": "Home Assistant erhält nun Sensoren und kann auf diesem Gerät Wecker stellen.",
+      "intro_open": "Ein paar Dinge sind noch offen. Du kannst sie später vom Startbildschirm aus erledigen."
+    }
+  }
+}

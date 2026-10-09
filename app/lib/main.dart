@@ -1,28 +1,45 @@
+import 'package:beamer/beamer.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import 'app_controller.dart';
-import 'ui/shell.dart';
-import 'ui/wizard/wizard.dart';
+import 'routing.dart';
 
 /// Owned by the Dart isolate, not the widget tree: the isolate also runs headless (started by
 /// the Android KeepAliveService at boot), where no widget is ever built.
 final controller = AppController();
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  controller.init();
-  runApp(const SidecarApp());
+  await EasyLocalization.ensureInitialized();
+  await controller.init();
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [Locale('en'), Locale('de')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
+      useOnlyLangCode: true,
+      child: const SidecarApp(),
+    ),
+  );
 }
 
-class SidecarApp extends StatelessWidget {
+class SidecarApp extends StatefulWidget {
   const SidecarApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // theme is a setting (also a HA select entity): system | light | dark | night (dark while it is night)
-    return ListenableBuilder(listenable: controller, builder: (context, _) => _app(context));
-  }
+  State<SidecarApp> createState() => _SidecarAppState();
+}
 
+class _SidecarAppState extends State<SidecarApp> {
+  late final AppRouter router = AppRouter(
+    controller,
+    initialPath: controller.setupDone && controller.settings.isPaired
+        ? '/'
+        : '/wizard',
+  );
+
+  // theme is a setting (also a HA select entity): system | light | dark | night (dark while it is night)
   ThemeMode get _themeMode {
     final s = controller.status;
     return switch (s.cfg['theme']) {
@@ -33,22 +50,30 @@ class SidecarApp extends StatelessWidget {
     };
   }
 
-  Widget _app(BuildContext context) {
-    return MaterialApp(
-      title: 'HA Sidecar',
-      themeMode: _themeMode,
-      theme: ThemeData(colorSchemeSeed: const Color(0xFF03A9F4), useMaterial3: true),
-      darkTheme: ThemeData(
-        colorSchemeSeed: const Color(0xFF03A9F4),
-        brightness: Brightness.dark,
-        useMaterial3: true,
-      ),
-      home: ListenableBuilder(
-        listenable: controller,
-        builder: (context, _) {
-          if (!controller.ready) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-          return controller.setupDone && controller.settings.isPaired ? AppShell(controller: controller) : WizardScreen(controller: controller);
-        },
+  static const _seed = Color(0xFF03A9F4);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) => MaterialApp.router(
+        onGenerateTitle: (_) => 'app.name'.tr(),
+        debugShowCheckedModeBanner: false,
+        themeMode: _themeMode,
+        theme: ThemeData(colorSchemeSeed: _seed, useMaterial3: true),
+        darkTheme: ThemeData(
+          colorSchemeSeed: _seed,
+          brightness: Brightness.dark,
+          useMaterial3: true,
+        ),
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
+        locale: context.locale,
+        routerDelegate: router.delegate,
+        routeInformationParser: BeamerParser(),
+        backButtonDispatcher: BeamerBackButtonDispatcher(
+          delegate: router.delegate,
+        ),
       ),
     );
   }

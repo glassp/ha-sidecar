@@ -1,3 +1,5 @@
+import 'package:beamer/beamer.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
@@ -14,23 +16,32 @@ class AllowlistScreen extends StatefulWidget {
 }
 
 class _AllowlistScreenState extends State<AllowlistScreen> {
-  late final Future<List<LaunchableApp>> _apps = widget.controller.platform.listLaunchableApps();
+  late final Future<List<LaunchableApp>> _apps = widget.controller.platform
+      .listLaunchableApps();
   late final Set<String> _selected = {...widget.controller.status.allowlist};
   String _query = '';
 
   Future<void> _save() async {
-    final nav = Navigator.of(context);
     await widget.controller.platform.setAllowlist(_selected.toList());
     await widget.controller.refresh();
-    nav.pop();
+    if (mounted) context.beamBack();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Allowed apps'),
-        actions: [Padding(padding: const EdgeInsets.only(right: 8), child: FilledButton(onPressed: _save, child: const Text('Save')))],
+        leading: BackButton(onPressed: () => context.beamBack()),
+        title: Text('settings.allowed_apps.title'.tr()),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilledButton(
+              onPressed: _save,
+              child: Text('common.save'.tr()),
+            ),
+          ),
+        ],
       ),
       body: Align(
         alignment: Alignment.topCenter,
@@ -38,18 +49,20 @@ class _AllowlistScreenState extends State<AllowlistScreen> {
           constraints: const BoxConstraints(maxWidth: kContentWidth),
           child: Column(
             children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Text('While the kiosk is locked only these apps can be opened. The Home Assistant app and the keyboard are always allowed.'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Text('allowed.intro'.tr()),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: TextField(
                   onChanged: (v) => setState(() => _query = v.toLowerCase()),
                   decoration: InputDecoration(
-                    hintText: 'Search apps',
+                    hintText: 'allowed.search'.tr(),
                     prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
               ),
@@ -57,8 +70,16 @@ class _AllowlistScreenState extends State<AllowlistScreen> {
                 child: FutureBuilder<List<LaunchableApp>>(
                   future: _apps,
                   builder: (context, snap) {
-                    if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-                    final apps = snap.data!.where((a) => a.label.toLowerCase().contains(_query) || a.package.contains(_query)).toList();
+                    if (!snap.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final apps = snap.data!
+                        .where(
+                          (a) =>
+                              a.label.toLowerCase().contains(_query) ||
+                              a.package.contains(_query),
+                        )
+                        .toList();
                     return ListView(
                       children: [
                         for (final app in apps)
@@ -66,7 +87,11 @@ class _AllowlistScreenState extends State<AllowlistScreen> {
                             title: Text(app.label),
                             subtitle: Text(app.package),
                             value: _selected.contains(app.package),
-                            onChanged: (v) => setState(() => v == true ? _selected.add(app.package) : _selected.remove(app.package)),
+                            onChanged: (v) => setState(
+                              () => v == true
+                                  ? _selected.add(app.package)
+                                  : _selected.remove(app.package),
+                            ),
                           ),
                       ],
                     );

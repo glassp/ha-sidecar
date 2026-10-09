@@ -1,25 +1,27 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:beamer/beamer.dart';
 
 import '../app_controller.dart';
 import '../ha/sidecar_client.dart';
 import '../permissions.dart';
 import '../platform/kiosk_platform.dart';
-import '../ui/allowlist_screen.dart';
 import '../ui/design.dart';
 import '../ui/dialogs.dart';
 import '../ui/setting_widgets.dart';
 
 /// Every setting in the app, in one list: the Kiosk/Display/System pages render it by section and
 /// group, and the search screen filters it. A setting added here is automatically searchable.
+/// Texts come from the translation files: `settings.<id>.title|desc|kw`.
 enum Section {
-  kiosk('Kiosk', Icons.lock_outline, 'Dashboards, lock, PIN and start-up'),
-  display('Display & presence', Icons.brightness_6_outlined, 'Brightness, night light, presence and camera'),
-  system('System', Icons.tune, 'Connection, permissions, updates and appearance');
+  kiosk(Icons.lock_outline),
+  display(Icons.brightness_6_outlined),
+  system(Icons.tune);
 
-  const Section(this.label, this.icon, this.subtitle);
-  final String label;
+  const Section(this.icon);
   final IconData icon;
-  final String subtitle;
+  String get label => 'section.$name.title'.tr();
+  String get subtitle => 'section.$name.subtitle'.tr();
 }
 
 class SettingEntry {
@@ -35,7 +37,7 @@ class SettingEntry {
 
   final String id;
   final Section section;
-  final String group;
+  final String group; // already translated
   final String title;
   final String description;
   final List<String> keywords;
@@ -55,168 +57,269 @@ String fmtSeconds(double s) {
   return '${(v / 3600).toStringAsFixed(v % 3600 == 0 ? 0 : 1)} h';
 }
 
+String _t(String id, String part) => 'settings.$id.$part'.tr();
+String _g(String key) => 'group.$key'.tr();
+
 List<SettingEntry> buildRegistry(AppController c) {
   DeviceStatus s() => c.status;
   Map<String, dynamic> cfg() => c.status.cfg;
   num n(String k, num fallback) => (cfg()[k] ?? fallback) as num;
   bool b(String k) => cfg()[k] == true;
   String str(String k, String fallback) => (cfg()[k] ?? fallback) as String;
+  List<String> kw(String id) => _t(
+    id,
+    'kw',
+  ).split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
 
   Future<void> set(BuildContext ctx, String key, Object v) async {
     final err = await c.setConfig(key, v);
-    if (err != null && ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(err)));
+    if (err != null && ctx.mounted) {
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(err)));
+    }
   }
 
-  SettingEntry switchEntry(String id, Section sec, String group, IconData icon, String title, String desc, String key,
-          {List<String> kw = const [], Future<void> Function(BuildContext, bool)? onChanged}) =>
-      SettingEntry(
-        id: id, section: sec, group: group, title: title, description: desc, keywords: kw,
-        builder: (ctx) => SwitchSetting(
-          icon: icon, title: title, subtitle: desc, value: b(key),
-          onChanged: (v) => onChanged != null ? onChanged(ctx, v) : set(ctx, key, v),
-        ),
-      );
+  SettingEntry base(
+    String id,
+    Section sec,
+    String group,
+    Widget Function(BuildContext) builder, {
+    String? title,
+  }) => SettingEntry(
+    id: id,
+    section: sec,
+    group: group,
+    title: title ?? _t(id, 'title'),
+    description: _t(id, 'desc'),
+    keywords: kw(id),
+    builder: builder,
+  );
 
-  SettingEntry sliderEntry(String id, Section sec, String group, IconData icon, String title, String desc, String key,
-          {required double min, required double max, required num fallback, int? divisions, String Function(double)? format, List<String> kw = const [], bool asDouble = false}) =>
-      SettingEntry(
-        id: id, section: sec, group: group, title: title, description: desc, keywords: kw,
-        builder: (ctx) => SliderSetting(
-          icon: icon, title: title, subtitle: desc, value: n(key, fallback).toDouble(), min: min, max: max, divisions: divisions, format: format,
-          onChanged: (v) => set(ctx, key, asDouble ? double.parse(v.toStringAsFixed(1)) : v.round()),
-        ),
-      );
+  SettingEntry switchEntry(
+    String id,
+    Section sec,
+    String group,
+    IconData icon,
+    String key, {
+    Future<void> Function(BuildContext, bool)? onChanged,
+  }) => base(
+    id,
+    sec,
+    group,
+    (ctx) => SwitchSetting(
+      icon: icon,
+      title: _t(id, 'title'),
+      subtitle: _t(id, 'desc'),
+      value: b(key),
+      onChanged: (v) =>
+          onChanged != null ? onChanged(ctx, v) : set(ctx, key, v),
+    ),
+  );
 
-  SettingEntry timeEntry(String id, String title, String desc, String key, IconData icon) => SettingEntry(
-        id: id, section: Section.display, group: 'Night', title: title, description: desc,
-        keywords: const ['schedule', 'sleep', 'bedtime', 'hours'],
-        builder: (ctx) => TimeSetting(icon: icon, title: title, subtitle: desc, minutes: n(key, 0).toInt(), onChanged: (m) => set(ctx, key, m)),
-      );
+  SettingEntry sliderEntry(
+    String id,
+    Section sec,
+    String group,
+    IconData icon,
+    String key, {
+    required double min,
+    required double max,
+    required num fallback,
+    int? divisions,
+    String Function(double)? format,
+    bool asDouble = false,
+  }) => base(
+    id,
+    sec,
+    group,
+    (ctx) => SliderSetting(
+      icon: icon,
+      title: _t(id, 'title'),
+      subtitle: _t(id, 'desc'),
+      value: n(key, fallback).toDouble(),
+      min: min,
+      max: max,
+      divisions: divisions,
+      format: format,
+      onChanged: (v) => set(
+        ctx,
+        key,
+        asDouble ? double.parse(v.toStringAsFixed(1)) : v.round(),
+      ),
+    ),
+  );
 
-  final entries = <SettingEntry>[
+  SettingEntry timeEntry(String id, String key, IconData icon) => base(
+    id,
+    Section.display,
+    _g('night'),
+    (ctx) => TimeSetting(
+      icon: icon,
+      title: _t(id, 'title'),
+      subtitle: _t(id, 'desc'),
+      minutes: n(key, 0).toInt(),
+      onChanged: (m) => set(ctx, key, m),
+    ),
+  );
+
+  final dashboards = _g('dashboards');
+  final lock = _g('lock');
+  final start = _g('start_screen');
+  final day = _g('day');
+  final night = _g('night');
+  final presence = _g('presence');
+  final camera = _g('camera');
+
+  return <SettingEntry>[
     // ---------------------------------------------------------------- Kiosk › Dashboards
-    SettingEntry(
-      id: 'kiosk_dashboard', section: Section.kiosk, group: 'Dashboards',
-      title: 'Main dashboard (kiosk)',
-      description: 'The Home Assistant dashboard that stays on screen. Required before you can lock the kiosk.',
-      keywords: const ['url', 'link', 'lovelace', 'page', 'default', 'wall panel', 'address', 'home screen', 'path', 'kiosk dashboard'],
-      builder: (ctx) => DashboardSetting(
-        controller: c, configKey: 'kiosk_dashboard', icon: Icons.dashboard_outlined, required: true,
-        title: 'Main dashboard (kiosk)',
-        help: 'Opened after a restart, when you press Home and when the lock starts. Paste the address from your browser.',
+    base(
+      'kiosk_dashboard',
+      Section.kiosk,
+      dashboards,
+      (ctx) => DashboardSetting(
+        controller: c,
+        configKey: 'kiosk_dashboard',
+        icon: Icons.dashboard_outlined,
+        required: true,
+        title: _t('kiosk_dashboard', 'title'),
+        help: _t('kiosk_dashboard', 'help'),
         value: str('kiosk_dashboard', ''),
       ),
     ),
-    switchEntry('glance_enabled', Section.kiosk, 'Dashboards', Icons.wb_twilight, 'Show an idle screen',
-        'When nobody touches or stands near the tablet for a while, show a calm screen instead of the main dashboard.', 'glance',
-        kw: const ['screensaver', 'at a glance', 'idle', 'clock', 'screen saver']),
-    SettingEntry(
-      id: 'glance_dashboard', section: Section.kiosk, group: 'Dashboards',
-      title: 'Idle dashboard (at a glance)',
-      description: 'Optional second dashboard for the idle screen, e.g. weather and temperatures. Empty = built-in clock screen.',
-      keywords: const ['url', 'link', 'lovelace', 'screensaver', 'weather', 'idle dashboard', 'glance dashboard', 'address'],
-      builder: (ctx) => DashboardSetting(
-        controller: c, configKey: 'glance_dashboard', icon: Icons.wb_twilight,
-        title: 'Idle dashboard (at a glance)',
-        help: 'Build it in Home Assistant with any cards (weather, cameras, floor temperatures). A touch or someone nearby returns to the main dashboard. '
-            'Leave empty for the built-in clock screen.',
+    switchEntry(
+      'glance_enabled',
+      Section.kiosk,
+      dashboards,
+      Icons.wb_twilight,
+      'glance',
+    ),
+    base(
+      'glance_dashboard',
+      Section.kiosk,
+      dashboards,
+      (ctx) => DashboardSetting(
+        controller: c,
+        configKey: 'glance_dashboard',
+        icon: Icons.wb_twilight,
+        title: _t('glance_dashboard', 'title'),
+        help: _t('glance_dashboard', 'help'),
         value: str('glance_dashboard', ''),
       ),
     ),
-    sliderEntry('glance_after', Section.kiosk, 'Dashboards', Icons.timer_outlined, 'Show the idle screen after',
-        'How long nobody uses or stands near the tablet.', 'glance_after_s',
-        min: 30, max: 3600, fallback: 300, format: fmtSeconds, kw: const ['screensaver', 'timeout', 'delay', 'idle time']),
+    sliderEntry(
+      'glance_after',
+      Section.kiosk,
+      dashboards,
+      Icons.timer_outlined,
+      'glance_after_s',
+      min: 30,
+      max: 3600,
+      fallback: 300,
+      format: fmtSeconds,
+    ),
 
     // ---------------------------------------------------------------- Kiosk › Lock
-    SettingEntry(
-      id: 'lockdown', section: Section.kiosk, group: 'Lock',
-      title: 'Lock the kiosk',
-      description: 'Keeps the dashboard on screen and blocks other apps, the notification shade and recents.',
-      keywords: const ['lockdown', 'lock', 'kiosk mode', 'block', 'pin', 'lock task', 'pinning'],
-      builder: (ctx) {
-        final st = s();
-        final missing = [
-          if (!st.hasPin) 'a PIN',
-          if (((cfg()['kiosk_dashboard'] ?? '') as String).isEmpty) 'the kiosk dashboard',
-          if (st.mode == EnforcementMode.none) 'kiosk protection',
-        ];
-        return SwitchSetting(
-          icon: st.lockdown ? Icons.lock : Icons.lock_open,
-          title: 'Lock the kiosk',
-          subtitle: st.lockdown
-              ? 'Locked. Only the Home Assistant app${st.allowlist.isEmpty ? '' : ' and your allowed apps'} can be used.'
-              : missing.isEmpty
-                  ? 'Keeps the dashboard on screen and blocks everything else.'
-                  : 'First set up: ${missing.join(', ')}.',
-          value: st.lockdown,
-          onChanged: (v) => toggleLockdown(ctx, c, v),
-        );
-      },
-    ),
-    SettingEntry(
-      id: 'pin', section: Section.kiosk, group: 'Lock', title: s().hasPin ? 'Change PIN' : 'Set PIN',
-      description: 'The PIN leaves the locked kiosk: tap the top-left corner 5 times, then enter it.',
-      keywords: const ['password', 'code', 'unlock', 'exit', 'secret'],
-      builder: (ctx) => ActionSetting(
+    base('lockdown', Section.kiosk, lock, (ctx) {
+      final st = s();
+      final missing = [
+        if (!st.hasPin) 'lock.need_pin'.tr(),
+        if (((cfg()['kiosk_dashboard'] ?? '') as String).isEmpty)
+          'lock.need_dashboard'.tr(),
+        if (st.mode == EnforcementMode.none) 'lock.need_protection'.tr(),
+      ];
+      return SwitchSetting(
+        icon: st.lockdown ? Icons.lock : Icons.lock_open,
+        title: _t('lockdown', 'title'),
+        subtitle: st.lockdown
+            ? (st.allowlist.isEmpty
+                  ? 'lock.locked_only_ha'.tr()
+                  : 'lock.locked_with_allowed'.tr())
+            : missing.isEmpty
+            ? _t('lockdown', 'desc')
+            : 'lock.first_setup'.tr(namedArgs: {'items': missing.join(', ')}),
+        value: st.lockdown,
+        onChanged: (v) => toggleLockdown(ctx, c, v),
+      );
+    }),
+    base(
+      'pin',
+      Section.kiosk,
+      lock,
+      (ctx) => ActionSetting(
         icon: Icons.pin_outlined,
-        title: s().hasPin ? 'Change PIN' : 'Set PIN',
-        subtitle: s().hasPin ? 'Tap the top-left corner 5 times on the locked screen, then enter your PIN.' : 'Required before the kiosk can be locked.',
-        trailing: s().hasPin ? const Pill('Set', color: Semantic.ok, icon: Icons.check) : const Pill('Required', color: Semantic.warn, icon: Icons.priority_high),
+        title: s().hasPin ? 'pin.change'.tr() : 'pin.set'.tr(),
+        subtitle: s().hasPin ? _t('pin', 'desc') : 'pin.required_desc'.tr(),
+        trailing: s().hasPin
+            ? Pill('common.set'.tr(), color: Semantic.ok, icon: Icons.check)
+            : Pill(
+                'common.required'.tr(),
+                color: Semantic.warn,
+                icon: Icons.priority_high,
+              ),
         onTap: () => showPinDialog(ctx, c),
       ),
+      title: s().hasPin ? 'pin.change'.tr() : 'pin.set'.tr(),
     ),
-    SettingEntry(
-      id: 'allowed_apps', section: Section.kiosk, group: 'Lock', title: 'Allowed apps',
-      description: 'Other apps that may be opened while the kiosk is locked (the Home Assistant app and the keyboard are always allowed).',
-      keywords: const ['allowlist', 'whitelist', 'apps', 'spotify', 'permit'],
-      builder: (ctx) => ActionSetting(
+    base(
+      'allowed_apps',
+      Section.kiosk,
+      lock,
+      (ctx) => ActionSetting(
         icon: Icons.apps,
-        title: 'Allowed apps',
-        subtitle: s().allowlist.isEmpty ? 'Only the Home Assistant app' : '${s().allowlist.length} extra app${s().allowlist.length == 1 ? '' : 's'}',
-        onTap: () => Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => AllowlistScreen(controller: c))),
+        title: _t('allowed_apps', 'title'),
+        subtitle: s().allowlist.isEmpty
+            ? 'allowed.none'.tr()
+            : 'allowed.count'.plural(s().allowlist.length),
+        onTap: () => ctx.beamToNamed('/allowed-apps', stacked: false),
       ),
     ),
-    SettingEntry(
-      id: 'protection', section: Section.kiosk, group: 'Lock', title: 'Kiosk protection',
-      description: 'How strongly the lock is enforced: device owner (strongest) or the accessibility guard.',
-      keywords: const ['device owner', 'accessibility', 'enforcement', 'lock task', 'adb', 'dpm', 'guard'],
-      builder: (ctx) {
-        final st = s();
-        final (label, color, icon) = switch (st.mode) {
-          EnforcementMode.deviceOwner => ('Device owner', Semantic.ok, Icons.verified_user),
-          EnforcementMode.accessibility => ('Accessibility guard', Semantic.warn, Icons.shield_outlined),
-          EnforcementMode.none => ('Not protected', Semantic.bad, Icons.gpp_maybe_outlined),
-        };
-        return ActionSetting(
-          icon: icon,
-          title: 'Kiosk protection',
-          subtitle: switch (st.mode) {
-            EnforcementMode.deviceOwner => 'Strongest: Android itself blocks the system UI.',
-            EnforcementMode.accessibility => 'Good: other apps are sent back. Device owner is stronger.',
-            EnforcementMode.none => 'Turn on the accessibility guard or become device owner to lock the kiosk.',
-          },
-          color: color,
-          trailing: Pill(label, color: color),
-          onTap: () => showProtectionSheet(ctx, c),
-        );
-      },
-    ),
+    base('protection', Section.kiosk, lock, (ctx) {
+      final st = s();
+      final (label, color, icon) = switch (st.mode) {
+        EnforcementMode.deviceOwner => (
+          'prot.device_owner'.tr(),
+          Semantic.ok,
+          Icons.verified_user,
+        ),
+        EnforcementMode.accessibility => (
+          'prot.accessibility'.tr(),
+          Semantic.warn,
+          Icons.shield_outlined,
+        ),
+        EnforcementMode.none => (
+          'prot.none'.tr(),
+          Semantic.bad,
+          Icons.gpp_maybe_outlined,
+        ),
+      };
+      return ActionSetting(
+        icon: icon,
+        title: _t('protection', 'title'),
+        subtitle: switch (st.mode) {
+          EnforcementMode.deviceOwner => 'prot.device_owner_desc'.tr(),
+          EnforcementMode.accessibility => 'prot.accessibility_desc'.tr(),
+          EnforcementMode.none => 'prot.none_desc'.tr(),
+        },
+        color: color,
+        trailing: Pill(label, color: color),
+        onTap: () => showProtectionSheet(ctx, c),
+      );
+    }),
 
     // ---------------------------------------------------------------- Kiosk › Start & screen
-    SettingEntry(
-      id: 'home_app', section: Section.kiosk, group: 'Start & screen', title: 'Start automatically',
-      description: 'Act as the home app: starts after a reboot and re-opens the Home Assistant app when it closes or crashes.',
-      keywords: const ['launcher', 'boot', 'autostart', 'home app', 'crash', 'recover', 'startup', 'default home'],
-      builder: (ctx) => SwitchSetting(
+    base(
+      'home_app',
+      Section.kiosk,
+      start,
+      (ctx) => SwitchSetting(
         icon: Icons.home_outlined,
-        title: 'Start automatically',
+        title: _t('home_app', 'title'),
         subtitle: !s().kioskLauncher
-            ? 'Starts after a reboot and brings the Home Assistant app back if it closes.'
+            ? _t('home_app', 'desc')
             : s().isHomeApp
-                ? 'Active. This app is the default home app.'
-                : s().deviceOwner
-                    ? 'Applying…'
-                    : 'Almost done: choose "HA Sidecar" as the default home app in Android.',
+            ? 'home.active'.tr()
+            : s().deviceOwner
+            ? 'home.applying'.tr()
+            : 'home.choose'.tr(),
         value: s().kioskLauncher,
         onChanged: (v) async {
           await c.platform.setKioskLauncher(v);
@@ -225,12 +328,14 @@ List<SettingEntry> buildRegistry(AppController c) {
         },
       ),
     ),
-    SettingEntry(
-      id: 'keep_screen_on', section: Section.kiosk, group: 'Start & screen', title: 'Keep the screen on',
-      description: 'Stops the screen from switching off by itself.',
-      keywords: const ['awake', 'sleep', 'timeout', 'screen off', 'wake lock'],
-      builder: (ctx) => SwitchSetting(
-        icon: Icons.light_mode_outlined, title: 'Keep the screen on', subtitle: 'Stops the screen from switching off by itself.',
+    base(
+      'keep_screen_on',
+      Section.kiosk,
+      start,
+      (ctx) => SwitchSetting(
+        icon: Icons.light_mode_outlined,
+        title: _t('keep_screen_on', 'title'),
+        subtitle: _t('keep_screen_on', 'desc'),
         value: s().keepScreenOn,
         onChanged: (v) async {
           await c.platform.setKeepScreenOn(v);
@@ -238,220 +343,408 @@ List<SettingEntry> buildRegistry(AppController c) {
         },
       ),
     ),
-    SettingEntry(
-      id: 'companion_app', section: Section.kiosk, group: 'Start & screen', title: 'Home Assistant app',
-      description: 'The official Home Assistant companion app that shows your dashboard.',
-      keywords: const ['companion', 'install', 'package', 'app'],
-      builder: (ctx) {
-        final found = s().companionPackages;
-        return ActionSetting(
-          icon: Icons.home_work_outlined,
-          title: 'Home Assistant app',
-          subtitle: found.isEmpty
-              ? 'Not found. Install the Home Assistant companion app and sign in to your server.'
-              : 'Found: ${found.map((p) => p.endsWith('.minimal') ? 'minimal' : 'full').join(', ')} version',
-          trailing: found.isEmpty ? const Pill('Missing', color: Semantic.bad) : const Pill('Installed', color: Semantic.ok, icon: Icons.check),
-          onTap: () async {
-            await c.refresh();
-            if (ctx.mounted) {
-              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                content: Text(s().companionPackages.isEmpty ? 'Still not installed.' : 'Home Assistant app found.'),
-              ));
-            }
-          },
-        );
-      },
-    ),
+    base('companion_app', Section.kiosk, start, (ctx) {
+      final found = s().companionPackages;
+      return ActionSetting(
+        icon: Icons.home_work_outlined,
+        title: _t('companion_app', 'title'),
+        subtitle: found.isEmpty
+            ? 'companion.missing'.tr()
+            : 'companion.found'.tr(
+                namedArgs: {
+                  'builds': found
+                      .map(
+                        (p) => p.endsWith('.minimal')
+                            ? 'companion.minimal'.tr()
+                            : 'companion.full'.tr(),
+                      )
+                      .join(', '),
+                },
+              ),
+        trailing: found.isEmpty
+            ? Pill('companion.missing_pill'.tr(), color: Semantic.bad)
+            : Pill(
+                'companion.installed'.tr(),
+                color: Semantic.ok,
+                icon: Icons.check,
+              ),
+        onTap: () async {
+          await c.refresh();
+          if (ctx.mounted) {
+            ScaffoldMessenger.of(ctx).showSnackBar(
+              SnackBar(
+                content: Text(
+                  s().companionPackages.isEmpty
+                      ? 'companion.still_missing'.tr()
+                      : 'companion.now_found'.tr(),
+                ),
+              ),
+            );
+          }
+        },
+      );
+    }),
 
     // ---------------------------------------------------------------- Display › Brightness
-    SettingEntry(
-      id: 'brightness_mode', section: Section.display, group: 'Brightness', title: 'Brightness control',
-      description: 'Manual leaves brightness alone. Auto follows day and night. Day or Night forces one of them.',
-      keywords: const ['auto dim', 'dimming', 'night mode', 'day mode', 'automatic', 'backlight'],
-      builder: (ctx) => SegmentedSetting(
+    base(
+      'brightness_mode',
+      Section.display,
+      _g('brightness'),
+      (ctx) => SegmentedSetting(
         icon: Icons.brightness_auto,
-        title: 'Brightness control',
-        subtitle: 'Manual leaves brightness alone. Auto follows day and night. Day or Night forces one of them.',
-        options: const {'manual': 'Manual', 'auto': 'Auto', 'day': 'Day', 'night': 'Night'},
+        title: _t('brightness_mode', 'title'),
+        subtitle: _t('brightness_mode', 'desc'),
+        options: {
+          'manual': 'mode.manual'.tr(),
+          'auto': 'mode.auto'.tr(),
+          'day': 'mode.day'.tr(),
+          'night': 'mode.night'.tr(),
+        },
         value: str('mode', 'manual'),
         onChanged: (v) => set(ctx, 'mode', v),
       ),
     ),
 
     // ---------------------------------------------------------------- Display › Day
-    sliderEntry('day_level', Section.display, 'Day', Icons.wb_sunny_outlined, 'Day brightness', 'While the tablet is in use or someone is near.', 'day_level',
-        min: 0, max: 255, fallback: 200, kw: const ['bright', 'backlight', 'high']),
-    switchEntry('auto_dim', Section.display, 'Day', Icons.brightness_medium, 'Dim when idle',
-        'Lower the brightness when nobody uses or stands near the tablet.', 'auto_dim', kw: const ['autodim', 'auto dim', 'idle']),
-    sliderEntry('day_dim_level', Section.display, 'Day', Icons.brightness_low, 'Idle brightness', 'Brightness while dimmed during the day.', 'day_dim_level',
-        min: 0, max: 255, fallback: 60, kw: const ['dim level']),
-    sliderEntry('dim_after', Section.display, 'Day', Icons.timer_outlined, 'Dim after', 'How long without touch or presence before dimming.', 'dim_after_s',
-        min: 10, max: 1800, fallback: 120, format: fmtSeconds, kw: const ['idle time', 'timeout']),
+    sliderEntry(
+      'day_level',
+      Section.display,
+      day,
+      Icons.wb_sunny_outlined,
+      'day_level',
+      min: 0,
+      max: 255,
+      fallback: 200,
+    ),
+    switchEntry(
+      'auto_dim',
+      Section.display,
+      day,
+      Icons.brightness_medium,
+      'auto_dim',
+    ),
+    sliderEntry(
+      'day_dim_level',
+      Section.display,
+      day,
+      Icons.brightness_low,
+      'day_dim_level',
+      min: 0,
+      max: 255,
+      fallback: 60,
+    ),
+    sliderEntry(
+      'dim_after',
+      Section.display,
+      day,
+      Icons.timer_outlined,
+      'dim_after_s',
+      min: 10,
+      max: 1800,
+      fallback: 120,
+      format: fmtSeconds,
+    ),
 
     // ---------------------------------------------------------------- Display › Night
-    timeEntry('night_start', 'Night starts', 'From this time the night brightness is used.', 'night_start', Icons.bedtime_outlined),
-    timeEntry('night_end', 'Night ends', 'From this time the day brightness is used again.', 'night_end', Icons.wb_twilight),
-    sliderEntry('night_level', Section.display, 'Night', Icons.nightlight_outlined, 'Night brightness', 'Very dim base brightness at night.', 'night_level',
-        min: 0, max: 255, fallback: 6, kw: const ['dark', 'low']),
-    switchEntry('night_light', Section.display, 'Night', Icons.lightbulb_outline, 'Night light',
-        'Brighten the screen a little when someone walks past, so you can see the floor.', 'night_light',
-        kw: const ['nightlight', 'walk past', 'floor', 'presence', 'path light']),
-    sliderEntry('night_light_level', Section.display, 'Night', Icons.lightbulb, 'Night light brightness', 'Brightness while someone is near at night.', 'night_light_level',
-        min: 0, max: 255, fallback: 50, kw: const ['floor']),
-    sliderEntry('night_touch_level', Section.display, 'Night', Icons.touch_app_outlined, 'Brightness after a touch', 'Brightness for a moment after you touch the screen at night.', 'night_touch_level',
-        min: 0, max: 255, fallback: 120),
-    sliderEntry('night_hold', Section.display, 'Night', Icons.timer_outlined, 'Keep after a touch', 'How long the touch brightness stays.', 'night_hold_s',
-        min: 5, max: 300, fallback: 20, format: fmtSeconds),
+    timeEntry('night_start', 'night_start', Icons.bedtime_outlined),
+    timeEntry('night_end', 'night_end', Icons.wb_twilight),
+    sliderEntry(
+      'night_level',
+      Section.display,
+      night,
+      Icons.nightlight_outlined,
+      'night_level',
+      min: 0,
+      max: 255,
+      fallback: 6,
+    ),
+    switchEntry(
+      'night_light',
+      Section.display,
+      night,
+      Icons.lightbulb_outline,
+      'night_light',
+    ),
+    sliderEntry(
+      'night_light_level',
+      Section.display,
+      night,
+      Icons.lightbulb,
+      'night_light_level',
+      min: 0,
+      max: 255,
+      fallback: 50,
+    ),
+    sliderEntry(
+      'night_touch_level',
+      Section.display,
+      night,
+      Icons.touch_app_outlined,
+      'night_touch_level',
+      min: 0,
+      max: 255,
+      fallback: 120,
+    ),
+    sliderEntry(
+      'night_hold',
+      Section.display,
+      night,
+      Icons.timer_outlined,
+      'night_hold_s',
+      min: 5,
+      max: 300,
+      fallback: 20,
+      format: fmtSeconds,
+    ),
 
     // ---------------------------------------------------------------- Display › Presence
-    SettingEntry(
-      id: 'presence_sources', section: Section.display, group: 'Presence', title: 'Presence sources',
-      description: 'Who counts as "near the tablet": Home Assistant presence sensors and/or the camera.',
-      keywords: const ['mmwave', 'pir', 'sensor', 'occupancy', 'motion', 'entities'],
-      builder: (ctx) => Tile(
+    base(
+      'presence_sources',
+      Section.display,
+      presence,
+      (ctx) => Tile(
         icon: Icons.sensors,
-        title: 'Presence sources',
-        subtitle: 'Choose presence sensors in Home Assistant: Settings → Devices & services → HA Sidecar → Configure. '
-            'The camera below is optional.',
-        trailing: s().presence ? const Pill('Someone near', color: Semantic.ok, icon: Icons.person) : const Pill('Nobody near'),
+        title: _t('presence_sources', 'title'),
+        subtitle: _t('presence_sources', 'help'),
+        trailing: s().presence
+            ? Pill('presence.near'.tr(), color: Semantic.ok, icon: Icons.person)
+            : Pill('presence.nobody'.tr()),
       ),
     ),
-    sliderEntry('presence_hold', Section.display, 'Presence', Icons.timer_outlined, 'Keep "present" for', 'How long presence is kept after the last detection.', 'presence_hold_s',
-        min: 5, max: 300, fallback: 30, format: fmtSeconds),
-    sliderEntry('fade', Section.display, 'Presence', Icons.blur_linear, 'Fade time', 'How smoothly brightness changes.', 'fade_s',
-        min: 0, max: 10, fallback: 1.5, divisions: 20, format: (v) => '${v.toStringAsFixed(1)} s', asDouble: true, kw: const ['transition', 'smooth']),
+    sliderEntry(
+      'presence_hold',
+      Section.display,
+      presence,
+      Icons.timer_outlined,
+      'presence_hold_s',
+      min: 5,
+      max: 300,
+      fallback: 30,
+      format: fmtSeconds,
+    ),
+    sliderEntry(
+      'fade',
+      Section.display,
+      presence,
+      Icons.blur_linear,
+      'fade_s',
+      min: 0,
+      max: 10,
+      fallback: 1.5,
+      divisions: 20,
+      format: (v) => '${v.toStringAsFixed(1)} s',
+      asDouble: true,
+    ),
 
     // ---------------------------------------------------------------- Display › Presence camera
-    SettingEntry(
-      id: 'camera_presence', section: Section.display, group: 'Presence camera', title: 'Detect presence with the camera',
-      description: 'Notices movement near the tablet. Nothing is recorded, stored or sent; a notification shows while it runs.',
-      keywords: const ['camera', 'motion', 'privacy', 'detect', 'webcam', 'front camera'],
-      builder: (ctx) => SwitchSetting(
+    base(
+      'camera_presence',
+      Section.display,
+      camera,
+      (ctx) => SwitchSetting(
         icon: Icons.videocam_outlined,
-        title: 'Detect presence with the camera',
-        subtitle: 'Notices movement near the tablet. Nothing is recorded, stored or sent; a notification shows while it runs.',
+        title: _t('camera_presence', 'title'),
+        subtitle: _t('camera_presence', 'desc'),
         value: b('camera_presence'),
         onChanged: (v) async {
           await set(ctx, 'camera_presence', v);
-          if (v && !s().cameraPermission) await c.platform.requestPermission('camera');
+          if (v && !s().cameraPermission) {
+            await c.platform.requestPermission('camera');
+          }
         },
       ),
     ),
-    SettingEntry(
-      id: 'camera_status', section: Section.display, group: 'Presence camera', title: 'Camera status',
-      description: 'Whether the presence camera is running and sees movement.',
-      keywords: const ['camera', 'permission', 'error', 'running'],
-      builder: (ctx) {
-        final st = s();
-        if (!b('camera_presence')) return const Tile(icon: Icons.videocam_off_outlined, title: 'Camera status', subtitle: 'Off', trailing: Pill('Off'));
-        if (!st.cameraPermission) {
-          return ActionSetting(
-            icon: Icons.warning_amber_rounded, color: Semantic.warn, title: 'Camera permission needed',
-            subtitle: 'Allow camera access so movement can be detected.',
-            trailing: FilledButton.tonal(onPressed: () => c.platform.requestPermission('camera'), child: const Text('Grant')),
-            onTap: () => c.platform.requestPermission('camera'),
-          );
-        }
-        if (st.cameraError != null) {
-          return Tile(icon: Icons.error_outline, color: Semantic.bad, title: 'Camera problem', subtitle: st.cameraError);
-        }
+    base('camera_status', Section.display, camera, (ctx) {
+      final st = s();
+      if (!b('camera_presence')) {
         return Tile(
-          icon: st.cameraActive ? Icons.videocam : Icons.videocam_off_outlined,
-          title: 'Camera status',
-          subtitle: 'Picture change ${(st.cameraScore * 100).toStringAsFixed(1)} %',
-          trailing: st.cameraActive
-              ? (st.cameraMotion ? const Pill('Movement', color: Semantic.ok, icon: Icons.directions_walk) : const Pill('Running'))
-              : const Pill('Starting…', color: Semantic.warn),
+          icon: Icons.videocam_off_outlined,
+          title: _t('camera_status', 'title'),
+          subtitle: 'camera.off'.tr(),
+          trailing: Pill('camera.off'.tr()),
         );
-      },
-    ),
-    SettingEntry(
-      id: 'camera_facing', section: Section.display, group: 'Presence camera', title: 'Which camera',
-      description: 'Front or back camera.', keywords: const ['camera', 'front', 'back', 'selfie'],
-      builder: (ctx) => SegmentedSetting(
-        icon: Icons.cameraswitch_outlined, title: 'Which camera', options: const {'front': 'Front', 'back': 'Back'},
-        value: str('camera_facing', 'front'), onChanged: (v) => set(ctx, 'camera_facing', v),
+      }
+      if (!st.cameraPermission) {
+        return ActionSetting(
+          icon: Icons.warning_amber_rounded,
+          color: Semantic.warn,
+          title: 'camera.permission_title'.tr(),
+          subtitle: 'camera.permission_desc'.tr(),
+          trailing: FilledButton.tonal(
+            onPressed: () => c.platform.requestPermission('camera'),
+            child: Text('perm.grant'.tr()),
+          ),
+          onTap: () => c.platform.requestPermission('camera'),
+        );
+      }
+      if (st.cameraError != null) {
+        return Tile(
+          icon: Icons.error_outline,
+          color: Semantic.bad,
+          title: 'camera.problem'.tr(),
+          subtitle: st.cameraError,
+        );
+      }
+      return Tile(
+        icon: st.cameraActive ? Icons.videocam : Icons.videocam_off_outlined,
+        title: _t('camera_status', 'title'),
+        subtitle: 'camera.change'.tr(
+          namedArgs: {'pct': (st.cameraScore * 100).toStringAsFixed(1)},
+        ),
+        trailing: st.cameraActive
+            ? (st.cameraMotion
+                  ? Pill(
+                      'camera.movement'.tr(),
+                      color: Semantic.ok,
+                      icon: Icons.directions_walk,
+                    )
+                  : Pill('camera.running'.tr()))
+            : Pill('camera.starting'.tr(), color: Semantic.warn),
+      );
+    }),
+    base(
+      'camera_facing',
+      Section.display,
+      camera,
+      (ctx) => SegmentedSetting(
+        icon: Icons.cameraswitch_outlined,
+        title: _t('camera_facing', 'title'),
+        options: {'front': 'camera.front'.tr(), 'back': 'camera.back'.tr()},
+        value: str('camera_facing', 'front'),
+        onChanged: (v) => set(ctx, 'camera_facing', v),
       ),
     ),
-    sliderEntry('camera_sensitivity', Section.display, 'Presence camera', Icons.tune, 'Sensitivity', 'Higher notices smaller movements (and more false alarms).', 'camera_sensitivity',
-        min: 0, max: 100, fallback: 50, format: (v) => '${v.round()} %', kw: const ['camera', 'motion', 'threshold']),
-    sliderEntry('camera_fps', Section.display, 'Presence camera', Icons.speed, 'Frame rate', 'Lower saves battery.', 'camera_fps',
-        min: 1, max: 10, fallback: 3, divisions: 9, format: (v) => '${v.round()} fps', kw: const ['camera', 'battery', 'fps']),
-
-    // ---------------------------------------------------------------- System › Home Assistant
-    SettingEntry(
-      id: 'connection', section: Section.system, group: 'Home Assistant', title: 'Connection',
-      description: 'The link to your Home Assistant server (pairing token).',
-      keywords: const ['pair', 'token', 'url', 'server', 'unpair', 'reconnect', 'integration', 'link'],
-      builder: (ctx) {
-        final link = c.link;
-        return ValueListenableBuilder<LinkState>(
-          valueListenable: link ?? ValueNotifier(LinkState.disconnected),
-          builder: (_, state, _) {
-            final (label, color) = switch (state) {
-              LinkState.connected => ('Connected', Semantic.ok),
-              LinkState.connecting => ('Connecting…', Semantic.warn),
-              LinkState.authFailed => ('Token rejected', Semantic.bad),
-              LinkState.disconnected => ('Disconnected', Semantic.bad),
-            };
-            return ActionSetting(
-              icon: Icons.hub_outlined,
-              title: 'Connection',
-              subtitle: c.settings.haUrl.isEmpty ? 'Not paired' : c.settings.haUrl,
-              color: color,
-              trailing: Pill(label, color: color),
-              onTap: () => showConnectionSheet(ctx, c),
-            );
-          },
-        );
-      },
+    sliderEntry(
+      'camera_sensitivity',
+      Section.display,
+      camera,
+      Icons.tune,
+      'camera_sensitivity',
+      min: 0,
+      max: 100,
+      fallback: 50,
+      format: (v) => '${v.round()} %',
+    ),
+    sliderEntry(
+      'camera_fps',
+      Section.display,
+      camera,
+      Icons.speed,
+      'camera_fps',
+      min: 1,
+      max: 10,
+      fallback: 3,
+      divisions: 9,
+      format: (v) => '${v.round()} fps',
     ),
 
+    // ---------------------------------------------------------------- System › Home Assistant
+    base('connection', Section.system, _g('home_assistant'), (ctx) {
+      final link = c.link;
+      return ValueListenableBuilder<LinkState>(
+        valueListenable: link ?? ValueNotifier(LinkState.disconnected),
+        builder: (_, state, _) {
+          final (label, color) = switch (state) {
+            LinkState.connected => ('link.connected'.tr(), Semantic.ok),
+            LinkState.connecting => ('link.connecting'.tr(), Semantic.warn),
+            LinkState.authFailed => ('link.rejected'.tr(), Semantic.bad),
+            LinkState.disconnected => ('link.disconnected'.tr(), Semantic.bad),
+          };
+          return ActionSetting(
+            icon: Icons.hub_outlined,
+            title: _t('connection', 'title'),
+            subtitle: c.settings.haUrl.isEmpty
+                ? 'link.not_paired'.tr()
+                : c.settings.haUrl,
+            color: color,
+            trailing: Pill(label, color: color),
+            onTap: () => showConnectionSheet(ctx, c),
+          );
+        },
+      );
+    }),
+
     // ---------------------------------------------------------------- System › Appearance
-    SettingEntry(
-      id: 'theme', section: Section.system, group: 'Appearance', title: 'Theme',
-      description: 'Light, dark, follow the system, or dark only at night.',
-      keywords: const ['dark mode', 'light mode', 'night mode', 'colors', 'appearance'],
-      builder: (ctx) => SegmentedSetting(
+    base(
+      'theme',
+      Section.system,
+      _g('appearance'),
+      (ctx) => SegmentedSetting(
         icon: Icons.contrast,
-        title: 'Theme',
-        subtitle: 'Light, dark, follow the system, or dark only at night.',
-        options: const {'system': 'System', 'light': 'Light', 'dark': 'Dark', 'night': 'Dark at night'},
+        title: _t('theme', 'title'),
+        subtitle: _t('theme', 'desc'),
+        options: {
+          'system': 'theme.system'.tr(),
+          'light': 'theme.light'.tr(),
+          'dark': 'theme.dark'.tr(),
+          'night': 'theme.night'.tr(),
+        },
         value: str('theme', 'system'),
         onChanged: (v) => set(ctx, 'theme', v),
       ),
     ),
+    base('language', Section.system, _g('appearance'), (ctx) {
+      final current = ctx.locale.languageCode;
+      return SegmentedSetting(
+        icon: Icons.language,
+        title: _t('language', 'title'),
+        subtitle: _t('language', 'desc'),
+        options: const {'en': 'English', 'de': 'Deutsch'},
+        value: current,
+        onChanged: (v) => ctx.setLocale(Locale(v)),
+      );
+    }),
 
     // ---------------------------------------------------------------- System › Permissions
     for (final p in permissionSpecs)
       SettingEntry(
-        id: 'perm_${p.id}', section: Section.system, group: 'Permissions', title: p.title, description: p.why,
-        keywords: [p.id, 'permission', 'android', 'allow', 'grant'],
+        id: 'perm_${p.id}',
+        section: Section.system,
+        group: _g('permissions'),
+        title: p.title,
+        description: p.why,
+        keywords: [
+          'permission',
+          'allow',
+          'grant',
+          p.id,
+          ..._t('permission', 'kw').split(',').map((e) => e.trim()),
+        ],
         builder: (ctx) => PermissionRow(spec: p, controller: c),
       ),
-    SettingEntry(
-      id: 'device_owner', section: Section.system, group: 'Permissions', title: 'Device owner',
-      description: 'Optional, strongest kiosk lock. Needs a one-time adb command on a freshly reset tablet.',
-      keywords: const ['dpm', 'adb', 'provision', 'managed', 'lock task'],
-      builder: (ctx) => ActionSetting(
+    base(
+      'device_owner',
+      Section.system,
+      _g('permissions'),
+      (ctx) => ActionSetting(
         icon: Icons.admin_panel_settings_outlined,
-        title: 'Device owner',
-        subtitle: s().deviceOwner ? 'This tablet is a device owner.' : 'Optional. Tap to see how.',
-        trailing: s().deviceOwner ? const Pill('Active', color: Semantic.ok, icon: Icons.check) : const Pill('Not set'),
+        title: _t('device_owner', 'title'),
+        subtitle: s().deviceOwner
+            ? 'owner.active_desc'.tr()
+            : 'owner.optional_desc'.tr(),
+        trailing: s().deviceOwner
+            ? Pill('owner.active'.tr(), color: Semantic.ok, icon: Icons.check)
+            : Pill('owner.not_set'.tr()),
         onTap: () => showProtectionSheet(ctx, c),
       ),
     ),
 
     // ---------------------------------------------------------------- System › Updates
-    SettingEntry(
-      id: 'update', section: Section.system, group: 'Updates', title: 'Android system update',
-      description: 'Opens the system update screen and, with the accessibility guard, taps through it.',
-      keywords: const ['os update', 'upgrade', 'security patch', 'version', 'firmware'],
-      builder: (ctx) => ActionSetting(
-        icon: s().pendingUpdate != null ? Icons.system_update : Icons.verified_outlined,
-        title: s().pendingUpdate != null ? 'An Android update is available' : 'Android ${s().androidRelease}',
-        subtitle: 'Security patch ${s().securityPatch}${s().deviceOwner ? '' : '. Update detection needs device owner.'}',
-        trailing: const Text('Check'),
+    base(
+      'update',
+      Section.system,
+      _g('updates'),
+      (ctx) => ActionSetting(
+        icon: s().pendingUpdate != null
+            ? Icons.system_update
+            : Icons.verified_outlined,
+        title: s().pendingUpdate != null
+            ? 'update.available'.tr()
+            : 'update.android'.tr(namedArgs: {'version': s().androidRelease}),
+        subtitle:
+            'update.patch'.tr(namedArgs: {'patch': s().securityPatch}) +
+            (s().deviceOwner ? '' : ' ${'update.needs_owner'.tr()}'),
+        trailing: Text('update.check'.tr()),
         onTap: () async {
           if (s().accessibilityEnabled) {
             await c.platform.runSystemUpdate();
@@ -463,29 +756,34 @@ List<SettingEntry> buildRegistry(AppController c) {
     ),
 
     // ---------------------------------------------------------------- System › Setup
-    SettingEntry(
-      id: 'run_setup', section: Section.system, group: 'Setup', title: 'Run the setup wizard again',
-      description: 'Walks through connection, dashboard, PIN and permissions step by step.',
-      keywords: const ['wizard', 'onboarding', 'guide', 'setup', 'reset', 'first run', 'help'],
-      builder: (ctx) => ActionSetting(
+    base(
+      'run_setup',
+      Section.system,
+      _g('setup'),
+      (ctx) => ActionSetting(
         icon: Icons.auto_fix_high,
-        title: 'Run the setup wizard again',
-        subtitle: 'Walks through connection, dashboard, PIN and permissions step by step.',
+        title: _t('run_setup', 'title'),
+        subtitle: _t('run_setup', 'desc'),
         onTap: () => c.restartSetup(),
       ),
     ),
   ];
-  return entries;
 }
 
 /// Free-text search over title, description, keywords, group and section; every word must match.
 List<SettingEntry> searchSettings(List<SettingEntry> all, String query) {
-  final words = query.toLowerCase().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+  final words = query
+      .toLowerCase()
+      .split(RegExp(r'\s+'))
+      .where((w) => w.isNotEmpty)
+      .toList();
   if (words.isEmpty) return const [];
   int score(SettingEntry e) {
     var total = 0;
     final title = e.title.toLowerCase();
-    final rest = '${e.description} ${e.keywords.join(' ')} ${e.group} ${e.section.label}'.toLowerCase();
+    final rest =
+        '${e.description} ${e.keywords.join(' ')} ${e.group} ${e.section.label}'
+            .toLowerCase();
     for (final w in words) {
       if (title.contains(w)) {
         total += title.startsWith(w) ? 6 : 4;
@@ -498,8 +796,9 @@ List<SettingEntry> searchSettings(List<SettingEntry> all, String query) {
     return total;
   }
 
-  final scored = [for (final e in all) (e, score(e))].where((p) => p.$2 > 0).toList()
-    ..sort((a, b) => b.$2.compareTo(a.$2));
+  final scored = [
+    for (final e in all) (e, score(e)),
+  ].where((p) => p.$2 > 0).toList()..sort((a, b) => b.$2.compareTo(a.$2));
   return [for (final p in scored) p.$1];
 }
 
@@ -518,43 +817,72 @@ Future<void> showProtectionSheet(BuildContext context, AppController c) {
         return SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Kiosk protection', style: t.textTheme.headlineSmall),
-              const SizedBox(height: 8),
-              const Text('Two ways to keep other apps away from the dashboard. You can use both.'),
-              const SizedBox(height: 16),
-              GroupCard(children: [
-                Tile(
-                  icon: Icons.shield_outlined,
-                  title: 'Accessibility guard',
-                  subtitle: 'Works on any tablet. Sends other apps back and closes the notification shade within a moment.',
-                  trailing: s.accessibilityEnabled
-                      ? const Pill('On', color: Semantic.ok, icon: Icons.check)
-                      : FilledButton.tonal(onPressed: () => c.platform.openSettings('accessibility'), child: const Text('Turn on')),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'sheet.protection.title'.tr(),
+                  style: t.textTheme.headlineSmall,
                 ),
-                Tile(
-                  icon: Icons.verified_user_outlined,
-                  title: 'Device owner (strongest)',
-                  subtitle: s.deviceOwner
-                      ? 'Active: Android itself hides and blocks the system UI.'
-                      : 'Android itself hides and blocks the system UI. Needs a factory-reset tablet with no accounts and a computer with adb.',
-                  trailing: s.deviceOwner ? const Pill('Active', color: Semantic.ok, icon: Icons.check) : null,
-                ),
-              ]),
-              if (!s.deviceOwner) ...[
+                const SizedBox(height: 8),
+                Text('sheet.protection.intro'.tr()),
                 const SizedBox(height: 16),
-                Text('To become device owner', style: t.textTheme.titleMedium),
-                const SizedBox(height: 4),
-                const Text('1. Factory reset the tablet and skip adding any account.\n'
-                    '2. Install this app and the Home Assistant app.\n'
-                    '3. Enable USB debugging and, on a computer, run:'),
-                const SizedBox(height: 8),
-                const CopyBlock('adb shell dpm set-device-owner dev.glassp.ha_sidecar/.SidecarDeviceAdminReceiver'),
-                const SizedBox(height: 8),
-                Text('A device owner cannot be removed afterwards except by a factory reset. Fire tablets are not supported.',
-                    style: t.textTheme.bodySmall?.copyWith(color: t.colorScheme.onSurfaceVariant)),
+                GroupCard(
+                  children: [
+                    Tile(
+                      icon: Icons.shield_outlined,
+                      title: 'prot.accessibility'.tr(),
+                      subtitle: 'sheet.protection.accessibility_desc'.tr(),
+                      trailing: s.accessibilityEnabled
+                          ? Pill(
+                              'common.on'.tr(),
+                              color: Semantic.ok,
+                              icon: Icons.check,
+                            )
+                          : FilledButton.tonal(
+                              onPressed: () =>
+                                  c.platform.openSettings('accessibility'),
+                              child: Text('common.turn_on'.tr()),
+                            ),
+                    ),
+                    Tile(
+                      icon: Icons.verified_user_outlined,
+                      title: 'sheet.protection.owner_title'.tr(),
+                      subtitle: s.deviceOwner
+                          ? 'owner.active_desc'.tr()
+                          : 'sheet.protection.owner_desc'.tr(),
+                      trailing: s.deviceOwner
+                          ? Pill(
+                              'owner.active'.tr(),
+                              color: Semantic.ok,
+                              icon: Icons.check,
+                            )
+                          : null,
+                    ),
+                  ],
+                ),
+                if (!s.deviceOwner) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'sheet.protection.how_title'.tr(),
+                    style: t.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text('sheet.protection.how_steps'.tr()),
+                  const SizedBox(height: 8),
+                  const CopyBlock(
+                    'adb shell dpm set-device-owner dev.glassp.ha_sidecar/.SidecarDeviceAdminReceiver',
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'sheet.protection.warning'.tr(),
+                    style: t.textTheme.bodySmall?.copyWith(
+                      color: t.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ],
-            ]),
+            ),
           ),
         );
       },
@@ -569,21 +897,34 @@ Future<void> showConnectionSheet(BuildContext context, AppController c) {
     builder: (ctx) => SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Connection', style: Theme.of(ctx).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text(c.settings.haUrl.isEmpty ? 'This tablet is not paired.' : 'Paired with ${c.settings.haUrl}'),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            icon: const Icon(Icons.link_off),
-            label: const Text('Pair again with a new token'),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await c.unpair();
-              await c.restartSetup();
-            },
-          ),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'settings.connection.title'.tr(),
+              style: Theme.of(ctx).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              c.settings.haUrl.isEmpty
+                  ? 'link.not_paired'.tr()
+                  : 'sheet.connection.paired_with'.tr(
+                      namedArgs: {'url': c.settings.haUrl},
+                    ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              icon: const Icon(Icons.link_off),
+              label: Text('sheet.connection.pair_again'.tr()),
+              onPressed: () async {
+                Navigator.pop(ctx);
+                await c.unpair();
+                await c.restartSetup();
+              },
+            ),
+          ],
+        ),
       ),
     ),
   );

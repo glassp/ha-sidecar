@@ -1,12 +1,16 @@
+import 'package:beamer/beamer.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../app_controller.dart';
 import '../../settings/registry.dart';
 import '../design.dart';
-import 'search_page.dart';
 
 /// Groups of a section, in registry order.
-Map<String, List<SettingEntry>> groupsOf(List<SettingEntry> all, Section section) {
+Map<String, List<SettingEntry>> groupsOf(
+  List<SettingEntry> all,
+  Section section,
+) {
   final map = <String, List<SettingEntry>>{};
   for (final e in all.where((e) => e.section == section)) {
     map.putIfAbsent(e.group, () => []).add(e);
@@ -15,14 +19,18 @@ Map<String, List<SettingEntry>> groupsOf(List<SettingEntry> all, Section section
 }
 
 Widget searchAction(BuildContext context, AppController c) => IconButton(
-      icon: const Icon(Icons.search),
-      tooltip: 'Search settings',
-      onPressed: () => openSearch(context, c),
-    );
+  icon: const Icon(Icons.search),
+  tooltip: 'search.title'.tr(),
+  onPressed: () => context.beamToNamed('/search', stacked: false),
+);
 
 /// One tab of the app: all groups of a section as cards.
 class SectionPage extends StatelessWidget {
-  const SectionPage({super.key, required this.section, required this.controller});
+  const SectionPage({
+    super.key,
+    required this.section,
+    required this.controller,
+  });
   final Section section;
   final AppController controller;
 
@@ -39,7 +47,11 @@ class SectionPage extends StatelessWidget {
             HelpText(section.subtitle),
             for (final g in groups.entries) ...[
               SectionTitle(g.key),
-              GroupCard(children: [for (final e in g.value) Builder(builder: e.builder)]),
+              GroupCard(
+                children: [
+                  for (final e in g.value) Builder(builder: e.builder),
+                ],
+              ),
             ],
           ],
         );
@@ -60,15 +72,23 @@ class GroupPage extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         final all = buildRegistry(controller);
-        final entry = all.firstWhere((e) => e.id == entryId, orElse: () => all.first);
-        final inGroup = all.where((e) => e.section == entry.section && e.group == entry.group).toList();
+        final entry = all.firstWhere(
+          (e) => e.id == entryId,
+          orElse: () => all.first,
+        );
+        final inGroup = all
+            .where((e) => e.section == entry.section && e.group == entry.group)
+            .toList();
         return AppPage(
           title: entry.group,
+          back: true,
           actions: [searchAction(context, controller)],
           children: [
-            HelpText('${entry.section.label} › ${entry.group}'),
+            HelpText(entry.breadcrumb),
             const SizedBox(height: 8),
-            GroupCard(children: [for (final e in inGroup) Builder(builder: e.builder)]),
+            GroupCard(
+              children: [for (final e in inGroup) Builder(builder: e.builder)],
+            ),
           ],
         );
       },
@@ -76,6 +96,5 @@ class GroupPage extends StatelessWidget {
   }
 }
 
-void openEntry(BuildContext context, AppController c, String id) {
-  Navigator.of(context).push(MaterialPageRoute(builder: (_) => GroupPage(controller: c, entryId: id)));
-}
+void openEntry(BuildContext context, AppController c, String id) =>
+    context.beamToNamed('/settings/$id', stacked: false);

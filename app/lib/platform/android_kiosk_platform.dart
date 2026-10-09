@@ -10,35 +10,46 @@ class AndroidKioskPlatform implements KioskPlatform {
   Stream<PlatformEvent>? _stream;
 
   @override
-  Stream<PlatformEvent> get events => _stream ??= _events.receiveBroadcastStream().map((e) {
+  Stream<PlatformEvent> get events =>
+      _stream ??= _events.receiveBroadcastStream().map((e) {
         final m = Map<String, dynamic>.from(e as Map);
-        return PlatformEvent(m['type'] as String, Map<String, dynamic>.from((m['data'] as Map?) ?? const {}));
+        return PlatformEvent(
+          m['type'] as String,
+          Map<String, dynamic>.from((m['data'] as Map?) ?? const {}),
+        );
       }).asBroadcastStream();
 
-  Future<T?> _call<T>(String method, [Map<String, dynamic>? args]) => _methods.invokeMethod<T>(method, args);
+  Future<T?> _call<T>(String method, [Map<String, dynamic>? args]) =>
+      _methods.invokeMethod<T>(method, args);
 
   @override
-  Future<DeviceStatus> getStatus() async =>
-      DeviceStatus(Map<String, dynamic>.from(await _call<Map>('getStatus') ?? const {}));
+  Future<DeviceStatus> getStatus() async => DeviceStatus(
+    Map<String, dynamic>.from(await _call<Map>('getStatus') ?? const {}),
+  );
 
   @override
-  Future<void> setLockdown(bool enabled) => _call('setLockdown', {'enabled': enabled});
+  Future<void> setLockdown(bool enabled) =>
+      _call('setLockdown', {'enabled': enabled});
 
   @override
-  Future<void> setAllowlist(List<String> packages) => _call('setAllowlist', {'packages': packages});
+  Future<void> setAllowlist(List<String> packages) =>
+      _call('setAllowlist', {'packages': packages});
 
   @override
-  Future<void> setTargetPackage(String? package) => _call('setTargetPackage', {'package': package});
+  Future<void> setTargetPackage(String? package) =>
+      _call('setTargetPackage', {'package': package});
 
   @override
-  Future<void> setKioskLauncher(bool enabled) => _call('setKioskLauncher', {'enabled': enabled});
+  Future<void> setKioskLauncher(bool enabled) =>
+      _call('setKioskLauncher', {'enabled': enabled});
 
   @override
   Future<void> setPin(String pin) => _call('setPin', {'pin': pin});
 
   @override
   Future<bool> launchApp(String package, {String? path}) async =>
-      await _call<bool>('launchApp', {'package': package, 'path': path}) ?? false;
+      await _call<bool>('launchApp', {'package': package, 'path': path}) ??
+      false;
 
   @override
   Future<bool> bringHaToFront({String? path}) async =>
@@ -51,12 +62,14 @@ class AndroidKioskPlatform implements KioskPlatform {
   Future<List<LaunchableApp>> listLaunchableApps() async {
     final list = await _call<List>('listLaunchableApps') ?? const [];
     return [
-      for (final e in list) LaunchableApp((e as Map)['package'] as String, e['label'] as String),
+      for (final e in list)
+        LaunchableApp((e as Map)['package'] as String, e['label'] as String),
     ];
   }
 
   @override
-  Future<void> setKeepScreenOn(bool enabled) => _call('setKeepScreenOn', {'enabled': enabled});
+  Future<void> setKeepScreenOn(bool enabled) =>
+      _call('setKeepScreenOn', {'enabled': enabled});
 
   @override
   Future<void> wakeScreen() => _call('wakeScreen');
@@ -65,20 +78,37 @@ class AndroidKioskPlatform implements KioskPlatform {
   Future<void> sleepScreen() => _call('sleepScreen');
 
   @override
-  Future<void> setBrightness(int level) => _call('setBrightness', {'level': level});
+  Future<void> setBrightness(int level) =>
+      _call('setBrightness', {'level': level});
 
   @override
-  Future<Map<String, dynamic>> setDisplayConfig(Map<String, dynamic> config) async =>
-      Map<String, dynamic>.from(await _call<Map>('setDisplayConfig', {'config': config}) ?? const {});
+  Future<Map<String, dynamic>> setDisplayConfig(
+    Map<String, dynamic> config,
+  ) async => Map<String, dynamic>.from(
+    await _call<Map>('setDisplayConfig', {'config': config}) ?? const {},
+  );
 
   @override
-  Future<void> setExternalPresence(bool present) => _call('setExternalPresence', {'present': present});
+  Future<void> setExternalPresence(bool present) =>
+      _call('setExternalPresence', {'present': present});
 
   @override
-  Future<void> setExternalNight(bool? night) => _call('setExternalNight', {'night': night});
+  Future<void> setExternalNight(bool? night) =>
+      _call('setExternalNight', {'night': night});
 
   @override
-  Future<void> setGlanceItems(List<Map<String, dynamic>> items) => _call('setGlanceItems', {'items': items});
+  Future<int> unlockWithPin(String pin) async =>
+      (await _call<num>('unlockWithPin', {'pin': pin}) ?? -1).toInt();
+
+  @override
+  Future<void> closeUi(String route) => _call('closeUi', {'route': route});
+
+  @override
+  Future<void> reportTouch() => _call('reportTouch');
+
+  @override
+  Future<void> setGlanceItems(List<Map<String, dynamic>> items) =>
+      _call('setGlanceItems', {'items': items});
 
   @override
   Future<bool> showGlance() async => await _call<bool>('showGlance') ?? false;
@@ -87,7 +117,8 @@ class AndroidKioskPlatform implements KioskPlatform {
   Future<void> hideGlance() => _call('hideGlance');
 
   @override
-  Future<void> requestPermission(String name) => _call('requestPermission', {'name': name});
+  Future<void> requestPermission(String name) =>
+      _call('requestPermission', {'name': name});
 
   @override
   Future<List<AlarmSpec>> getAlarms() async {
@@ -96,7 +127,8 @@ class AndroidKioskPlatform implements KioskPlatform {
   }
 
   @override
-  Future<void> upsertAlarm(AlarmSpec alarm) => _call('upsertAlarm', {'alarm': alarm.toMap()});
+  Future<void> upsertAlarm(AlarmSpec alarm) =>
+      _call('upsertAlarm', {'alarm': alarm.toMap()});
 
   @override
   Future<void> removeAlarm(String id) => _call('removeAlarm', {'id': id});
@@ -111,10 +143,12 @@ class AndroidKioskPlatform implements KioskPlatform {
   Future<void> startKeepAlive() => _call('startKeepAlive');
 
   @override
-  Future<bool> openSettings(String kind) async => await _call<bool>('openSettings', {'kind': kind}) ?? false;
+  Future<bool> openSettings(String kind) async =>
+      await _call<bool>('openSettings', {'kind': kind}) ?? false;
 
   @override
-  Future<void> installSystemUpdate(String uri) => _call('installSystemUpdate', {'uri': uri});
+  Future<void> installSystemUpdate(String uri) =>
+      _call('installSystemUpdate', {'uri': uri});
 
   @override
   Future<void> reboot() => _call('reboot');

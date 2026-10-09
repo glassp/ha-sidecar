@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -12,40 +13,53 @@ Future<void> showPinDialog(BuildContext context, AppController c) async {
       String? error;
       return StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: Text(c.status.hasPin ? 'Change PIN' : 'Set a PIN'),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('At least 4 digits. You will enter it by tapping the top-left corner of the locked screen 5 times.'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: first,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              obscureText: true,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(labelText: 'New PIN', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: second,
-              keyboardType: TextInputType.number,
-              obscureText: true,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(labelText: 'Repeat PIN', errorText: error, border: const OutlineInputBorder()),
-            ),
-          ]),
+          title: Text(c.status.hasPin ? 'pin.change'.tr() : 'pin.set'.tr()),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('pin.dialog_intro'.tr()),
+              const SizedBox(height: 12),
+              TextField(
+                controller: first,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  labelText: 'pin.new'.tr(),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: second,
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  labelText: 'pin.repeat'.tr(),
+                  errorText: error,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('common.cancel'.tr()),
+            ),
             FilledButton(
               onPressed: () {
                 if (first.text.length < 4) {
-                  setState(() => error = 'Use at least 4 digits');
+                  setState(() => error = 'pin.too_short'.tr());
                 } else if (first.text != second.text) {
-                  setState(() => error = 'The PINs do not match');
+                  setState(() => error = 'pin.mismatch'.tr());
                 } else {
                   Navigator.pop(ctx, true);
                 }
               },
-              child: const Text('Save'),
+              child: Text('common.save'.tr()),
             ),
           ],
         ),
@@ -59,18 +73,30 @@ Future<void> showPinDialog(BuildContext context, AppController c) async {
 }
 
 /// Lock/unlock with a readable message for each way it can be refused.
-Future<void> toggleLockdown(BuildContext context, AppController c, bool on) async {
+Future<void> toggleLockdown(
+  BuildContext context,
+  AppController c,
+  bool on,
+) async {
   final messenger = ScaffoldMessenger.of(context);
   try {
     await c.platform.setLockdown(on);
   } on PlatformException catch (e) {
-    final msg = switch (e.code) {
-      'dashboard_required' => 'Choose the kiosk dashboard first (Kiosk → Dashboards).',
-      'pin_required' => 'Set a PIN first.',
-      'no_enforcement_available' => 'Turn on the accessibility guard or make this tablet a device owner first.',
-      _ => 'Could not change the lock: ${e.message ?? e.code}',
+    final key = switch (e.code) {
+      'dashboard_required' => 'lock.err_dashboard',
+      'pin_required' => 'lock.err_pin',
+      'no_enforcement_available' => 'lock.err_protection',
+      _ => null,
     };
-    messenger.showSnackBar(SnackBar(content: Text(msg)));
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          key != null
+              ? key.tr()
+              : 'lock.err_other'.tr(namedArgs: {'error': e.message ?? e.code}),
+        ),
+      ),
+    );
   }
   await c.refresh();
 }

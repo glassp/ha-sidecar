@@ -11,10 +11,10 @@ class DeviceStatus {
   static const empty = DeviceStatus({});
 
   EnforcementMode get mode => switch (raw['mode']) {
-        'device_owner' => EnforcementMode.deviceOwner,
-        'accessibility' => EnforcementMode.accessibility,
-        _ => EnforcementMode.none,
-      };
+    'device_owner' => EnforcementMode.deviceOwner,
+    'accessibility' => EnforcementMode.accessibility,
+    _ => EnforcementMode.none,
+  };
 
   bool _b(String k) => raw[k] == true;
   bool get deviceOwner => _b('device_owner');
@@ -33,20 +33,30 @@ class DeviceStatus {
   bool get notificationsGranted => _b('notifications_granted');
   bool get batteryUnrestricted => _b('battery_unrestricted');
   bool get fullScreenIntentGranted => _b('full_screen_intent_granted');
-  List<String> get companionPackages => (raw['companion_packages'] as List? ?? const []).cast<String>();
+  List<String> get companionPackages =>
+      (raw['companion_packages'] as List? ?? const []).cast<String>();
   bool get glanceShowing => _b('glance_showing');
+  List<Map<String, dynamic>> get glanceItems => [
+    for (final e in (raw['glance_items'] as List? ?? const []))
+      Map<String, dynamic>.from(e as Map),
+  ];
+  Map<String, dynamic>? get ringingAlarm =>
+      (raw['ringing_alarm'] as Map?)?.cast<String, dynamic>();
   bool get cameraActive => _b('camera_active');
   bool get cameraMotion => _b('camera_motion');
   String? get cameraError => raw['camera_error'] as String?;
   double get cameraScore => ((raw['camera_score'] ?? 0) as num).toDouble();
   int? get targetBrightness => raw['target_brightness'] as int?;
   String? get displayError => raw['display_error'] as String?;
-  Map<String, dynamic> get cfg => Map<String, dynamic>.from((raw['cfg'] as Map?) ?? const {});
+  Map<String, dynamic> get cfg =>
+      Map<String, dynamic>.from((raw['cfg'] as Map?) ?? const {});
   bool get isHomeApp => _b('is_home_app');
   bool get alarmRinging => _b('alarm_ringing');
   String? get targetPackage => raw['target_package'] as String?;
-  List<String> get allowlist => (raw['allowlist'] as List? ?? const []).cast<String>();
-  Map<String, dynamic>? get pendingUpdate => (raw['pending_update'] as Map?)?.cast<String, dynamic>();
+  List<String> get allowlist =>
+      (raw['allowlist'] as List? ?? const []).cast<String>();
+  Map<String, dynamic>? get pendingUpdate =>
+      (raw['pending_update'] as Map?)?.cast<String, dynamic>();
   String get securityPatch => (raw['security_patch'] ?? '') as String;
   String get androidRelease => (raw['android_release'] ?? '') as String;
   int? get nextAlarmMillis => raw['next_alarm'] as int?;
@@ -88,25 +98,25 @@ class AlarmSpec {
   final int? next;
 
   factory AlarmSpec.fromMap(Map<dynamic, dynamic> m) => AlarmSpec(
-        id: m['id'] as String,
-        hour: m['hour'] as int,
-        minute: m['minute'] as int,
-        days: ((m['days'] as List?) ?? const []).cast<int>(),
-        label: (m['label'] ?? '') as String,
-        enabled: (m['enabled'] ?? true) as bool,
-        snoozeMinutes: (m['snooze_minutes'] ?? 9) as int,
-        next: m['next'] as int?,
-      );
+    id: m['id'] as String,
+    hour: m['hour'] as int,
+    minute: m['minute'] as int,
+    days: ((m['days'] as List?) ?? const []).cast<int>(),
+    label: (m['label'] ?? '') as String,
+    enabled: (m['enabled'] ?? true) as bool,
+    snoozeMinutes: (m['snooze_minutes'] ?? 9) as int,
+    next: m['next'] as int?,
+  );
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'hour': hour,
-        'minute': minute,
-        'days': days,
-        'label': label,
-        'enabled': enabled,
-        'snooze_minutes': snoozeMinutes,
-      };
+    'id': id,
+    'hour': hour,
+    'minute': minute,
+    'days': days,
+    'label': label,
+    'enabled': enabled,
+    'snooze_minutes': snoozeMinutes,
+  };
 }
 
 abstract class KioskPlatform {
@@ -142,6 +152,15 @@ abstract class KioskPlatform {
   Future<void> setExternalPresence(bool present);
   Future<void> setExternalNight(bool? night);
 
+  /// PIN check for the Flutter PIN page. @return 0 = correct (lockdown is ended), -1 = wrong, >0 = locked out, ms remaining.
+  Future<int> unlockWithPin(String pin);
+
+  /// Closes the Android activity hosting [route] (`/pin`, `/alarm`, `/glance`) if it is the one in front.
+  Future<void> closeUi(String route);
+
+  /// Counts as a touch for dimming / idle timers (the idle screen reports taps this way).
+  Future<void> reportTouch();
+
   // At-a-glance screen and permissions
   Future<void> setGlanceItems(List<Map<String, dynamic>> items);
   Future<bool> showGlance();
@@ -158,6 +177,7 @@ abstract class KioskPlatform {
   // System
   Future<void> startKeepAlive();
   Future<bool> openSettings(String kind);
+
   /// Opens the system update screen and taps through it (accessibility service required).
   Future<void> runSystemUpdate();
   Future<void> installSystemUpdate(String uri);

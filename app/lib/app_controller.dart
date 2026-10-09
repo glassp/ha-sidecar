@@ -12,7 +12,8 @@ import 'settings/connection_settings.dart';
 
 /// Wires platform <-> HA client and exposes UI state.
 class AppController extends ChangeNotifier {
-  AppController({KioskPlatform? platform}) : platform = platform ?? AndroidKioskPlatform();
+  AppController({KioskPlatform? platform})
+    : platform = platform ?? AndroidKioskPlatform();
 
   final KioskPlatform platform;
 
@@ -23,6 +24,10 @@ class AppController extends ChangeNotifier {
   StreamSubscription<PlatformEvent>? _events;
   Timer? _poll;
   bool ready = false;
+
+  /// Set by the router: navigate to a path / follow the Android activity that is in front.
+  void Function(String path)? onNavigate;
+  void Function(String route)? onUiRoute;
 
   /// First-run wizard state. `kiosk` = wall display, `extras` = sensors and alarms only.
   bool setupDone = false;
@@ -64,6 +69,7 @@ class AppController extends ChangeNotifier {
     setupDone = true;
     await (await SharedPreferences.getInstance()).setBool('setup_done', true);
     notifyListeners();
+    onNavigate?.call('/');
   }
 
   Future<void> setSetupMode(String mode) async {
@@ -76,6 +82,7 @@ class AppController extends ChangeNotifier {
     setupDone = false;
     await (await SharedPreferences.getInstance()).setBool('setup_done', false);
     notifyListeners();
+    onNavigate?.call('/wizard');
   }
 
   /// Writes one display/kiosk setting. @return a human readable error, or null on success.
@@ -85,7 +92,9 @@ class AppController extends ChangeNotifier {
       await refresh();
       return null;
     } on PlatformException catch (e) {
-      return e.code == 'invalid_value' ? 'That value is not valid.' : (e.message ?? e.code);
+      return e.code == 'invalid_value'
+          ? 'That value is not valid.'
+          : (e.message ?? e.code);
     }
   }
 
@@ -116,7 +125,9 @@ class AppController extends ChangeNotifier {
       },
       onCommand: (command, data) async {
         final result = await CommandRouter(platform).handle(command, data);
-        unawaited(refresh()); // answer HA first: a slow status read must not time the command out
+        unawaited(
+          refresh(),
+        ); // answer HA first: a slow status read must not time the command out
         return result;
       },
       onConnected: _pushState,
@@ -134,6 +145,11 @@ class AppController extends ChangeNotifier {
   Future<void> _pushState() async => _client?.sendState(status.raw);
 
   Future<void> _onPlatformEvent(PlatformEvent e) async {
+    if (e.type == 'ui_route') {
+      onUiRoute?.call(e.data['route'] as String);
+      return;
+    }
+    if (e.type == 'alarm_stopped') await platform.closeUi('/alarm');
     await refresh();
     if (_forwarded.contains(e.type)) _client?.sendEvent(e.type, e.data);
   }
