@@ -67,7 +67,11 @@ Events: `app_blocked`, `pin_failed`, `guard_disabled`, `device_admin_disabled`, 
 | `pause_timer` / `resume_timer` / `cancel_timer` | `id` | `cancel_timer` removes without ringing |
 | `adjust_timer` | `id`, `delta_s` | add/remove time on a countdown; on a finished one it runs again |
 | `get_timers` | | |
+| `heal_dashboard` | `reason` | restart requested by Home Assistant (beacon silent): answers `{healed, why?}`; refused (`screen_off`, `busy`, `not_in_front`, `rate_limited`); needs neither the watchdog switch nor accessibility |
 | `restart_companion` | | closes and relaunches the Home Assistant app now (device owner: hide + unhide) |
+
+**Dashboard beacon** (Home Assistant side, not tablet protocol): websocket commands `ha_sidecar/beacon` (`tablet`, `state` active|inactive,
+`reason`, `path`) and `ha_sidecar/tablets`; bus events `dashboard_unresponsive`, `dashboard_navigate_attempt`, `dashboard_recovered`.
 
 **Companion app watchdog** (settings `watchdog`, `watchdog_action` = `restart`/`notify`, `watchdog_probe_s`, `watchdog_startup_s`
 via `set_config`). State carries `watchdog`: `{enabled, state (off|ok|idle|no_accessibility|unresponsive|restarting|gave_up),

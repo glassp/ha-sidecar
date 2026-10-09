@@ -66,5 +66,36 @@ class BeaconTrackerTest(unittest.TestCase):
         self.assertFalse(self.t.armed)  # and the restarted page has to beacon before it is judged again
 
 
+class BeaconLadderTest(unittest.TestCase):
+    def setUp(self):
+        self.t = beacon.BeaconTracker(timeout=4 * MIN)
+        self.t.record(T0, "/lovelace/wall")
+
+    def test_leaving_is_not_a_hang(self):
+        self.t.mark_inactive("navigation", "/config")
+        self.assertEqual(self.t.evaluate(T0 + 60 * MIN, watching=True), beacon.BeaconState.INACTIVE)
+        self.t.record(T0 + 61 * MIN, "/lovelace/wall")  # the card is mounted again
+        self.assertEqual(self.t.evaluate(T0 + 62 * MIN, watching=True), beacon.BeaconState.OK)
+
+    def test_silence_first_navigates_then_restarts(self):
+        now = T0 + 10 * MIN
+        self.assertEqual(self.t.next_action(now, can_navigate=True), "navigate")
+        self.assertIsNone(self.t.next_action(now + 30 * timedelta(seconds=1), can_navigate=True))  # give it time
+        self.assertEqual(self.t.next_action(now + 91 * timedelta(seconds=1), can_navigate=True), "heal")
+
+    def test_a_beacon_after_navigating_ends_the_escalation(self):
+        now = T0 + 10 * MIN
+        self.t.next_action(now, can_navigate=True)
+        self.t.record(now + 20 * timedelta(seconds=1), "/lovelace/wall")
+        self.assertEqual(self.t.next_action(now + 5 * MIN, can_navigate=True), "navigate")  # a new episode starts over
+
+    def test_without_a_kiosk_dashboard_it_goes_straight_to_restart(self):
+        self.assertEqual(self.t.next_action(T0 + 10 * MIN, can_navigate=False), "heal")
+
+    def test_restart_is_rate_limited(self):
+        self.t.healed(T0)
+        self.assertIsNone(self.t.next_action(T0 + 2 * MIN, can_navigate=False))
+
+
 if __name__ == "__main__":
     unittest.main()

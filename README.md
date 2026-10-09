@@ -56,6 +56,29 @@ owner: hide + unhide; otherwise via the dialog's "Close app"), at most three tim
 (`companion_unresponsive` / `companion_restarted` / `companion_restart_gave_up` events, a *Companion app responsive* sensor,
 a restart counter and a *Restart companion app* button). See the 2.5 section of [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## Dashboard beacon card (frozen page detection)
+
+The watchdog above sees a frozen *app*; a frozen or dead *page* inside a healthy app needs the page's help. Add the card
+**HA Sidecar beacon** (served by the integration, pick the tablet in the editor) to the dashboard the tablet shows:
+
+```yaml
+type: custom:ha-sidecar-beacon-card
+tablet: wallpanel      # the entity prefix of the tablet
+```
+
+While the card is on screen it pings Home Assistant every 30 s over the page's own connection (and does not ping when nothing is
+being drawn). It tells Home Assistant when it leaves (another dashboard, a view without the card, a reload), so leaving is never
+mistaken for a freeze. A dashboard shows only the cards of the view on screen, so put the card on every view the tablet can be
+on (or keep the kiosk dashboard to one view). Entities: *Dashboard responsive* (on / off / unknown while the card is not on screen)
+and *Dashboard last beacon*.
+
+Silence alone never restarts anything. With *Restart the companion app when the beacon goes silent* switched on in the
+integration's options (off by default), a beacon that stops **without** saying goodbye is handled in steps, only while the screen
+is on, the app is in front and the tablet is connected: (1) the tablet is sent to the kiosk dashboard with a navigate intent, which
+fixes a wrong page and often a stuck one; (2) if no ping returns within 90 s, the companion app is closed and reopened through
+the watchdog (same limit of three restarts per ten minutes). Events: `dashboard_unresponsive`, `dashboard_navigate_attempt`,
+`dashboard_recovered`.
+
 ## Timers, stopwatches and remote alarm control
 
 Labeled countdowns ("Batch 1") and count-ups ("Treadmill") run on the tablet and show on the idle screen. A finished

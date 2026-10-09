@@ -237,10 +237,18 @@ class SidecarDevice:
         )
 
     @callback
-    def handle_beacon(self) -> None:
+    def handle_beacon(self, active: bool = True, reason: str | None = None, path: str | None = None) -> None:
         self.beacon.timeout = timedelta(minutes=self.beacon_timeout_minutes)
-        self.beacon.record(dt_util.utcnow())
-        self._beacon_episode = False
+        if active:
+            if self._beacon_episode:
+                self.hass.bus.async_fire(
+                    EVENT_SIDECAR, {"device_id": self.device_id, "name": self.name, "event": "dashboard_recovered", "path": path}
+                )
+            self.beacon.record(dt_util.utcnow(), path)
+            self._beacon_episode = False
+        else:
+            self.beacon.mark_inactive(reason, path)
+            self._beacon_episode = False
         self._set_beacon_state(self.beacon.evaluate(dt_util.utcnow(), watching=self._beacon_watching()))
 
     @callback
@@ -262,19 +270,30 @@ class SidecarDevice:
         self.beacon.timeout = timedelta(minutes=self.beacon_timeout_minutes)
         state = self.beacon.evaluate(now, watching=self._beacon_watching())
         self._set_beacon_state(state)
-        if state != BeaconState.STALE or self._beacon_episode:
+        if state != BeaconState.STALE:
             return
-        self._beacon_episode = True
-        self.hass.bus.async_fire(
-            EVENT_SIDECAR,
-            {"device_id": self.device_id, "name": self.name, "event": "dashboard_unresponsive",
-             "last_beacon": self.beacon.last.isoformat() if self.beacon.last else None},
-        )
-        if self.beacon_heal_enabled and self.beacon.may_heal(now):
-            try:
+        if not self._beacon_episode:  # once per episode; the remedies below are retried on later ticks
+            self._beacon_episode = True
+            self.hass.bus.async_fire(
+                EVENT_SIDECAR,
+                {"device_id": self.device_id, "name": self.name, "event": "dashboard_unresponsive",
+                 "last_beacon": self.beacon.last.isoformat() if self.beacon.last else None},
+            )
+        if not self.beacon_heal_enabled:
+            return
+        # a silent beacon is only a suspicion (wrong page, dropped connection, hung page): gentlest remedy first
+        kiosk_path = ((self.state.get("cfg") or {}).get("kiosk_dashboard") or "").strip()
+        action = self.beacon.next_action(now, can_navigate=bool(kiosk_path))
+        try:
+            if action == "navigate":
+                await self.send_command("bring_to_front", {"path": kiosk_path})
+                self.hass.bus.async_fire(
+                    EVENT_SIDECAR,
+                    {"device_id": self.device_id, "name": self.name, "event": "dashboard_navigate_attempt", "path": kiosk_path},
+                )
+            elif action == "heal":
                 result = await self.send_command("heal_dashboard", {"reason": "beacon"})
-            except HomeAssistantError as err:
-                _LOGGER.warning("Could not heal the dashboard on %s: %s", self.name, err)
-                return
-            self.beacon.healed(now)
-            _LOGGER.info("Dashboard beacon of %s went silent: heal %s", self.name, result)
+                self.beacon.healed(now)
+                _LOGGER.info("Dashboard beacon of %s stayed silent: heal %s", self.name, result)
+        except HomeAssistantError as err:
+            _LOGGER.warning("Could not recover the dashboard on %s: %s", self.name, err)

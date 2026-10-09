@@ -19,7 +19,13 @@ function load() {
   const sandbox = {
     HTMLElement: FakeElement,
     customElements: { define: (n, c) => { defined[n] = c; } },
-    window: { customCards: [] },
+    window: {
+      customCards: [],
+      location: { pathname: "/lovelace/wall" },
+      listeners: {},
+      addEventListener(name, fn) { (this.listeners[name] = this.listeners[name] || []).push(fn); },
+      removeEventListener(name, fn) { this.listeners[name] = (this.listeners[name] || []).filter((f) => f !== fn); },
+    },
     document: { createElement: () => new FakeElement(), get visibilityState() { return visible.state; } },
     performance: { now: () => now },
     requestAnimationFrame: () => 1,
@@ -58,7 +64,7 @@ test("pings immediately and then on the interval", async () => {
   const calls = [];
   const el = card(env, { tablet: "wallpanel", interval: 30 }, async (msg) => { calls.push(msg); return { ok: true }; });
   await new Promise((r) => setImmediate(r));
-  assert.equal(JSON.stringify(calls[0]), JSON.stringify({ type: "ha_sidecar/beacon", tablet: "wallpanel" }));
+  assert.equal(JSON.stringify(calls[0]), JSON.stringify({ type: "ha_sidecar/beacon", tablet: "wallpanel", state: "active", path: "/lovelace/wall" }));
   assert.equal(env.timers[0].ms, 30000);
   await el._ping();
   assert.equal(calls.length, 2); // one from start, one from the explicit call
@@ -100,4 +106,30 @@ test("escapes what it renders", () => {
   const el = new env.defined["ha-sidecar-beacon-card"]();
   el.setConfig({ tablet: "<img src=x onerror=alert(1)>" });
   assert.ok(!el.shadowRoot.innerHTML.includes("<img"));
+});
+
+test("announces that it left when the page navigates away", async () => {
+  const env = load();
+  const calls = [];
+  card(env, { tablet: "wallpanel" }, async (msg) => { calls.push(JSON.parse(JSON.stringify(msg))); return { ok: true }; });
+  await new Promise((r) => setImmediate(r));
+  env.sandbox.window.location.pathname = "/config";
+  for (const fn of env.sandbox.window.listeners["location-changed"]) fn();
+  await new Promise((r) => setImmediate(r));
+  const left = calls.find((c) => c.state === "inactive");
+  assert.ok(left, "no leave notice sent");
+  assert.equal(left.reason, "navigation");
+  assert.equal(left.path, "/config");
+});
+
+test("announces when its view is unmounted and stops listening", async () => {
+  const env = load();
+  const calls = [];
+  const el = card(env, { tablet: "wallpanel" }, async (msg) => { calls.push(JSON.parse(JSON.stringify(msg))); return { ok: true }; });
+  await new Promise((r) => setImmediate(r));
+  el.isConnected = false;
+  el.disconnectedCallback();
+  await new Promise((r) => setImmediate(r));
+  assert.ok(calls.some((c) => c.state === "inactive" && /removed/.test(c.reason)));
+  assert.equal(env.sandbox.window.listeners["location-changed"].length, 0);
 });

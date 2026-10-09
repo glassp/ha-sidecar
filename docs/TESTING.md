@@ -148,6 +148,15 @@ device over a day (dimming, glance, Wi-Fi changes), a start-up hang that is *not
 paths (`relaunch_only`), the Home Assistant entities (the integration was only compiled; the test Home Assistant was removed
 before this phase), a physical tablet and localized ANR dialogs.
 
+### Dashboard beacon card (unit level only)
+
+9 Node tests run the card against a stubbed page (ping on start and interval, no ping when nothing is drawn or the page is hidden,
+unknown tablet, escaping, leave notice on navigation, leave notice and listener cleanup on unmount); 12 Python tests cover the
+tracker (no verdict without a first ping, stale after the limit, paused while not watching, silence counted from when watching
+resumed, inactive is not stale, navigate-then-restart ladder, restart rate limit). `heal_dashboard` and the Python integration
+code compile; **nothing ran against a real Home Assistant, the companion app or the dashboard editor yet** (the test Home
+Assistant was removed; re-creating it needs a ~1 GB download).
+
 ## Not verified
 
 - Update **detection** (`onSystemUpdatePending`) and the download/install/restart taps: need a real pending OTA.

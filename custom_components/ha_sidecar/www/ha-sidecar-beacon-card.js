@@ -30,6 +30,8 @@ class HaSidecarBeaconCard extends HTMLElement {
     this._rafId = null;
     this._lastFrame = performance.now();
     this._status = { kind: "waiting", text: "Waiting" };
+    this._leaving = () => this._announceLeft("navigation", true);
+    this._pageHide = () => this._announceLeft("page unloaded", false);
     this.attachShadow({ mode: "open" });
   }
 
@@ -72,6 +74,8 @@ class HaSidecarBeaconCard extends HTMLElement {
   }
 
   disconnectedCallback() {
+    // the view with this card is no longer shown: say so, so that silence is not mistaken for a hang
+    this._announceLeft("card removed from the page", false);
     this._stop();
   }
 
@@ -84,6 +88,11 @@ class HaSidecarBeaconCard extends HTMLElement {
     };
     loop();
     const every = Math.max(5, Number(this._config.interval) || 30) * 1000;
+    // leaving the page on purpose (another dashboard, a reload) is announced, not mistaken for a freeze
+    window.addEventListener("location-changed", this._leaving);
+    window.addEventListener("popstate", this._leaving);
+    window.addEventListener("pagehide", this._pageHide);
+    window.addEventListener("beforeunload", this._pageHide);
     this._ping();
     this._timer = setInterval(() => this._ping(), every);
   }
@@ -93,6 +102,23 @@ class HaSidecarBeaconCard extends HTMLElement {
     if (this._rafId) cancelAnimationFrame(this._rafId);
     this._timer = null;
     this._rafId = null;
+    window.removeEventListener("location-changed", this._leaving);
+    window.removeEventListener("popstate", this._leaving);
+    window.removeEventListener("pagehide", this._pageHide);
+    window.removeEventListener("beforeunload", this._pageHide);
+  }
+
+  /** Tells Home Assistant this card is not on the page being shown any more (best effort: the page may be unloading). */
+  _announceLeft(reason, maybeStillHere) {
+    if (!this._hass || !this._config) return;
+    this._set("paused", "Left the page");
+    Promise.resolve(
+      this._hass.callWS({ type: "ha_sidecar/beacon", tablet: this._config.tablet, state: "inactive", reason, path: window.location.pathname }),
+    ).catch(() => {});
+    if (maybeStillHere) {
+      // a navigation inside the same view keeps this card mounted: announce that it is active again
+      setTimeout(() => { if (this.isConnected) this._ping(); }, 1500);
+    }
   }
 
   async _ping() {
@@ -109,7 +135,7 @@ class HaSidecarBeaconCard extends HTMLElement {
     }
     try {
       const answer = await Promise.race([
-        this._hass.callWS({ type: "ha_sidecar/beacon", tablet: this._config.tablet }),
+        this._hass.callWS({ type: "ha_sidecar/beacon", tablet: this._config.tablet, state: "active", path: window.location.pathname }),
         new Promise((_, reject) => setTimeout(() => reject(new Error("no answer")), ANSWER_TIMEOUT_MS)),
       ]);
       this._set("ok", `Alive ${new Date().toLocaleTimeString()}`, answer);

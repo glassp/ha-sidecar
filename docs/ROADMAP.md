@@ -116,25 +116,18 @@ device-owner recovery ~3.5 s, the ANR dialog answered by view id, the 3-per-10-m
 3. *Visual freeze* (F3, optional, off by default): accessibility screenshot (Android 11+, needs the screenshot capability)
    hashed on a tiny grid; identical for `visual_timeout` while the screen is on and brightness is unchanged.
    Needs a live element on the dashboard (a clock card); otherwise static dashboards false-positive.
-4. *Dashboard beacon* (F3, and a dashboard that lost its connection; designed, not built). The integration serves a small
-   frontend module (`frontend.add_extra_js_url`, so it is loaded by every dashboard in the companion app without editing any
-   dashboard; a card with the same code is the manual alternative). It runs *inside the page*: every 30 s it sends
-   `ha_sidecar/beacon` over the page's own authenticated WebSocket (`window.hassConnection`) and waits for the answer. Because it
-   lives in the WebView, it stops when the page's JS hangs, the renderer process dies, the page stays blank after a failed
-   load, or the page's connection to Home Assistant is dead; it also skips the ping when no animation frame ran
-   (`requestAnimationFrame`), which catches a stuck compositor. The integration keeps `last_beacon` per tablet
-   (sensor + binary sensor *Dashboard responsive*, event `dashboard_unresponsive`) and, if enabled, tells the tablet to heal.
-   - *Which tablet?* The page does not know. v1: the card/module is configured with the entity prefix; v2: the sidecar opens the
-     dashboard with `?ha_sidecar=<device id>` and the module keeps it in `localStorage` (needs checking that the companion
-     app keeps query parameters of `homeassistant://navigate/...`).
-   - *When is silence a problem?* Only while the tablet reports the screen on, the companion app in front, its own link to Home
-     Assistant up and Home Assistant not freshly (re)started, and only after the first beacon was seen since the app was
-     launched (so a tablet without the module never gets restarted). Timeout about 3-5 minutes, configurable.
-   - *Heal:* a new `heal_dashboard` command, handled by the tablet's watchdog so there is one rate limiter and one set of
-     gating rules (reason `beacon`; relaunch with the dashboard link, hide + unhide as device owner).
-   - *Why through Home Assistant and not straight to the tablet?* It also shows up as a sensor and works wherever the dashboard
-     works. A beacon to a local port on the tablet would heal even while Home Assistant is down, but needs a local HTTP server
-     on the tablet and has to get past mixed-content / private-network rules of the WebView; possible later.
+4. *Dashboard beacon* (F3, built, not yet run end to end): an explicit card, `custom:ha-sidecar-beacon-card`, shipped by the
+   integration with a picker of the registered tablets (config = the tablet's entity prefix). It pings `ha_sidecar/beacon` over the
+   page's own WebSocket every 30 s, skips pings when no animation frame ran or the page is hidden, and **announces when it
+   leaves** (`location-changed`, `popstate`, `pagehide`, view unmounted), so leaving a page is `inactive`, not stale. The
+   integration tracks it per tablet (`BeaconTracker`: only judged while the screen is on, the app is in front, the tablet is
+   connected, Home Assistant is not freshly started, and after a first ping).
+   - *Stale is only a suspicion.* Opt-in remedy ladder for a beacon that went silent *without* a goodbye: (1) `bring_to_front` with
+     the kiosk dashboard path (navigate intent; the companion app may accept it and reload the page that has the card),
+     (2) after 90 s without a ping, `heal_dashboard` (close and reopen the app via the watchdog: same gating and the 3-per-10-minutes limit).
+     No kiosk dashboard set: straight to (2). Inactive never triggers anything.
+   - Not built: asking the app which dashboard is on screen (nothing in the companion app exposes it); the page's own
+     path in the pings stands in for that. Direct tablet-local beacon (heals without Home Assistant).
 5. *Scheduled restart* (blunt, also fixes stale dashboards): restart the HA app on a schedule in a quiet period.
 
 **Recovery (rate limited):**

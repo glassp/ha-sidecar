@@ -24,7 +24,15 @@ def async_register(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, ws_tablets)
 
 
-@websocket_api.websocket_command({vol.Required("type"): "ha_sidecar/beacon", vol.Required("tablet"): str})
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "ha_sidecar/beacon",
+        vol.Required("tablet"): str,
+        vol.Optional("state", default="active"): vol.In(["active", "inactive"]),
+        vol.Optional("reason"): vol.Any(str, None),
+        vol.Optional("path"): vol.Any(str, None),
+    }
+)
 @callback
 def ws_beacon(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
     """A ping from the card. Answering proves the whole round trip (page -> Home Assistant -> page) works."""
@@ -32,7 +40,7 @@ def ws_beacon(hass: HomeAssistant, connection: websocket_api.ActiveConnection, m
     if device is None:
         connection.send_error(msg["id"], "unknown_tablet", f"No tablet with the prefix '{msg['tablet']}'")
         return
-    device.handle_beacon()
+    device.handle_beacon(active=msg["state"] == "active", reason=msg.get("reason"), path=msg.get("path"))
     connection.send_result(msg["id"], {"ok": True, "state": str(device.beacon_state), "timeout_s": int(device.beacon.timeout.total_seconds())})
 
 

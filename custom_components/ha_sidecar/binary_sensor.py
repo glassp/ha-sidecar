@@ -79,4 +79,5 @@ class DashboardResponsiveSensor(SidecarEntity, BinarySensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, str]:
-        return {"beacon": str(self._device.beacon_state)}
+        b = self._device.beacon
+        return {"beacon": str(self._device.beacon_state), "path": b.path, "inactive_reason": b.inactive_reason}
