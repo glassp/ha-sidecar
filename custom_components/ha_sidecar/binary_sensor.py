@@ -1,0 +1,42 @@
+"""Binary sensors."""
+
+from __future__ import annotations
+
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from .const import CONF_DEVICE_ID, DOMAIN
+from .entity import SidecarEntity
+
+# key, name, device_class, entity_category, icon
+SENSORS = [
+    ("alarm_ringing", "Alarm ringing", None, None, "mdi:alarm-light"),
+    ("charging", "Charging", BinarySensorDeviceClass.BATTERY_CHARGING, None, None),
+    ("screen_on", "Screen on", None, None, "mdi:monitor"),
+    ("is_home_app", "Is home app", None, EntityCategory.DIAGNOSTIC, "mdi:home"),
+    ("device_owner", "Device owner", None, EntityCategory.DIAGNOSTIC, "mdi:shield-account"),
+    ("accessibility_enabled", "Accessibility guard", None, EntityCategory.DIAGNOSTIC, "mdi:human"),
+    ("overlay_granted", "Overlay permission", None, EntityCategory.DIAGNOSTIC, "mdi:layers"),
+]
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
+    device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
+    async_add_entities(SidecarBinarySensor(device, *s) for s in SENSORS)
+
+
+class SidecarBinarySensor(SidecarEntity, BinarySensorEntity):
+    def __init__(self, device, key, name, device_class, category, icon) -> None:
+        super().__init__(device, key)
+        self._attr_name = name
+        self._attr_device_class = device_class
+        self._attr_entity_category = category
+        self._attr_icon = icon
+
+    @property
+    def is_on(self) -> bool | None:
+        value = self._state.get(self._key)
+        return None if value is None else bool(value)

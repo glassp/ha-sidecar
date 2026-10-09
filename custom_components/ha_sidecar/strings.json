@@ -1,0 +1,111 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a tablet",
+        "description": "Give the tablet a name. A pairing token is generated on the next screen.",
+        "data": {
+          "name": "Name"
+        }
+      },
+      "pair": {
+        "title": "Pair the HA Sidecar app",
+        "description": "In the HA Sidecar app enter this Home Assistant URL and the token below, then press Submit here.\n\n**Token:** `{token}`"
+      }
+    }
+  },
+  "services": {
+    "launch_app": {
+      "name": "Launch app",
+      "description": "Launches an app on the tablet.",
+      "fields": {
+        "package": {
+          "name": "Package",
+          "description": "Android package name."
+        },
+        "path": {
+          "name": "Path",
+          "description": "Optional HA frontend path; only used for the HA companion app (homeassistant://navigate/<path>)."
+        }
+      }
+    },
+    "set_allowlist": {
+      "name": "Set allowed apps",
+      "description": "Sets which apps may run during lockdown.",
+      "fields": {
+        "packages": {
+          "name": "Packages",
+          "description": "List of package names."
+        }
+      }
+    },
+    "set_alarm": {
+      "name": "Set alarm",
+      "description": "Creates or updates a native alarm on the tablet.",
+      "fields": {
+        "time": {
+          "name": "Time",
+          "description": "Local time."
+        },
+        "days": {
+          "name": "Days",
+          "description": "Empty means once."
+        },
+        "label": {
+          "name": "Label",
+          "description": "Shown when ringing."
+        },
+        "alarm_id": {
+          "name": "Alarm ID",
+          "description": "Reuse to update an existing alarm."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Whether the alarm is active."
+        },
+        "snooze_minutes": {
+          "name": "Snooze minutes",
+          "description": "Snooze duration."
+        }
+      }
+    },
+    "cancel_alarm": {
+      "name": "Cancel alarm",
+      "description": "Deletes an alarm.",
+      "fields": {
+        "alarm_id": {
+          "name": "Alarm ID",
+          "description": "ID of the alarm."
+        }
+      }
+    },
+    "stop_alarm": {
+      "name": "Stop alarm",
+      "description": "Dismisses the ringing alarm."
+    },
+    "snooze_alarm": {
+      "name": "Snooze alarm",
+      "description": "Snoozes the ringing alarm."
+    },
+    "install_system_update": {
+      "name": "Install system update",
+      "description": "Device owner only: installs an A/B OTA package from a URI readable by the system.",
+      "fields": {
+        "uri": {
+          "name": "URI",
+          "description": "OTA package location."
+        }
+      }
+    },
+    "bring_to_front": {
+      "name": "Bring dashboard to front",
+      "description": "Brings the HA companion app to the front without restarting it.",
+      "fields": {
+        "path": {
+          "name": "Path",
+          "description": "Optional dashboard path to navigate to."
+        }
+      }
+    }
+  }
+}

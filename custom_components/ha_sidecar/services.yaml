@@ -1,0 +1,97 @@
+launch_app:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    package:
+      required: true
+      example: io.homeassistant.companion.android
+      selector:
+        text:
+    path:
+      example: lovelace/kitchen
+      selector:
+        text:
+
+bring_to_front:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    path:
+      example: lovelace/kitchen
+      selector:
+        text:
+
+set_allowlist:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    packages:
+      required: true
+      example: '["com.spotify.music"]'
+      selector:
+        object:
+
+set_alarm:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    time:
+      required: true
+      selector:
+        time:
+    days:
+      selector:
+        select:
+          multiple: true
+          options: [mon, tue, wed, thu, fri, sat, sun]
+    label:
+      selector:
+        text:
+    alarm_id:
+      selector:
+        text:
+    enabled:
+      default: true
+      selector:
+        boolean:
+    snooze_minutes:
+      default: 9
+      selector:
+        number:
+          min: 1
+          max: 60
+
+cancel_alarm:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    alarm_id:
+      required: true
+      selector:
+        text:
+
+stop_alarm:
+  target:
+    device:
+      integration: ha_sidecar
+
+snooze_alarm:
+  target:
+    device:
+      integration: ha_sidecar
+
+install_system_update:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    uri:
+      required: true
+      example: file:///sdcard/Download/ota.zip
+      selector:
+        text:
