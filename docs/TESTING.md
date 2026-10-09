@@ -73,6 +73,13 @@ already running (the emulator's companion app is not logged in; entering credent
 redacts the deep-link URI in logs, so the exact path is covered by the unit tests, not by the device log. Please check this
 once on your real tablet; if the companion app only handles it on cold start, the glance mode needs a different approach.
 
+### Freeze spike (design input for roadmap 2.5)
+
+Companion app frozen with `kill -STOP` on the emulator: accessibility dump fails with a null root within ~3 s; touching it
+brings the system ANR dialog ("Home Assistant isn't responding", Close app / Wait) in ~2 s; "Close app" kills the process;
+`pm suspend` does not kill a stopped process but `pm hide` does and `unhide` + launch restores a healthy app with data
+intact. Not tried: the real `DevicePolicyManager` calls, a renderer-only hang, a cold-start hang.
+
 ## Not verified
 
 - Update **detection** (`onSystemUpdatePending`) and the download/install/restart taps: need a real pending OTA.

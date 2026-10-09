@@ -39,6 +39,64 @@ Original plan:
 - Dimming curve + presence wake (HA `binary_sensor` → `screen` command already works).
 - Screenshot + battery/uptime sensors.
 
+### 2.5 Companion app watchdog (frozen / non-responsive HA app) - design, not built
+
+**Problem.** Crashes and kills are already handled (home role: Android returns to the sidecar, which relaunches the HA
+app). A *frozen* app is not: it is still "running" so nothing relaunches it. Failure modes:
+
+| # | Failure | Looks like | Handled today |
+|---|---|---|---|
+| F1 | Cold-start hang (splash forever, never reaches the dashboard) | process alive, UI never changes | no |
+| F2 | UI-thread freeze / ANR | touches ignored, system may show "App isn't responding" | no |
+| F3 | WebView renderer hang or blank/white page (UI thread alive) | app responds, page is dead or stale | no |
+| F4 | Crash / kill / lock-task exit | app gone | yes |
+
+**Spike results (emulator, Android 15, companion 2026.8.4, process frozen with `kill -STOP`):**
+- Accessibility tree of a frozen app: retrieval fails with a *null root node* within ~3 s (healthy app: 20 nodes).
+  A frozen UI thread (F1/F2) is therefore detectable with a cheap probe from the accessibility service, no screen capture.
+- After the first touch the *system* raises the ANR dialog within ~2 s: package `android`, text "Home Assistant isn't
+  responding", buttons "Close app" / "Wait". Visible in the accessibility tree, so it can be recognised and answered.
+  "Close app" kills the process.
+- Kill-from-outside: `pm suspend` (= `setPackagesSuspended`) did **not** kill the stopped process; `pm hide` /
+  `setApplicationHidden(true)` did, and `unhide` + relaunch gave a healthy process with data intact. A device owner can
+  use `setApplicationHidden(admin, pkg, true/false)`.
+- Not covered by any of this: F3 (the UI thread is fine, the page is dead). Needs a content-level signal.
+
+**Detection signals (combine, each with a grace period):**
+1. *UI probe* (F1, F2): every 15-30 s while the HA app is foreground, the screen is on and nothing else is running,
+   `rootInActiveWindow` of the target; null/empty for N consecutive probes = unresponsive. Cold start: after a launch we
+   issued, expect a non-splash tree within `startup_timeout` (default 90 s).
+2. *ANR dialog* (F2): accessibility sees package `android` + "isn't responding" naming the HA app.
+3. *Visual freeze* (F3, optional, off by default): accessibility screenshot (Android 11+, needs the screenshot capability)
+   hashed on a tiny grid; identical for `visual_timeout` while the screen is on and brightness is unchanged.
+   Needs a live element on the dashboard (a clock card); otherwise static dashboards false-positive.
+4. *HA-side heartbeat* (F2/F3, optional): the integration flags the tablet when a companion-app sensor with a short update
+   interval (Fast Always = 1 min) or a heartbeat card has not updated for N minutes, and sends `restart_companion`.
+   Slow and needs user setup, but independent of the tablet.
+5. *Scheduled restart* (blunt, also fixes stale dashboards): restart the HA app on a schedule in a quiet period.
+
+**Recovery (rate limited):**
+- Device owner: `setApplicationHidden(true)` then `false`, then `launchTarget(lockTask + dashboard)`. With lock-task the
+  task ends and the home role relaunches it anyway.
+- Without device owner: if the ANR dialog is up, tap "Close app" (accessibility); otherwise drive Settings → App info →
+  Force stop (same mechanism as the update automation; label-matched, OEM dependent) and relaunch. Last resort: notify HA.
+- Policy: never while an alarm rings or the PIN screen is open; skip when the screen is off; max 3 restarts per
+  10 minutes with back-off, then stop restarting and raise an HA event instead (a boot loop must not hide a real problem).
+  A restart is reported with its reason.
+
+**HA surface.** `binary_sensor` Companion app responsive (problem class), `sensor` Companion restarts (total increasing)
+and Last restart reason, `switch` Watchdog, numbers for the probe interval / startup timeout / visual timeout, `select`
+action (`restart` | `notify only`), `button` Restart companion app, bus events `companion_unresponsive`,
+`companion_restarted`, `companion_restart_gave_up`.
+
+**Evaluation plan (this is why it is a half phase).**
+1. Freeze lab on the emulator: `kill -STOP` (F2), a page that blocks the renderer (F3), a launch that never finishes (F1).
+   Measure detection latency and false positives on a healthy device over a day (dimming, glance dashboard, screen off).
+2. Implement signals 1 and 2 plus the device-owner recovery first; decide on 3-5 from the false-positive data.
+3. Tune probe interval vs battery; confirm the accessibility probe does not wake the screen or reset dimming.
+4. Real tablet: low memory, slow storage, OEM ANR dialog wording (the dialog text is localized: match by package +
+   button roles, not only English text).
+
 ### 3. Voice
 - Integration side: implement `assist_satellite` entity platform (`AssistSatelliteEntity`): `async_announce`,
   `async_set_configuration`, pipeline events; audio over a second binary WebSocket stream or HA's `assist_pipeline/run`.

@@ -48,6 +48,12 @@ via `addPersistentPreferredActivity`; others pick it in Android settings (`ROLE_
 polling watchdog: the OS tells us when the HA app is gone. Gaps: a *frozen* (not dead) HA app is not detected, and
 without the home role or the accessibility service nothing recovers a crashed HA app.
 
+## Watchdog (planned, phase 2.5)
+
+See ROADMAP 2.5. Short version: crashes are recovered by the home role; frozen apps need an accessibility UI probe + ANR
+dialog recognition, and a device-owner `setApplicationHidden` kill/relaunch (spiked: suspend does not kill a stopped
+process, hide does). Page-level hangs inside a live WebView need an optional visual or HA-side heartbeat signal.
+
 ## Foregrounding the HA app
 
 Plain intents only: the launcher intent with `FLAG_ACTIVITY_REORDER_TO_FRONT` (no task reset, so the dashboard is not
