@@ -6,7 +6,7 @@ based on its **public docs only**; everything here is implemented independently.
 | KS feature (from its docs) | Here |
 |---|---|
 | PIN-protected kiosk, lockdown, device-owner lock task, accessibility "system UI guard" | ✅ scaffolded (phase 1) |
-| Home-Assistant-facing entities (switches, sensors, buttons) over ESPHome native API | ✅ own WebSocket + HA integration instead of ESPHome. Trade-off: no zero-config discovery, but no key exchange/mDNS/BLE-permission dance and works through reverse proxies |
+| Home-Assistant-facing entities (switches, sensors, buttons) over ESPHome native API | ✅ own WebSocket + HA integration instead of ESPHome. works through reverse proxies; discovery is mDNS pairing (phase 2.7, [PAIRING.md](PAIRING.md)) |
 | Alarms (next alarm, ringing, stop, snooze) | ✅ scaffolded, native `setAlarmClock` |
 | Remote screen on/off, brightness, keep screen on | ✅ scaffolded |
 | Reboot (device owner) | ✅ |
@@ -97,6 +97,13 @@ action (`restart` | `notify only`), `button` Restart companion app, bus events `
 4. Real tablet: low memory, slow storage, OEM ANR dialog wording (the dialog text is localized: match by package +
    button roles, not only English text).
 
+### 2.7 Discovery and pairing (done, see [PAIRING.md](PAIRING.md))
+mDNS: the tablet advertises `_ha-sidecar._tcp` while its pairing mode is on, Home Assistant discovers it (zeroconf) and the two
+pair with an ECDH handshake: confirm the six-digit number on the tablet, or use IP + the code the tablet shows when discovery is
+not available. Home Assistant hands over the connection token and its address(es) encrypted. Also: internal and external address,
+home networks (Wi-Fi name, Ethernet, VPN) and a *home network only* option for the persistent connection.
+Open: QR pairing, reconfigure/re-pair from Home Assistant, verification on a real network (the emulator cannot bridge multicast).
+
 ### 3. Voice
 - Integration side: implement `assist_satellite` entity platform (`AssistSatelliteEntity`): `async_announce`,
   `async_set_configuration`, pipeline events; audio over a second binary WebSocket stream or HA's `assist_pipeline/run`.
@@ -117,7 +124,7 @@ Media player entity, intercom, camera-based motion/presence, Bluetooth proxy (ES
 
 ## Open design questions
 - Nightly "reload/restart HA app" job to mitigate stale dashboards (DO: reboot; non-DO: relaunch).
-- Pairing UX: QR code from config flow; zeroconf advertisement from the app.
+- Pairing UX: QR code on the tablet (zeroconf advertisement and code pairing are done, see PAIRING.md).
 - Token rotation / re-pair flow in the integration (reconfigure step).
 - Whether to allow `clearDeviceOwnerApp` from the app behind the PIN (currently only factory reset removes ownership).
 - Play Store distribution is doubtful (accessibility + device-owner use, `USE_FULL_SCREEN_INTENT`); plan on F-Droid/GitHub APKs.

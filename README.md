@@ -31,13 +31,19 @@ English and German; light/dark theme. See [docs/UI.md](docs/UI.md).
 
 ## Naming
 
-When you add a tablet in Home Assistant you get a pairing token to type into the app, and choose the device name and an
+You pair a tablet from the app (System → Pair with Home Assistant, or the setup wizard): it advertises itself over mDNS, Home
+Assistant lists it as a discovered device, you press Configure, choose the device name and an
 **entity prefix** (for example `wallpanel`). Every entity is then `<domain>.<prefix>_<entity>`: `sensor.wallpanel_timers`,
 `number.wallpanel_night_brightness`, so several tablets never collide. (Home Assistant itself forbids a double underscore in
 entity ids, so a single underscore separates prefix and name.) The prefix is fixed once created; the name can be renamed.
 
-Brightness is a percentage everywhere by default. Raw Android values (0-255) are an opt-in under System > Developer
-options, which also switches the Home Assistant entities. Night mode can be driven from automations with the
+Connection: the tablet knows an internal and an external Home Assistant address and picks by network (home Wi-Fi, Ethernet,
+VPN); the persistent connection can be limited to the home network. Details in [docs/PAIRING.md](docs/PAIRING.md).
+
+Brightness is a percentage in the app by default (raw Android values 0-255 are an opt-in under System > Developer
+options). In Home Assistant every brightness has two entities, `..._brightness_percentage` (0-100) and
+`..._brightness_raw` (0-255), for example `number.wallpanel_night_brightness_percentage` and
+`number.wallpanel_night_brightness_raw`; both change the same setting. Night mode can be driven from automations with the
 `ha_sidecar.enter_night_mode` and `ha_sidecar.exit_night_mode` actions (the latter can also hand control back to the
 night start/end times).
 
@@ -80,8 +86,10 @@ companion app as the launcher.
 ## Quick start
 
 1. **HA:** install the integration (HACS custom repository, category *Integration*), restart,
-   *Settings → Devices & services → Add → HA Sidecar*, name the tablet, copy the token.
-2. **Tablet:** `cd app && flutter build apk` and install; open the app, enter HA URL + token.
+   *Settings → Devices & services*; after pairing starts on the tablet it shows up as discovered. (No discovery? *Add → HA Sidecar*
+   and enter the tablet's address and the code it shows.) See [docs/PAIRING.md](docs/PAIRING.md).
+2. **Tablet:** `cd app && flutter build apk` and install; open the app and press *Pair with Home Assistant*, then confirm the
+   six-digit number on both screens.
 3. In the app: set the **kiosk dashboard** (paste the address of the HA dashboard from your browser) and a PIN, grant the listed permissions, then either
    - provision as device owner ([docs/PROVISIONING.md](docs/PROVISIONING.md)) - recommended, or
    - enable the accessibility guard (weaker). Enabling it is also recommended with device owner (foreground reporting).

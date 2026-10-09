@@ -109,6 +109,23 @@ started; a second timer finishing while one rings replaced the first one's sound
 Not verified: timers over a reboot / Doze, countdown on the idle screen visually, voice interaction (not built yet; it will
 call the same platform methods).
 
+### Pairing, discovery and network policy (emulator + throwaway HA)
+
+| Area | Result |
+|---|---|
+| Tablet pairing mode: port 8750 opens, code and addresses shown, mDNS registration succeeds (`NsdManager` callback) | ✅ |
+| HA config flow by address + code (`adb forward`): unreachable host -> `cannot_connect`; wrong code -> `bad_token` (counts toward the 5-try lock); malformed prefix rejected; right code -> entry created, tablet saved the new token and addresses and connected, entities live | ✅ |
+| Confirm mode: HA and tablet showed the same comparison number (387 497), Allow on the tablet + submit in HA -> entry created, tablet connected | ✅ |
+| Kotlin and Python crypto agree (HKDF, HMAC proof, AES-GCM, comparison number) on shared vectors; round trip and tamper detection | ✅ (4 Kotlin tests) |
+| *Home network only* with VPN-as-home on, tablet on Wi-Fi (not home): connection dropped (entities unavailable); back to *Always*: reconnected | ✅ |
+| Route choice (internal/external/waiting/offline) for Wi-Fi, Ethernet, VPN, cellular, nothing configured | ✅ (7 Dart tests) |
+
+Bugs found: org.json `optString` turns a JSON null into the string `"null"` (the external address became "null"); a stale
+text field did not follow a value changed by pairing.
+**Not verified:** actual mDNS discovery by Home Assistant (the emulator's NAT does not bridge multicast; zeroconf step
+reviewed only), the Deny and timeout paths, Wi-Fi name matching (needs the location permission and a real SSID), a real VPN,
+two tablets, IPv6-only networks.
+
 ## Not verified
 
 - Update **detection** (`onSystemUpdatePending`) and the download/install/restart taps: need a real pending OTA.

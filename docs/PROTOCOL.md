@@ -3,6 +3,8 @@
 Transport: WebSocket, text frames with JSON, tablet → `GET {ha_url}/api/ha_sidecar/ws` (use `wss://` behind TLS).
 HA sends WebSocket pings every 30 s (aiohttp `heartbeat`).
 
+Pairing (how the token and address get onto the tablet) is a separate HTTP handshake, see [PAIRING.md](PAIRING.md).
+
 ## Handshake
 
 ```
