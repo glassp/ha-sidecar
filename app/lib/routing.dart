@@ -8,6 +8,7 @@ import 'ui/pages/glance_page.dart';
 import 'ui/pages/pin_page.dart';
 import 'ui/pages/search_page.dart';
 import 'ui/pages/section_page.dart';
+import 'ui/pages/voice_page.dart';
 import 'ui/shell.dart';
 import 'ui/wizard/wizard.dart';
 
@@ -15,7 +16,7 @@ import 'ui/wizard/wizard.dart';
 ///   /  /kiosk  /display  /alarms  /system   main tabs (one shell page)
 ///   /search  /settings/:id  /allowed-apps    pushed pages
 ///   /wizard                                  first-run guide
-///   /pin  /alarm  /glance                    full-screen pages hosted by their own Android activity
+///   /pin  /alarm  /glance  /voice            full-screen pages hosted by their own Android activity
 ///                                             (the native side tells us which one is on screen)
 class AppRouter {
   AppRouter(this.controller, {required String initialPath}) {
@@ -59,6 +60,10 @@ class AppRouter {
             key: const ValueKey('alarm'),
             child: AlarmPage(controller: controller),
           ),
+          '/voice': (context, state, data) => BeamPage(
+            key: const ValueKey('voice'),
+            child: VoicePage(controller: controller),
+          ),
           '/glance': (context, state, data) => BeamPage(
             key: const ValueKey('glance'),
             child: GlancePage(controller: controller),
@@ -75,7 +80,7 @@ class AppRouter {
   final AppController controller;
   late final BeamerDelegate delegate;
 
-  static const nativeHosted = {'/pin', '/alarm', '/glance'};
+  static const nativeHosted = {'/pin', '/alarm', '/glance', '/voice'};
   String _lastMain = '/';
 
   BeamPage _shell(int tab) => BeamPage(

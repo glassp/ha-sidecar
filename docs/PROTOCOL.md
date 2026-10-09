@@ -71,6 +71,9 @@ Voice (see [VOICE.md](VOICE.md)): `{"type":"voice","action":"start|audio|stop|ca
 | `adjust_timer` | `id`, `delta_s` | add/remove time on a countdown; on a finished one it runs again |
 | `get_timers` | | |
 | `heal_dashboard` | `reason` | restart requested by Home Assistant (beacon silent): answers `{healed, why?}`; refused (`screen_off`, `busy`, `not_in_front`, `rate_limited`); needs neither the watchdog switch nor accessibility |
+| `voice_listen` | | open the assistant page and start a push-to-talk turn (the HA services `listen` / button *Start listening*); errors: `not_connected`, `mic_permission`, `mic_busy`, `mic_failed` |
+| `voice_cancel` | | end the running turn and close the page |
+| `voice_announce` | `url`, `message`, `preannounce_url?` | play the sound and the announcement; answers when playback ended (`playback_failed` on an error) |
 | `restart_companion` | | closes and relaunches the Home Assistant app now (device owner: hide + unhide) |
 
 **Dashboard beacon** (Home Assistant side, not tablet protocol): websocket commands `ha_sidecar/beacon` (`tablet`, `state` active|inactive,

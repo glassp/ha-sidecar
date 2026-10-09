@@ -14,6 +14,7 @@ object UiHost {
     const val PIN = "/pin"
     const val ALARM = "/alarm"
     const val GLANCE = "/glance"
+    const val VOICE = "/voice"
 
     @Volatile var activity: MainActivity? = null
     @Volatile var route: String = MAIN

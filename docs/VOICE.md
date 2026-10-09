@@ -9,7 +9,7 @@ TTS), the tablet shows and speaks the answer. Everything runs over the existing 
 | Slice | What | State |
 |---|---|---|
 | 3.1 | Integration: `assist_satellite` entity, voice messages, announcements. Tested against a real Home Assistant with a fake tablet | done, see [TESTING.md](TESTING.md) |
-| 3.2 | App: microphone capture, TTS playback, push-to-talk, answer overlay | not started |
+| 3.2 | App: microphone capture, TTS playback, push-to-talk, answer page | done as v1 (full-screen page; the docked bubble over the dashboard is still to do) |
 | 3.3 | Wake word on the device (`WakeWordEngine`, openWakeWord via TFLite) | not started |
 | 3.4 | Timers by voice, `start_conversation`, ask question, skins | not started |
 
@@ -60,9 +60,28 @@ State of the entity follows the pipeline: `idle`, `listening` (from `stt-start`)
 default) and `select.lab_assist_vad_sensitivity` (how long a pause ends the command). These are Home Assistant's own helper
 selects, the satellite entity reads them like it does for ESPHome or VoIP devices.
 
-## What is not in 3.1
+## The app (slice 3.2)
 
-- No wake word: `async_get_configuration` reports no available wake words, `async_set_configuration` does nothing.
-- `start_conversation` and `ask_question` (the entity advertises only *announce*).
-- The app side: nothing records or plays yet, so with the real app the entity stays *idle* and an announcement times out
-  after 120 s. See slice 3.2.
+- **Starting a turn:** *Talk to Assist* on the Home tab, the Home Assistant service `ha_sidecar.listen` (also the button
+  *Start listening*, for a physical button or an automation) or, later, the wake word. `ha_sidecar.cancel_listening` ends it.
+- **Recording:** `Voice.kt` records 16 kHz mono PCM16 with `AudioRecord` (source *voice recognition*) in a foreground
+  service of type `microphone`, 100 ms per frame, with a level for the page. The page opens first, so the app is visible when the
+  service starts (Android 14+ forbids starting a microphone service from the background). Recording ends on Home Assistant's
+  `stt-end`/error, on *Done talking*, on cancel, or after 30 s.
+- **Permission:** `RECORD_AUDIO`. A device owner grants it silently (also again after it was revoked); otherwise the
+  permission dialog opens (`mic_permission` is the error shown meanwhile, with an *Allow the microphone* button).
+- **Answer:** the TTS URL is fetched through the address the tablet is connected through (Home Assistant may name its internal
+  address while the tablet is away), played with `MediaPlayer` (usage *assistant*, transient audio focus that lets other audio
+  duck), `played` is sent when it ends.
+- **The page** (`/voice`, an own Android activity like the alarm page, over the lock screen, keeps the screen on): state icon with a
+  level ring, the recognised text, the answer, errors named by their stage (microphone, connection, speech recognition, playback),
+  buttons *Done talking* / *Cancel*, double tap cancels. It closes itself 4 s after a turn (6 s after an error).
+- **Safety:** a turn with no event from Home Assistant for 20 s is cancelled (`timeout`); losing the connection cancels it; a new
+  turn interrupts the old one.
+
+## Not built yet
+
+- The **docked bubble** over the dashboard (the page is full screen for now).
+- **Wake word** (3.3): `async_get_configuration` reports no wake words, `async_set_configuration` does nothing.
+- `start_conversation` and `ask_question` (the entity advertises only *announce*), timers by voice (3.4).
+- Binary audio frames (base64 in JSON is used), a microphone/speaker test in the app, a volume setting.

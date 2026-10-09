@@ -79,8 +79,8 @@ class MainActivity : FlutterActivity() {
     private fun applyFlags(r: String) {
         val overlay = r != UiHost.MAIN
         setShowWhenLocked(overlay)
-        setTurnScreenOn(r == UiHost.ALARM)
-        val keepOn = r == UiHost.ALARM
+        setTurnScreenOn(r == UiHost.ALARM || r == UiHost.VOICE)
+        val keepOn = r == UiHost.ALARM || r == UiHost.VOICE
         if (keepOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         // Release builds only, so debug builds stay capturable for development.
         val secure = r == UiHost.PIN && applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE == 0

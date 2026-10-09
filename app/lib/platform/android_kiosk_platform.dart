@@ -173,6 +173,27 @@ class AndroidKioskPlatform implements KioskPlatform {
       _call('answerPairing', {'allow': allow});
 
   @override
+  Future<String?> voiceStart(String session) =>
+      _call<String>('voiceStart', {'session': session});
+
+  @override
+  Future<void> voiceStop() => _call('voiceStop');
+
+  @override
+  Future<String?> voicePlay(String url) =>
+      _call<String>('voicePlay', {'url': url});
+
+  @override
+  Future<void> voiceStopPlayback() => _call('voiceStopPlayback');
+
+  @override
+  Future<void> requestMicPermission() => _call('requestMicPermission');
+
+  @override
+  Future<bool> showUi(String route) async =>
+      await _call<bool>('showUi', {'route': route}) ?? false;
+
+  @override
   Future<List<TimerSpec>> getTimers() async {
     final list = await _call<List>('getTimers') ?? const [];
     return [for (final e in list) TimerSpec.fromMap(e as Map)];

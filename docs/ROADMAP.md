@@ -37,7 +37,7 @@ Assistant (see [TESTING.md](TESTING.md)); nothing has run on a physical tablet y
 | 2.4 Naming, brightness units, night mode actions | done |
 | 2.5 Companion app watchdog | done: F1/F2 (UI probe, ANR dialog, start-up hang) and F3 (beacon card, opt-in remedy ladder); the optional signals (visual freeze, scheduled restart) open |
 | 2.7 Discovery, pairing and network-aware connection | done (discovery itself unverified on a real LAN) |
-| 3 Voice | 3.1 integration side done (see [VOICE.md](VOICE.md)); app side (3.2), wake word (3.3), timers by voice (3.4) not started |
+| 3 Voice | 3.1 integration side and 3.2 app side (push-to-talk, answer page) done, see [VOICE.md](VOICE.md); wake word (3.3), docked bubble, timers by voice (3.4) not started |
 | 4 Optional | not started |
 
 ### 1. Kiosk core (done)

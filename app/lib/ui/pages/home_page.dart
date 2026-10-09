@@ -135,6 +135,9 @@ class HomePage extends StatelessWidget {
                     'home.qa_idle'.tr(),
                     () => controller.platform.showGlance(),
                   ),
+                  _Action(Icons.mic_none, 'home.qa_voice'.tr(), () async {
+                    await controller.voice.listen();
+                  }),
                   _Action(
                     Icons.screen_lock_portrait_outlined,
                     'home.qa_screen_off'.tr(),

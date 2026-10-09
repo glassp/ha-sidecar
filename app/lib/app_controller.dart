@@ -10,6 +10,7 @@ import 'platform/android_kiosk_platform.dart';
 import 'platform/kiosk_platform.dart';
 import 'settings/connection_route.dart';
 import 'settings/connection_settings.dart';
+import 'voice/voice_controller.dart';
 
 /// Wires platform <-> HA client and exposes UI state.
 class AppController extends ChangeNotifier {
@@ -17,6 +18,13 @@ class AppController extends ChangeNotifier {
     : platform = platform ?? AndroidKioskPlatform();
 
   final KioskPlatform platform;
+
+  /// The Assist satellite: records, sends audio to Home Assistant, plays the answer.
+  late final VoiceController voice = VoiceController(
+    platform: platform,
+    send: (m) => _client?.sendMessage(m) ?? false,
+    baseUrl: () => route.url,
+  );
 
   ConnectionSettings settings = const ConnectionSettings();
   DeviceStatus status = DeviceStatus.empty;
@@ -188,14 +196,25 @@ class AppController extends ChangeNotifier {
         'sdk': status.raw['sdk'],
       },
       onCommand: (command, data) async {
-        final result = await CommandRouter(platform).handle(command, data);
+        final result = await CommandRouter(
+          platform,
+          voice: voice,
+        ).handle(command, data);
         unawaited(
           refresh(),
         ); // answer HA first: a slow status read must not time the command out
         return result;
       },
       onConnected: _pushState,
-    )..start();
+      onMessage: (m) {
+        if (m['type'] == 'voice_event') voice.onVoiceEvent(m);
+      },
+    );
+    final client = _client!;
+    client.link.addListener(() {
+      if (client.link.value != LinkState.connected) voice.onDisconnected();
+    });
+    client.start();
     notifyListeners();
   }
 
@@ -226,6 +245,10 @@ class AppController extends ChangeNotifier {
   Future<void> _onPlatformEvent(PlatformEvent e) async {
     if (e.type == 'ui_route') {
       onUiRoute?.call(e.data['route'] as String);
+      return;
+    }
+    if (e.type.startsWith('voice_')) {
+      voice.onPlatformEvent(e);
       return;
     }
     if (e.type == 'paired') {

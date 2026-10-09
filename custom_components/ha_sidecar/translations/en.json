@@ -300,6 +300,14 @@
     "restart_companion": {
       "name": "Restart companion app",
       "description": "Closes and starts the Home Assistant companion app on the tablet again (device owner: hide and unhide; otherwise a relaunch)."
+    },
+    "listen": {
+      "name": "Start listening",
+      "description": "Opens the assistant on the tablet and listens, as if the talk button was pressed (for a physical button or an automation). The tablet needs the microphone permission."
+    },
+    "cancel_listening": {
+      "name": "Cancel listening",
+      "description": "Ends the assistant turn that is running on the tablet and closes its screen."
     }
   },
   "options": {

@@ -225,6 +225,25 @@ old one ended. Unit tests (`tests/test_voice.py`, 11) cover the audio queue (ord
 Not verified: real speech (the lab STT ignores the audio content), a real VAD end-of-speech (the fake tablet ends the turn itself),
 any of the app side.
 
+### Voice, app side (slice 3.2, emulator, the real app against the lab Home Assistant)
+
+Home Assistant service `ha_sidecar.listen` (and the app's *Talk to Assist* action) on the real tablet app, lab STT/TTS:
+the assistant page opens over the app, the Android microphone indicator comes on, the entity goes `listening`; *Done talking*
+(or, with silence, Home Assistant's own end-of-listening after about 15 s) gives `responding` with the recognised text and the
+answer on screen, the tone is played (an `AudioTrack` with the delivered frames shows in the log), the entity returns to `idle`
+within about 3 s of the tap and the recording service is gone. Also checked: the *Cancel* button and `ha_sidecar.cancel_listening`
+end a turn (entity `idle`, no recording service); two `listen` calls in a row (barge-in); `assist_satellite.announce` plays the pre-announce
+sound and the message and the service call returns when the tablet finished (5.9 s including speech generation); the microphone
+permission revoked with `pm revoke` (this kills the app process) is granted again silently by the device-owner path on the next
+`listen`; the connection lost in the middle of a turn (airplane mode) cancels the recording and closes the page on the tablet,
+Home Assistant notices the dead socket only after its 30 s heartbeat and then the entity is idle again after reconnecting. 13
+Dart unit tests (`test/voice_controller_test.dart`) cover the controller (a full turn, address rewriting, microphone and
+connection errors, stale events, barge-in, errors, timeout, disconnect, cancel while speaking, announce order and failure).
+
+Not verified: real speech and a real microphone (the emulator's microphone delivers silence or host audio, the lab STT ignores the
+content), the permission dialog for a non-device-owner install, a physical tablet's speaker and echo, the docked bubble (not built),
+wake word (not built).
+
 ## Not verified
 
 - Update **detection** (`onSystemUpdatePending`) and the download/install/restart taps: need a real pending OTA.

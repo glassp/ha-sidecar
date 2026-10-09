@@ -344,7 +344,8 @@ object KioskController {
             "glance_items" to glanceItems(ctx),
             "ringing_alarm" to AlarmService.ringingSnapshot(ctx),
             "glance_showing" to (UiHost.isShowing(UiHost.GLANCE) || BrightnessController.dashboardGlanceShowing),
-        ) + BrightnessController.snapshot() + PresenceCamera.snapshot(ctx)
+        ) + BrightnessController.snapshot() + PresenceCamera.snapshot(ctx) +
+            mapOf("mic_permission" to Voice.hasPermission(ctx), "voice_active" to (Voice.session != null))
     }
 
     private fun glanceItems(ctx: Context): List<Map<String, Any?>> {

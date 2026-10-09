@@ -30,6 +30,7 @@ class DeviceStatus {
   bool get cameraInUse => _b('camera_in_use');
   bool get micInUse => _b('mic_in_use');
   bool get cameraPermission => _b('camera_permission');
+  bool get micPermission => _b('mic_permission');
   bool get notificationsGranted => _b('notifications_granted');
   bool get batteryUnrestricted => _b('battery_unrestricted');
   bool get fullScreenIntentGranted => _b('full_screen_intent_granted');
@@ -292,6 +293,19 @@ abstract class KioskPlatform {
 
   /// Answer to a confirm-mode request shown on the tablet.
   Future<void> answerPairing(bool allow);
+
+  // Voice (Assist satellite): microphone frames arrive as `voice_frame` platform events.
+  /// Starts recording for [session]. Returns null, or an error code: `mic_permission`, `mic_busy`, `mic_failed`.
+  Future<String?> voiceStart(String session);
+  Future<void> voiceStop();
+
+  /// Plays [url] and completes when it ended: null if it played to the end, else an error code.
+  Future<String?> voicePlay(String url);
+  Future<void> voiceStopPlayback();
+  Future<void> requestMicPermission();
+
+  /// Brings the full-screen page [route] (for example `/voice`) to the front.
+  Future<bool> showUi(String route);
 
   // Timers and stopwatches
   Future<List<TimerSpec>> getTimers();

@@ -29,6 +29,7 @@ class SidecarClient {
     required this.deviceInfo,
     required this.onCommand,
     required this.onConnected,
+    this.onMessage,
   });
 
   /// WebSocket address (internal or external, chosen by the connection policy) and the pairing token.
@@ -39,6 +40,9 @@ class SidecarClient {
 
   /// Called after a successful handshake, so the owner can push its full state.
   final Future<void> Function() onConnected;
+
+  /// Messages that are neither handshake nor command (the voice events).
+  final void Function(Map<String, dynamic> message)? onMessage;
 
   final ValueNotifier<LinkState> link = ValueNotifier(LinkState.disconnected);
 
@@ -71,6 +75,13 @@ class SidecarClient {
           .timeout(const Duration(seconds: 2))
           .then<void>((_) {}, onError: (_) {}),
     );
+  }
+
+  /// Sends any protocol message; false (nothing sent) while not connected.
+  bool sendMessage(Map<String, dynamic> msg) {
+    if (link.value != LinkState.connected) return false;
+    _channel?.sink.add(jsonEncode(msg));
+    return true;
   }
 
   void sendState(Map<String, dynamic> state) =>
@@ -123,6 +134,8 @@ class SidecarClient {
               await ch.sink.close();
             case 'command':
               await _handleCommand(msg);
+            case 'voice_event':
+              onMessage?.call(msg);
           }
         },
         onDone: () => done.complete(),

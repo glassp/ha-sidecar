@@ -66,6 +66,8 @@ SERVICES: dict[str, vol.Schema] = {
     "cancel_alarm": vol.Schema({**_TARGET, vol.Required("alarm_id"): cv.string}),
     "stop_alarm": vol.Schema(_TARGET),
     "restart_companion": vol.Schema(_TARGET),
+    "listen": vol.Schema(_TARGET),
+    "cancel_listening": vol.Schema(_TARGET),
     "snooze_alarm": vol.Schema(_TARGET),
     "enter_night_mode": vol.Schema(_TARGET),
     "exit_night_mode": vol.Schema({**_TARGET, vol.Optional("follow_schedule", default=False): cv.boolean}),
@@ -122,6 +124,10 @@ def _resolve_devices(hass: HomeAssistant, ha_device_ids: list[str]) -> list[Side
 
 
 def _build_command(service: str, data: dict) -> tuple[str, dict]:
+    if service == "listen":
+        return "voice_listen", {}
+    if service == "cancel_listening":
+        return "voice_cancel", {}
     if service == "launch_app":
         return "launch_app", {"package": data["package"], "path": data.get("path")}
     if service == "bring_to_front":

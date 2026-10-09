@@ -1,12 +1,14 @@
 import 'package:flutter/services.dart';
 
 import '../platform/kiosk_platform.dart';
+import '../voice/voice_controller.dart';
 import 'sidecar_client.dart';
 
 /// Maps protocol commands (docs/PROTOCOL.md) to platform calls.
 class CommandRouter {
-  CommandRouter(this.platform);
+  CommandRouter(this.platform, {this.voice});
   final KioskPlatform platform;
+  final VoiceController? voice;
 
   Future<Map<String, dynamic>?> handle(
     String command,
@@ -24,6 +26,27 @@ class CommandRouter {
     Map<String, dynamic> d,
   ) async {
     switch (command) {
+      case 'voice_announce':
+        final v = voice;
+        if (v == null) {
+          throw CommandException('unsupported', 'voice is not available');
+        }
+        try {
+          await v.announce(
+            url: d['url'] as String? ?? '',
+            message: d['message'] as String? ?? '',
+            preannounceUrl: d['preannounce_url'] as String?,
+          );
+        } on StateError catch (e) {
+          throw CommandException('playback_failed', e.message);
+        }
+      case 'voice_listen':
+        final err = await voice?.listen();
+        if (err != null) {
+          throw CommandException(err, 'could not start listening');
+        }
+      case 'voice_cancel':
+        await voice?.cancel();
       case 'set_lockdown':
         await platform.setLockdown(d['enabled'] == true);
       case 'set_allowlist':

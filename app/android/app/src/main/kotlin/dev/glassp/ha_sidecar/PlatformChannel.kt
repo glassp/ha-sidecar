@@ -191,6 +191,24 @@ object PlatformChannel {
                 if (CompanionWatchdog.restartNow(ctx)) result.success(null)
                 else result.error("not_found", "no Home Assistant app installed", null)
 
+            // voice (Assist satellite) -------------------------------------------------------------
+            "voiceStart" -> result.success(Voice.start(ctx, call.argument<String>("session").orEmpty()))
+            "voiceStop" -> {
+                Voice.stop(ctx)
+                result.success(null)
+            }
+            "voicePlay" -> Voice.play(ctx, call.argument<String>("url").orEmpty()) { err -> result.success(err) }
+            "voiceStopPlayback" -> {
+                Voice.stopPlayback(ctx)
+                result.success(null)
+            }
+            "micPermission" -> result.success(Voice.hasPermission(ctx))
+            "requestMicPermission" -> {
+                Voice.requestPermission(ctx)
+                result.success(null)
+            }
+            "showUi" -> result.success(UiHost.show(ctx, call.argument<String>("route").orEmpty()))
+
             // pairing with Home Assistant ----------------------------------------------------------
             "startPairing" -> result.success(PairingServer.start(ctx))
             "stopPairing" -> {

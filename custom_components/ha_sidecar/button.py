@@ -22,6 +22,7 @@ BUTTONS = [
     ("snooze_alarm", "Snooze alarm", "snooze_alarm", {}, None, None, "mdi:alarm-snooze"),
     ("run_system_update", "Run system update", "run_system_update", {}, None, EntityCategory.CONFIG, "mdi:cellphone-arrow-down"),
     ("open_system_update", "Open system update", "open_system_update", {}, None, EntityCategory.CONFIG, "mdi:system-update"),
+    ("listen", "Start listening", "voice_listen", {}, None, None, "mdi:microphone"),
     ("restart_companion", "Restart companion app", "restart_companion", {}, ButtonDeviceClass.RESTART, None, "mdi:restart-alert"),
     ("reboot", "Reboot", "reboot", {}, ButtonDeviceClass.RESTART, EntityCategory.CONFIG, None),
 ]

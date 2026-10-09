@@ -237,3 +237,13 @@ restart_companion:
   target:
     device:
       integration: ha_sidecar
+
+listen:
+  target:
+    device:
+      integration: ha_sidecar
+
+cancel_listening:
+  target:
+    device:
+      integration: ha_sidecar
