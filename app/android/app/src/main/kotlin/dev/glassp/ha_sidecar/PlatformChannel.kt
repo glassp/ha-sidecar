@@ -131,6 +131,7 @@ object PlatformChannel {
             "requestPermission" -> {
                 val perm = when (call.argument<String>("name")) {
                     "camera" -> android.Manifest.permission.CAMERA
+                    "location" -> android.Manifest.permission.ACCESS_FINE_LOCATION
                     "notifications" ->
                         if (Build.VERSION.SDK_INT >= 33) android.Manifest.permission.POST_NOTIFICATIONS
                         else return result.success(null)
@@ -181,6 +182,17 @@ object PlatformChannel {
                 val until = if (call.argument<Boolean>("forever") == true) Long.MAX_VALUE
                 else call.argument<Number>("until_ms")?.toLong()
                 AlarmEngine.setMuted(ctx, until)
+                result.success(null)
+            }
+
+            // pairing with Home Assistant ----------------------------------------------------------
+            "startPairing" -> result.success(PairingServer.start(ctx))
+            "stopPairing" -> {
+                PairingServer.stop()
+                result.success(null)
+            }
+            "answerPairing" -> {
+                PairingServer.answer(call.argument<Boolean>("allow") == true)
                 result.success(null)
             }
 

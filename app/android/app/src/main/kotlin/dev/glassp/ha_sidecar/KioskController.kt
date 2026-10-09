@@ -323,6 +323,8 @@ object KioskController {
             "timer_ringing" to (AlarmService.ringingTimerId != null),
             "alarms" to AlarmStore.all(ctx).map { it.toMap() },
             "timers" to TimerEngine.snapshot(ctx),
+            "pairing" to PairingServer.state(ctx),
+            "network" to NetworkMonitor.snapshot(),
             "alarms_muted" to AlarmEngine.isMuted(ctx),
             "alarms_muted_until" to Prefs.alarmsMutedUntil(ctx).takeIf { it > System.currentTimeMillis() && it != Long.MAX_VALUE },
             "last_interaction" to InteractionTracker.lastMs,

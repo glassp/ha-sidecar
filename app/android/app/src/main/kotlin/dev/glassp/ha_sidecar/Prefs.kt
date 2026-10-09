@@ -62,6 +62,10 @@ object Prefs {
     fun alarmsJson(ctx: Context): String = sp(ctx).getString("alarms", "[]")!!
     fun setAlarmsJson(ctx: Context, v: String) = sp(ctx).edit().putString("alarms", v).apply()
 
+    /** Stable random id of this tablet (also its Home Assistant device id). */
+    fun deviceId(ctx: Context): String = sp(ctx).getString("device_id", null)
+        ?: java.util.UUID.randomUUID().toString().replace("-", "").also { sp(ctx).edit().putString("device_id", it).apply() }
+
     fun timersJson(ctx: Context): String = sp(ctx).getString("timers", "[]")!!
     fun setTimersJson(ctx: Context, v: String) = sp(ctx).edit().putString("timers", v).apply()
 
