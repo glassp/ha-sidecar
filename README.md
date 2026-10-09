@@ -21,6 +21,14 @@ companion app** for the dashboard and a small **sidecar app** for everything the
 | Theme | `App theme` select: system / light / dark / dark at night |
 | Voice assistant (planned) | Assist satellite, see [docs/ROADMAP.md](docs/ROADMAP.md) |
 
+## The app
+
+First start opens a **setup wizard** (connect, purpose, companion app, kiosk dashboard, PIN, protection, permissions with a
+grant button per item, start-up, brightness). After that the app has five tabs: **Home** (status, one-tap lock, what still
+needs attention), **Kiosk** (dashboards, lock, PIN, allowed apps, start-up), **Display** (brightness, night light, presence,
+camera), **Alarms**, **System** (connection, permissions, updates, theme, language). A global **search** finds any setting.
+English and German; light/dark theme. See [docs/UI.md](docs/UI.md).
+
 ## Repository layout
 
 ```

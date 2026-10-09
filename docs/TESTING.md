@@ -80,6 +80,20 @@ brings the system ANR dialog ("Home Assistant isn't responding", Close app / Wai
 `pm suspend` does not kill a stopped process but `pm hide` does and `unhide` + launch restores a healthy app with data
 intact. Not tried: the real `DevicePolicyManager` calls, a renderer-only hang, a cold-start hang.
 
+### UI redesign run (emulator, hot-reload session)
+
+| Area | Result |
+|---|---|
+| Setup wizard stepped through end to end; Home / Kiosk / Display / System / Alarms tabs, settings search ("night light" returns the night light, its brightness, mode, theme, permission), language switch to German (labels, tab names, search hints) | ✅ screenshots |
+| PIN pad, idle screen as Flutter pages in the single activity (`--es route /pin`, `/glance`), back/cancel/touch close them | ✅ |
+| 15 Kotlin + 8 Dart tests (incl. translation key parity en/de and "every used key exists") | ✅ |
+
+Bugs found: a second/third Flutter activity on the shared engine detached the main one (black screen) → single activity with
+routes; the splash drew the adaptive launcher icon as a bitmap and crashed at start → dedicated splash PNG; `BeamPage` with a
+reused key never updates its child → the shell reads the tab from the router; beamer stacks parent routes → `stacked: false`.
+Not verified: alarm page while an alarm really rings over the lock screen, PIN unlock round trip through the new page, wizard
+permission buttons (they open Android settings), phone-sized layout.
+
 ## Not verified
 
 - Update **detection** (`onSystemUpdatePending`) and the download/install/restart taps: need a real pending OTA.
