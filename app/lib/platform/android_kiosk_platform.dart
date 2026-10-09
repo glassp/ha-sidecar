@@ -147,11 +147,21 @@ class AndroidKioskPlatform implements KioskPlatform {
   Future<void> skipNextAlarm(String? id) => _call('skipNextAlarm', {'id': id});
 
   @override
-  Future<void> setAlarmsMuted({DateTime? until, bool forever = false}) =>
-      _call('setAlarmsMuted', {
-        'until_ms': until?.millisecondsSinceEpoch,
-        'forever': forever,
-      });
+  Future<void> setAlarmsMuted({DateTime? until, bool forever = false}) => _call(
+    'setAlarmsMuted',
+    {'until_ms': until?.millisecondsSinceEpoch, 'forever': forever},
+  );
+
+  @override
+  Future<Map<String, dynamic>> startPairing() async =>
+      Map<String, dynamic>.from(await _call<Map>('startPairing') ?? const {});
+
+  @override
+  Future<void> stopPairing() => _call('stopPairing');
+
+  @override
+  Future<void> answerPairing(bool allow) =>
+      _call('answerPairing', {'allow': allow});
 
   @override
   Future<List<TimerSpec>> getTimers() async {

@@ -9,6 +9,9 @@ import '../platform/kiosk_platform.dart';
 import '../ui/design.dart';
 import '../ui/dialogs.dart';
 import '../ui/setting_widgets.dart';
+import '../ui/pairing.dart';
+import 'connection_route.dart';
+import 'connection_settings.dart';
 
 /// Every setting in the app, in one list: the Kiosk/Display/System pages render it by section and
 /// group, and the search screen filters it. A setting added here is automatically searchable.
@@ -672,7 +675,12 @@ List<SettingEntry> buildRegistry(AppController c) {
             title: _t('connection', 'title'),
             subtitle: c.settings.haUrl.isEmpty
                 ? 'link.not_paired'.tr()
-                : c.settings.haUrl,
+                : '${c.settings.haUrl} · ${switch (c.route.kind) {
+                    RouteKind.internal => 'net.via_internal'.tr(),
+                    RouteKind.external => 'net.via_external'.tr(),
+                    RouteKind.waitingForHome => 'net.waiting_home'.tr(),
+                    RouteKind.offline => 'net.offline'.tr(),
+                  }}',
             color: color,
             trailing: Pill(label, color: color),
             onTap: () => showConnectionSheet(ctx, c),
@@ -680,6 +688,125 @@ List<SettingEntry> buildRegistry(AppController c) {
         },
       );
     }),
+
+    base(
+      'pair_ha',
+      Section.system,
+      _g('home_assistant'),
+      (ctx) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: PairingPanel(controller: c),
+      ),
+    ),
+
+    // ---------------------------------------------------------------- System › Network
+    base('network_status', Section.system, _g('network'), (ctx) {
+      final n = c.network;
+      final where = n.vpn
+          ? 'net.vpn'.tr()
+          : n.wifi
+          ? (n.ssid != null
+                ? 'net.wifi_named'.tr(namedArgs: {'name': n.ssid!})
+                : 'net.wifi'.tr())
+          : n.ethernet
+          ? 'net.ethernet'.tr()
+          : n.cellular
+          ? 'net.cellular'.tr()
+          : 'net.none'.tr();
+      final via = switch (c.route.kind) {
+        RouteKind.internal => 'net.via_internal'.tr(),
+        RouteKind.external => 'net.via_external'.tr(),
+        RouteKind.waitingForHome => 'net.waiting_home'.tr(),
+        RouteKind.offline => 'net.offline'.tr(),
+      };
+      return Tile(
+        icon: Icons.network_check,
+        title: _t('network_status', 'title'),
+        subtitle: '$where · $via',
+      );
+    }),
+    base(
+      'internal_url',
+      Section.system,
+      _g('network'),
+      (ctx) => TextFieldSetting(
+        icon: Icons.home_outlined,
+        title: _t('internal_url', 'title'),
+        subtitle: _t('internal_url', 'desc'),
+        hint: 'http://homeassistant.local:8123',
+        value: c.settings.haUrl,
+        onSaved: (v) => c.updateConnection(c.settings.copyWith(haUrl: v)),
+      ),
+    ),
+    base(
+      'external_url',
+      Section.system,
+      _g('network'),
+      (ctx) => TextFieldSetting(
+        icon: Icons.public,
+        title: _t('external_url', 'title'),
+        subtitle: _t('external_url', 'desc'),
+        hint: 'https://ha.example.org',
+        value: c.settings.externalUrl,
+        onSaved: (v) => c.updateConnection(c.settings.copyWith(externalUrl: v)),
+      ),
+    ),
+    base(
+      'home_networks',
+      Section.system,
+      _g('network'),
+      (ctx) => HomeNetworksSetting(controller: c),
+    ),
+    base(
+      'vpn_is_home',
+      Section.system,
+      _g('network'),
+      (ctx) => SwitchSetting(
+        icon: Icons.vpn_lock_outlined,
+        title: _t('vpn_is_home', 'title'),
+        subtitle: _t('vpn_is_home', 'desc'),
+        value: c.settings.vpnIsHome,
+        onChanged: (v) async =>
+            c.updateConnection(c.settings.copyWith(vpnIsHome: v)),
+      ),
+    ),
+    base(
+      'ethernet_is_home',
+      Section.system,
+      _g('network'),
+      (ctx) => SwitchSetting(
+        icon: Icons.settings_ethernet,
+        title: _t('ethernet_is_home', 'title'),
+        subtitle: _t('ethernet_is_home', 'desc'),
+        value: c.settings.ethernetIsHome,
+        onChanged: (v) async =>
+            c.updateConnection(c.settings.copyWith(ethernetIsHome: v)),
+      ),
+    ),
+    base(
+      'connection_policy',
+      Section.system,
+      _g('network'),
+      (ctx) => SegmentedSetting(
+        icon: Icons.sync_lock,
+        title: _t('connection_policy', 'title'),
+        subtitle: _t('connection_policy', 'desc'),
+        options: {
+          'always': 'net.policy_always'.tr(),
+          'home_only': 'net.policy_home'.tr(),
+        },
+        value: c.settings.policy == ConnectionPolicy.homeOnly
+            ? 'home_only'
+            : 'always',
+        onChanged: (v) async => c.updateConnection(
+          c.settings.copyWith(
+            policy: v == 'home_only'
+                ? ConnectionPolicy.homeOnly
+                : ConnectionPolicy.always,
+          ),
+        ),
+      ),
+    ),
 
     // ---------------------------------------------------------------- System › Appearance
     base(
@@ -965,4 +1092,79 @@ Future<void> showConnectionSheet(BuildContext context, AppController c) {
       ),
     ),
   );
+}
+
+/// Home Wi-Fi names (chips), with "add the current network". Reading the Wi-Fi name needs the location permission.
+class HomeNetworksSetting extends StatelessWidget {
+  const HomeNetworksSetting({super.key, required this.controller});
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context);
+    final c = controller;
+    final ssid = c.network.ssid;
+    final s = c.settings;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const IconBadge(Icons.wifi),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'settings.home_networks.title'.tr(),
+                  style: t.textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 56, top: 2),
+            child: Text(
+              'settings.home_networks.desc'.tr(),
+              style: t.textTheme.bodyMedium?.copyWith(
+                color: t.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 56, top: 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                for (final n in s.homeSsids)
+                  InputChip(
+                    label: Text(n),
+                    onDeleted: () => c.updateConnection(
+                      s.copyWith(homeSsids: [...s.homeSsids]..remove(n)),
+                    ),
+                  ),
+                if (!c.network.locationGranted)
+                  ActionChip(
+                    avatar: const Icon(Icons.location_on_outlined, size: 18),
+                    label: Text('net.allow_location'.tr()),
+                    onPressed: () => c.platform.requestPermission('location'),
+                  )
+                else if (ssid != null && !s.homeSsids.contains(ssid))
+                  ActionChip(
+                    avatar: const Icon(Icons.add, size: 18),
+                    label: Text(
+                      'net.add_current'.tr(namedArgs: {'name': ssid}),
+                    ),
+                    onPressed: () => c.updateConnection(
+                      s.copyWith(homeSsids: [...s.homeSsids, ssid]),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

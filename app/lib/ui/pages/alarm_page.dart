@@ -81,13 +81,17 @@ class _AlarmPageState extends State<AlarmPage> {
                         const SizedBox(height: 4),
                         Text(
                           '+${formatClock(DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch((alarm!['finished_at'] as num).toInt())))} ${'timers.over'.tr()}',
-                          style: t.headlineMedium?.copyWith(color: Colors.redAccent),
+                          style: t.headlineMedium?.copyWith(
+                            color: Colors.redAccent,
+                          ),
                         ),
                       ],
                       const SizedBox(height: 8),
                       Text(
                         label.isEmpty
-                            ? (isTimer ? 'timers.timer'.tr() : 'alarm.ringing'.tr())
+                            ? (isTimer
+                                  ? 'timers.timer'.tr()
+                                  : 'alarm.ringing'.tr())
                             : label,
                         style: t.headlineSmall?.copyWith(color: Colors.white70),
                         textAlign: TextAlign.center,
@@ -102,7 +106,9 @@ class _AlarmPageState extends State<AlarmPage> {
                             await c.platform.closeUi('/alarm');
                           },
                           child: Text(
-                            isTimer ? 'timers.plus_minute'.tr() : 'alarm.snooze'.tr(),
+                            isTimer
+                                ? 'timers.plus_minute'.tr()
+                                : 'alarm.snooze'.tr(),
                             style: const TextStyle(fontSize: 20),
                           ),
                         ),

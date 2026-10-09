@@ -77,7 +77,8 @@
     "permissions": "Permissions",
     "updates": "Updates",
     "setup": "Setup",
-    "developer": "Developer options"
+    "developer": "Developer options",
+    "network": "Network"
   },
   "settings": {
     "kiosk_dashboard": {
@@ -273,8 +274,48 @@
     },
     "raw_brightness": {
       "title": "Brightness as 0–255",
-      "desc": "Show and set brightness levels as raw Android values (0–255) instead of percent. This also changes the Home Assistant entities.",
+      "desc": "Show and set brightness levels as raw Android values (0–255) instead of percent.",
       "kw": "percent, raw, value, 255, level, developer"
+    },
+    "pair_ha": {
+      "title": "Pair with Home Assistant",
+      "desc": "Start pairing so Home Assistant can find this tablet.",
+      "kw": "pair, discover, mdns, zeroconf, code, add, connect"
+    },
+    "network_status": {
+      "title": "Current network",
+      "desc": "Where this tablet is and which address it uses.",
+      "kw": "wifi, vpn, ethernet, network, address, route"
+    },
+    "internal_url": {
+      "title": "Internal address",
+      "desc": "Used at home, on a home network, VPN or Ethernet marked as home.",
+      "kw": "url, local, lan, ip, internal"
+    },
+    "external_url": {
+      "title": "External address",
+      "desc": "Used everywhere else. Leave empty to always use the internal address.",
+      "kw": "url, remote, nabu casa, domain, external, internet"
+    },
+    "home_networks": {
+      "title": "Home Wi-Fi networks",
+      "desc": "Networks where the internal address is used. Reading the Wi-Fi name needs the location permission.",
+      "kw": "ssid, wifi, home, location"
+    },
+    "vpn_is_home": {
+      "title": "VPN counts as home",
+      "desc": "Use the internal address while a VPN is connected.",
+      "kw": "vpn, wireguard, tunnel, home"
+    },
+    "ethernet_is_home": {
+      "title": "Ethernet counts as home",
+      "desc": "Use the internal address on a wired connection.",
+      "kw": "ethernet, cable, wired, lan"
+    },
+    "connection_policy": {
+      "title": "Keep the connection",
+      "desc": "Always stay connected, or only while on a home network.",
+      "kw": "persistent, always, home only, battery, vpn, network"
     }
   },
   "pin": {
@@ -454,7 +495,7 @@
     },
     "connection": {
       "paired_with": "Paired with {url}",
-      "pair_again": "Pair again with a new token"
+      "pair_again": "Pair again"
     }
   },
   "search": {
@@ -569,20 +610,22 @@
     },
     "connect": {
       "title": "Connect to Home Assistant",
-      "intro": "This tablet talks to the HA Sidecar integration in Home Assistant.",
+      "intro": "This tablet pairs with the HA Sidecar integration in Home Assistant. Both stay on your network; nothing is typed by hand.",
       "s1_title": "Install the integration",
       "s1_text": "In HACS add the HA Sidecar repository (Custom repositories → Integration) and restart Home Assistant.",
-      "s2_title": "Add this tablet",
-      "s2_text": "Settings → Devices & services → Add integration → HA Sidecar. Name the tablet.",
-      "s3_title": "Copy the token",
-      "s3_text": "Home Assistant shows a pairing token. Enter it below with the address of your server.",
+      "s2_title": "Start pairing here",
+      "s2_text": "Press the button below. The tablet now announces itself on your network.",
+      "s3_title": "Confirm in Home Assistant",
+      "s3_text": "The tablet shows up under Settings → Devices & services as discovered. Press Configure, name it, and confirm the number on this screen.",
       "address": "Home Assistant address",
       "token": "Pairing token",
       "connect": "Connect",
       "reconnect": "Reconnect",
       "ok": "Connected to Home Assistant",
       "rejected": "Home Assistant rejected the token. Check it and try again.",
-      "not_yet": "Not connected yet"
+      "not_yet": "Not connected yet",
+      "manual_title": "Enter the address and token manually",
+      "manual_text": "For older setups. New setups pair as described above."
     },
     "mode": {
       "title": "What is this device for?",
@@ -679,5 +722,32 @@
     "cancel": "Cancel timer",
     "times_up": "Time's up",
     "over": "over"
+  },
+  "pairing": {
+    "start": "Pair with Home Assistant",
+    "waiting": "Waiting for Home Assistant",
+    "found_auto": "Open Home Assistant: this tablet appears as a discovered device. Press Configure there.",
+    "manual": "Not found? Add the integration HA Sidecar in Home Assistant and enter this address and code:",
+    "locked": "Too many wrong codes. Pairing was switched off; start it again.",
+    "request_title": "{name} wants to pair",
+    "request_text": "Check that Home Assistant shows the same number, then allow.",
+    "allow": "Allow",
+    "deny": "Deny"
+  },
+  "net": {
+    "wifi": "Wi-Fi",
+    "wifi_named": "Wi-Fi “{name}\\u201d",
+    "ethernet": "Ethernet",
+    "cellular": "Mobile data",
+    "vpn": "VPN",
+    "none": "No network",
+    "via_internal": "internal address",
+    "via_external": "external address",
+    "waiting_home": "waiting for the home network",
+    "offline": "offline",
+    "policy_always": "Always",
+    "policy_home": "Home network only",
+    "allow_location": "Allow location to read the Wi-Fi name",
+    "add_current": "Add “{name}\\u201d"
   }
 }

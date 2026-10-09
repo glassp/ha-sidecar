@@ -4,8 +4,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-import '../settings/connection_settings.dart';
-
 enum LinkState { disconnected, connecting, connected, authFailed }
 
 class CommandException implements Exception {
@@ -26,13 +24,16 @@ typedef CommandHandler =
 /// The tablet connects out, so no port has to be opened on the device.
 class SidecarClient {
   SidecarClient({
-    required this.settings,
+    required this.uri,
+    required this.token,
     required this.deviceInfo,
     required this.onCommand,
     required this.onConnected,
   });
 
-  final ConnectionSettings settings;
+  /// WebSocket address (internal or external, chosen by the connection policy) and the pairing token.
+  final Uri uri;
+  final String token;
   final Map<String, dynamic> Function() deviceInfo;
   final CommandHandler onCommand;
 
@@ -75,7 +76,7 @@ class SidecarClient {
     if (!_running) return;
     link.value = LinkState.connecting;
     try {
-      final ch = WebSocketChannel.connect(settings.websocketUri);
+      final ch = WebSocketChannel.connect(uri);
       _channel = ch;
       await ch.ready.timeout(const Duration(seconds: 10));
 
@@ -83,7 +84,7 @@ class SidecarClient {
         jsonEncode({
           'type': 'hello',
           'protocol': 1,
-          'token': settings.token,
+          'token': token,
           'device': deviceInfo(),
         }),
       );

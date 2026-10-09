@@ -72,7 +72,12 @@ String timerText(TimerSpec t, DateTime now) =>
 
 /// One timer row: big live time, label, pause/resume, +1 min (countdowns) and cancel.
 class TimerTile extends StatelessWidget {
-  const TimerTile({super.key, required this.controller, required this.timer, required this.now});
+  const TimerTile({
+    super.key,
+    required this.controller,
+    required this.timer,
+    required this.now,
+  });
   final AppController controller;
   final TimerSpec timer;
   final DateTime now;
@@ -116,9 +121,16 @@ class TimerTile extends StatelessWidget {
                     timerTitle(timer),
                     if (timer.paused) 'timers.paused'.tr(),
                     if (timer.finished) 'timers.over'.tr(),
-                    if (timer.isCountdown) 'timers.of'.tr(args: [formatClock(Duration(milliseconds: timer.durationMs))]),
+                    if (timer.isCountdown)
+                      'timers.of'.tr(
+                        args: [
+                          formatClock(Duration(milliseconds: timer.durationMs)),
+                        ],
+                      ),
                   ].join(' · '),
-                  style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurfaceVariant),
+                  style: t.textTheme.bodyMedium?.copyWith(
+                    color: t.colorScheme.onSurfaceVariant,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -127,14 +139,20 @@ class TimerTile extends StatelessWidget {
           ),
           if (timer.isCountdown)
             TextButton(
-              onPressed: () => _do(() => p.adjustTimer(timer.id, const Duration(minutes: 1))),
+              onPressed: () => _do(
+                () => p.adjustTimer(timer.id, const Duration(minutes: 1)),
+              ),
               child: Text('timers.plus_minute'.tr()),
             ),
           IconButton(
             tooltip: timer.paused ? 'timers.resume'.tr() : 'timers.pause'.tr(),
             onPressed: timer.finished
                 ? null
-                : () => _do(() => timer.paused ? p.resumeTimer(timer.id) : p.pauseTimer(timer.id)),
+                : () => _do(
+                    () => timer.paused
+                        ? p.resumeTimer(timer.id)
+                        : p.pauseTimer(timer.id),
+                  ),
             icon: Icon(timer.paused ? Icons.play_arrow : Icons.pause),
           ),
           IconButton(
@@ -177,18 +195,28 @@ Future<void> startTimerSheet(BuildContext context, AppController c) async {
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
               suffixText: unit,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
         );
         return Padding(
-          padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.fromLTRB(
+            24,
+            0,
+            24,
+            24 + MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('timers.new'.tr(), style: Theme.of(ctx).textTheme.headlineSmall),
+                Text(
+                  'timers.new'.tr(),
+                  style: Theme.of(ctx).textTheme.headlineSmall,
+                ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: label,
@@ -196,7 +224,9 @@ Future<void> startTimerSheet(BuildContext context, AppController c) async {
                   decoration: InputDecoration(
                     labelText: 'timers.label'.tr(),
                     hintText: 'timers.label_hint'.tr(),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -283,8 +313,14 @@ Future<void> startStopwatch(BuildContext context, AppController c) async {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('common.cancel'.tr())),
-        FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text('timers.start'.tr())),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text('common.cancel'.tr()),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text('timers.start'.tr()),
+        ),
       ],
     ),
   );

@@ -7,6 +7,7 @@ import '../../health.dart';
 import '../../permissions.dart';
 import '../../platform/kiosk_platform.dart';
 import '../design.dart';
+import '../pairing.dart';
 import '../dialogs.dart';
 import '../setting_widgets.dart';
 
@@ -427,58 +428,85 @@ class _ConnectStepState extends State<_ConnectStep> {
           ],
         ),
         const SizedBox(height: 24),
-        TextField(
-          controller: _url,
-          keyboardType: TextInputType.url,
-          autocorrect: false,
-          decoration: InputDecoration(
-            labelText: 'wiz.connect.address'.tr(),
-            prefixIcon: const Icon(Icons.language),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _token,
-          autocorrect: false,
-          decoration: InputDecoration(
-            labelText: 'wiz.connect.token'.tr(),
-            prefixIcon: const Icon(Icons.key_outlined),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-          ),
-        ),
+        PairingPanel(controller: widget.controller),
         const SizedBox(height: 16),
         Row(
           children: [
-            FilledButton.icon(
-              onPressed: _busy ? null : _connect,
-              icon: _busy
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.link),
-              label: Text(
-                connected
-                    ? 'wiz.connect.reconnect'.tr()
-                    : 'wiz.connect.connect'.tr(),
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                statusText,
+                style: t.textTheme.bodyMedium?.copyWith(color: color),
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Row(
-                children: [
-                  Icon(icon, color: color, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      statusText,
-                      style: t.textTheme.bodyMedium?.copyWith(color: color),
-                    ),
-                  ),
-                ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          title: Text('wiz.connect.manual_title'.tr()),
+          subtitle: Text('wiz.connect.manual_text'.tr()),
+          childrenPadding: const EdgeInsets.only(bottom: 8),
+          children: [
+            TextField(
+              controller: _url,
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+              decoration: InputDecoration(
+                labelText: 'wiz.connect.address'.tr(),
+                prefixIcon: const Icon(Icons.language),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _token,
+              autocorrect: false,
+              decoration: InputDecoration(
+                labelText: 'wiz.connect.token'.tr(),
+                prefixIcon: const Icon(Icons.key_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                FilledButton.icon(
+                  onPressed: _busy ? null : _connect,
+                  icon: _busy
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.link),
+                  label: Text(
+                    connected
+                        ? 'wiz.connect.reconnect'.tr()
+                        : 'wiz.connect.connect'.tr(),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(icon, color: color, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          statusText,
+                          style: t.textTheme.bodyMedium?.copyWith(color: color),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),

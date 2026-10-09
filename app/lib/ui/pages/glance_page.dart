@@ -125,7 +125,9 @@ class _GlancePageState extends State<GlancePage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    tm.isCountdown ? Icons.timer_outlined : Icons.directions_run,
+                                    tm.isCountdown
+                                        ? Icons.timer_outlined
+                                        : Icons.directions_run,
                                     size: 28,
                                     color: Colors.white54,
                                   ),
@@ -135,7 +137,9 @@ class _GlancePageState extends State<GlancePage> {
                                     style: TextStyle(
                                       fontSize: 44,
                                       fontWeight: FontWeight.w300,
-                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
+                                      ],
                                       color: tm.paused
                                           ? Colors.white38
                                           : tm.finished
@@ -148,7 +152,10 @@ class _GlancePageState extends State<GlancePage> {
                                     child: Text(
                                       timerTitle(tm),
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontSize: 22, color: Colors.white54),
+                                      style: const TextStyle(
+                                        fontSize: 22,
+                                        color: Colors.white54,
+                                      ),
                                     ),
                                   ),
                                 ],

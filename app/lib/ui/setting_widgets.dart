@@ -468,3 +468,106 @@ class CopyBlock extends StatelessWidget {
     );
   }
 }
+
+/// A free-text field that saves when submitted or when it loses focus (addresses).
+class TextFieldSetting extends StatefulWidget {
+  const TextFieldSetting({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.hint,
+    required this.value,
+    required this.onSaved,
+  });
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final String? hint;
+  final String value;
+  final ValueChanged<String> onSaved;
+
+  @override
+  State<TextFieldSetting> createState() => _TextFieldSettingState();
+}
+
+class _TextFieldSettingState extends State<TextFieldSetting> {
+  late final _ctl = TextEditingController(text: widget.value);
+  final _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() {
+      if (!_focus.hasFocus) _save();
+    });
+  }
+
+  void _save() {
+    final v = _ctl.text.trim();
+    if (v != widget.value) widget.onSaved(v);
+  }
+
+  @override
+  void didUpdateWidget(TextFieldSetting old) {
+    super.didUpdateWidget(old);
+    // changed from elsewhere (pairing handed over new addresses): show it unless the user is typing
+    if (widget.value != old.value && !_focus.hasFocus) _ctl.text = widget.value;
+  }
+
+  @override
+  void dispose() {
+    _ctl.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconBadge(widget.icon),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(widget.title, style: t.textTheme.titleMedium),
+              ),
+            ],
+          ),
+          if (widget.subtitle != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 56, top: 2),
+              child: Text(
+                widget.subtitle!,
+                style: t.textTheme.bodyMedium?.copyWith(
+                  color: t.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(left: 56, top: 8),
+            child: TextField(
+              controller: _ctl,
+              focusNode: _focus,
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+              onSubmitted: (_) => _save(),
+              decoration: InputDecoration(
+                hintText: widget.hint,
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

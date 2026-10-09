@@ -371,9 +371,9 @@ class _MuteCard extends StatelessWidget {
                 ? 'alarms.muted_forever'.tr()
                 : 'alarms.muted_until'.tr(
                     args: [
-                      DateFormat.MMMEd(context.locale.toString()).add_Hm().format(
-                        DateTime.fromMillisecondsSinceEpoch(until),
-                      ),
+                      DateFormat.MMMEd(context.locale.toString())
+                          .add_Hm()
+                          .format(DateTime.fromMillisecondsSinceEpoch(until)),
                     ],
                   ),
           ),

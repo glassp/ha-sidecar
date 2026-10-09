@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'app_controller.dart';
 import 'routing.dart';
+import 'ui/pairing.dart';
 
 /// Owned by the Dart isolate, not the widget tree: the isolate also runs headless (started by
 /// the Android KeepAliveService at boot), where no widget is ever built.
@@ -69,6 +70,10 @@ class _SidecarAppState extends State<SidecarApp> {
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
         locale: context.locale,
+        builder: (context, child) => PairingRequestHost(
+          controller: controller,
+          child: child ?? const SizedBox(),
+        ),
         routerDelegate: router.delegate,
         routeInformationParser: BeamerParser(),
         backButtonDispatcher: BeamerBackButtonDispatcher(

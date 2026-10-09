@@ -77,7 +77,8 @@
     "permissions": "Berechtigungen",
     "updates": "Updates",
     "setup": "Einrichtung",
-    "developer": "Entwickleroptionen"
+    "developer": "Entwickleroptionen",
+    "network": "Netzwerk"
   },
   "settings": {
     "kiosk_dashboard": {
@@ -273,8 +274,48 @@
     },
     "raw_brightness": {
       "title": "Helligkeit als 0–255",
-      "desc": "Helligkeitsstufen als rohe Android-Werte (0–255) statt in Prozent anzeigen und setzen. Ändert auch die Entitäten in Home Assistant.",
+      "desc": "Helligkeitsstufen als rohe Android-Werte (0–255) statt in Prozent anzeigen und setzen.",
       "kw": "prozent, roh, wert, 255, stufe, entwickler"
+    },
+    "pair_ha": {
+      "title": "Mit Home Assistant koppeln",
+      "desc": "Kopplung starten, damit Home Assistant dieses Tablet finden kann.",
+      "kw": "koppeln, entdecken, mdns, zeroconf, code, hinzufügen, verbinden"
+    },
+    "network_status": {
+      "title": "Aktuelles Netzwerk",
+      "desc": "Wo sich dieses Tablet befindet und welche Adresse es nutzt.",
+      "kw": "wlan, vpn, ethernet, netzwerk, adresse, route"
+    },
+    "internal_url": {
+      "title": "Interne Adresse",
+      "desc": "Wird zu Hause genutzt, in einem Heimnetz, VPN oder Ethernet, das als zu Hause gilt.",
+      "kw": "url, lokal, lan, ip, intern"
+    },
+    "external_url": {
+      "title": "Externe Adresse",
+      "desc": "Wird überall sonst genutzt. Leer lassen, um immer die interne Adresse zu nutzen.",
+      "kw": "url, extern, remote, nabu casa, domain, internet"
+    },
+    "home_networks": {
+      "title": "WLAN-Netzwerke zu Hause",
+      "desc": "Netzwerke, in denen die interne Adresse genutzt wird. Für den WLAN-Namen braucht Android die Standortberechtigung.",
+      "kw": "ssid, wlan, zuhause, standort"
+    },
+    "vpn_is_home": {
+      "title": "VPN gilt als zu Hause",
+      "desc": "Die interne Adresse nutzen, solange ein VPN verbunden ist.",
+      "kw": "vpn, wireguard, tunnel, zuhause"
+    },
+    "ethernet_is_home": {
+      "title": "Ethernet gilt als zu Hause",
+      "desc": "Die interne Adresse bei Kabelverbindung nutzen.",
+      "kw": "ethernet, kabel, lan"
+    },
+    "connection_policy": {
+      "title": "Verbindung halten",
+      "desc": "Immer verbunden bleiben oder nur im Heimnetz.",
+      "kw": "dauerhaft, immer, nur zuhause, akku, vpn, netzwerk"
     }
   },
   "pin": {
@@ -454,7 +495,7 @@
     },
     "connection": {
       "paired_with": "Gekoppelt mit {url}",
-      "pair_again": "Mit neuem Token erneut koppeln"
+      "pair_again": "Erneut koppeln"
     }
   },
   "search": {
@@ -569,20 +610,22 @@
     },
     "connect": {
       "title": "Mit Home Assistant verbinden",
-      "intro": "Dieses Tablet spricht mit der HA-Sidecar-Integration in Home Assistant.",
+      "intro": "Dieses Tablet koppelt sich mit der HA-Sidecar-Integration in Home Assistant. Alles bleibt in deinem Netzwerk; nichts muss von Hand abgetippt werden.",
       "s1_title": "Integration installieren",
       "s1_text": "Füge in HACS das HA-Sidecar-Repository hinzu (Benutzerdefinierte Repositories → Integration) und starte Home Assistant neu.",
-      "s2_title": "Dieses Tablet hinzufügen",
-      "s2_text": "Einstellungen → Geräte & Dienste → Integration hinzufügen → HA Sidecar. Gib dem Tablet einen Namen.",
-      "s3_title": "Token kopieren",
-      "s3_text": "Home Assistant zeigt ein Kopplungs-Token. Gib es unten zusammen mit der Adresse deines Servers ein.",
+      "s2_title": "Hier die Kopplung starten",
+      "s2_text": "Drücke unten auf die Schaltfläche. Das Tablet meldet sich jetzt in deinem Netzwerk.",
+      "s3_title": "In Home Assistant bestätigen",
+      "s3_text": "Das Tablet erscheint unter Einstellungen → Geräte & Dienste als entdeckt. Drücke auf Konfigurieren, vergib einen Namen und bestätige die Zahl auf diesem Bildschirm.",
       "address": "Home-Assistant-Adresse",
       "token": "Kopplungs-Token",
       "connect": "Verbinden",
       "reconnect": "Neu verbinden",
       "ok": "Mit Home Assistant verbunden",
       "rejected": "Home Assistant hat das Token abgelehnt. Prüfe es und versuche es erneut.",
-      "not_yet": "Noch nicht verbunden"
+      "not_yet": "Noch nicht verbunden",
+      "manual_title": "Adresse und Token manuell eingeben",
+      "manual_text": "Für ältere Einrichtungen. Neue Einrichtungen koppeln wie oben beschrieben."
     },
     "mode": {
       "title": "Wofür ist dieses Gerät?",
@@ -679,5 +722,32 @@
     "cancel": "Timer abbrechen",
     "times_up": "Zeit abgelaufen",
     "over": "vorbei"
+  },
+  "pairing": {
+    "start": "Mit Home Assistant koppeln",
+    "waiting": "Warte auf Home Assistant",
+    "found_auto": "Öffne Home Assistant: Dieses Tablet erscheint dort als entdecktes Gerät. Drücke dort auf Konfigurieren.",
+    "manual": "Nicht gefunden? Füge in Home Assistant die Integration HA Sidecar hinzu und gib diese Adresse und diesen Code ein:",
+    "locked": "Zu viele falsche Codes. Die Kopplung wurde beendet; starte sie erneut.",
+    "request_title": "{name} möchte koppeln",
+    "request_text": "Prüfe, ob Home Assistant dieselbe Zahl zeigt, und erlaube dann.",
+    "allow": "Erlauben",
+    "deny": "Ablehnen"
+  },
+  "net": {
+    "wifi": "WLAN",
+    "wifi_named": "WLAN „{name}“",
+    "ethernet": "Ethernet",
+    "cellular": "Mobilfunk",
+    "vpn": "VPN",
+    "none": "Kein Netzwerk",
+    "via_internal": "interne Adresse",
+    "via_external": "externe Adresse",
+    "waiting_home": "wartet auf das Heimnetz",
+    "offline": "offline",
+    "policy_always": "Immer",
+    "policy_home": "Nur Heimnetz",
+    "allow_location": "Standort erlauben, um den WLAN-Namen zu lesen",
+    "add_current": "„{name}“ hinzufügen"
   }
 }

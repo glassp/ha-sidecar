@@ -108,7 +108,9 @@ class CommandRouter {
           id: d['id'] as String,
           label: (d['label'] ?? '') as String,
           kind: (d['kind'] ?? 'countdown') as String,
-          duration: Duration(milliseconds: ((d['duration_s'] ?? 0) as num).round() * 1000),
+          duration: Duration(
+            milliseconds: ((d['duration_s'] ?? 0) as num).round() * 1000,
+          ),
         );
       case 'pause_timer':
         await platform.pauseTimer(d['id'] as String);

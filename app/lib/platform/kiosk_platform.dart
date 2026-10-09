@@ -62,6 +62,12 @@ class DeviceStatus {
   int? get nextAlarmMillis => raw['next_alarm'] as int?;
   bool get alarmsMuted => _b('alarms_muted');
 
+  /// Pairing mode state (see docs/PAIRING.md); null while it is off.
+  Map<String, dynamic>? get pairing =>
+      (raw['pairing'] as Map?)?.cast<String, dynamic>();
+  Map<String, dynamic>? get network =>
+      (raw['network'] as Map?)?.cast<String, dynamic>();
+
   /// Epoch ms when the mute ends; null = until unmuted (or not muted).
   int? get alarmsMutedUntil => raw['alarms_muted_until'] as int?;
   List<TimerSpec> get timers => [
@@ -104,7 +110,9 @@ class TimerSpec {
 
   /// How long a finished countdown has been over.
   Duration overtime(DateTime now) => Duration(
-    milliseconds: finishedAt == null ? 0 : (now.millisecondsSinceEpoch - finishedAt!).clamp(0, 1 << 40),
+    milliseconds: finishedAt == null
+        ? 0
+        : (now.millisecondsSinceEpoch - finishedAt!).clamp(0, 1 << 40),
   );
 
   bool get isCountdown => kind == 'countdown';
@@ -116,10 +124,14 @@ class TimerSpec {
   Duration shown(DateTime now) {
     final ms = now.millisecondsSinceEpoch;
     if (isCountdown) {
-      if (running && endsAt != null) return Duration(milliseconds: (endsAt! - ms).clamp(0, durationMs));
+      if (running && endsAt != null) {
+        return Duration(milliseconds: (endsAt! - ms).clamp(0, durationMs));
+      }
       return Duration(milliseconds: finished ? 0 : remainingMs);
     }
-    if (running && startedAt != null) return Duration(milliseconds: (ms - startedAt!).clamp(0, 1 << 40));
+    if (running && startedAt != null) {
+      return Duration(milliseconds: (ms - startedAt!).clamp(0, 1 << 40));
+    }
     return Duration(milliseconds: elapsedMs);
   }
 
@@ -261,6 +273,13 @@ abstract class KioskPlatform {
 
   /// Silences alarms until [until] / [forever]; neither unmutes. Muted alarms do not ring but keep their schedule.
   Future<void> setAlarmsMuted({DateTime? until, bool forever = false});
+
+  // Pairing with Home Assistant: the tablet listens and advertises itself while this is on.
+  Future<Map<String, dynamic>> startPairing();
+  Future<void> stopPairing();
+
+  /// Answer to a confirm-mode request shown on the tablet.
+  Future<void> answerPairing(bool allow);
 
   // Timers and stopwatches
   Future<List<TimerSpec>> getTimers();
