@@ -167,6 +167,56 @@ object PlatformChannel {
                 AlarmService.snooze(ctx)
                 result.success(null)
             }
+            "setAlarmEnabled" -> {
+                val id = call.argument<String>("id").orEmpty()
+                if (AlarmEngine.setEnabled(ctx, id, call.argument<Boolean>("enabled") == true)) result.success(null)
+                else result.error("not_found", "no alarm $id", null)
+            }
+            "skipNextAlarm" -> {
+                if (AlarmEngine.skipNext(ctx, call.argument<String>("id"))) result.success(null)
+                else result.error("not_found", "no such alarm", null)
+            }
+            "setAlarmsMuted" -> {
+                // `until_ms`: epoch ms; `forever`; or neither = unmute
+                val until = if (call.argument<Boolean>("forever") == true) Long.MAX_VALUE
+                else call.argument<Number>("until_ms")?.toLong()
+                AlarmEngine.setMuted(ctx, until)
+                result.success(null)
+            }
+
+            // timers and stopwatches ------------------------------------------------------------
+            "getTimers" -> result.success(TimerEngine.snapshot(ctx))
+            "startTimer" -> {
+                val id = call.argument<String>("id").orEmpty()
+                try {
+                    val t = TimerEngine.start(
+                        ctx, id, call.argument<String>("label").orEmpty(),
+                        call.argument<String>("kind") ?: SidecarTimer.KIND_COUNTDOWN,
+                        call.argument<Number>("duration_ms")?.toLong() ?: 0L,
+                    )
+                    result.success(t.toMap())
+                } catch (e: TimerEngine.Invalid) {
+                    result.error("invalid_value", e.message, null)
+                }
+            }
+            "pauseTimer" -> {
+                if (TimerEngine.pause(ctx, call.argument<String>("id").orEmpty())) result.success(null)
+                else result.error("not_found", "no running timer with that id", null)
+            }
+            "resumeTimer" -> {
+                if (TimerEngine.resume(ctx, call.argument<String>("id").orEmpty())) result.success(null)
+                else result.error("not_found", "no paused timer with that id", null)
+            }
+            "cancelTimer" -> {
+                if (TimerEngine.cancel(ctx, call.argument<String>("id").orEmpty())) result.success(null)
+                else result.error("not_found", "no timer with that id", null)
+            }
+            "adjustTimer" -> {
+                val ok = TimerEngine.adjust(
+                    ctx, call.argument<String>("id").orEmpty(), call.argument<Number>("delta_ms")?.toLong() ?: 0L,
+                )
+                if (ok) result.success(null) else result.error("not_found", "no countdown with that id", null)
+            }
 
             // system -----------------------------------------------------------------------
             "startKeepAlive" -> {

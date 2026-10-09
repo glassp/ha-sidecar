@@ -9,7 +9,15 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != AlarmScheduler.ACTION_FIRE) return
         val id = intent.getStringExtra("id") ?: return
-        AlarmService.ring(context, id)
+        AlarmEngine.fire(context, id)
+    }
+}
+
+/** Not exported: only our own PendingIntents can finish a timer. */
+class TimerReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action != TimerScheduler.ACTION_FIRE) return
+        TimerEngine.fire(context, intent.getStringExtra("id") ?: return)
     }
 }
 
@@ -22,6 +30,7 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED -> {
                 AlarmScheduler.rescheduleAll(context)
+                TimerEngine.rescheduleAll(context)
                 if (intent.action == Intent.ACTION_BOOT_COMPLETED ||
                     intent.action == Intent.ACTION_MY_PACKAGE_REPLACED
                 ) {

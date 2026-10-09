@@ -320,6 +320,11 @@ object KioskController {
             "pending_update" to pending?.let { JSONObject(it).toMap() },
             "next_alarm" to AlarmScheduler.nextAlarmMillis(ctx),
             "alarm_ringing" to (AlarmService.ringingId != null),
+            "timer_ringing" to (AlarmService.ringingTimerId != null),
+            "alarms" to AlarmStore.all(ctx).map { it.toMap() },
+            "timers" to TimerEngine.snapshot(ctx),
+            "alarms_muted" to AlarmEngine.isMuted(ctx),
+            "alarms_muted_until" to Prefs.alarmsMutedUntil(ctx).takeIf { it > System.currentTimeMillis() && it != Long.MAX_VALUE },
             "last_interaction" to InteractionTracker.lastMs,
             "camera_in_use" to PrivacyMonitor.cameraInUse,
             "mic_in_use" to PrivacyMonitor.micInUse,
@@ -333,7 +338,7 @@ object KioskController {
                 (Build.VERSION.SDK_INT < 34 || ctx.getSystemService(android.app.NotificationManager::class.java).canUseFullScreenIntent()),
             "companion_packages" to COMPANION_PACKAGES.filter { isInstalled(ctx, it) },
             "glance_items" to glanceItems(ctx),
-            "ringing_alarm" to AlarmService.ringingId?.let { AlarmStore.get(ctx, it)?.toMap() },
+            "ringing_alarm" to AlarmService.ringingSnapshot(ctx),
             "glance_showing" to (UiHost.isShowing(UiHost.GLANCE) || BrightnessController.dashboardGlanceShowing),
         ) + BrightnessController.snapshot() + PresenceCamera.snapshot(ctx)
     }

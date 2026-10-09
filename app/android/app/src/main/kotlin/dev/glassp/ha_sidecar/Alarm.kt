@@ -22,17 +22,22 @@ data class Alarm(
     val enabled: Boolean = true,
     val snoozeMinutes: Int = 9,
     val snoozedUntil: Long = 0,
+    /** Repeating alarm: ring on the occurrence after the next one (e.g. "skip tomorrow's alarm"). */
+    val skipNext: Boolean = false,
 ) {
     fun nextTriggerMillis(now: Long = System.currentTimeMillis()): Long? {
         if (!enabled) return null
         if (snoozedUntil > now) return snoozedUntil
         val zone = ZoneId.systemDefault()
         val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
-        for (offset in 0L..7L) {
+        var toSkip = if (skipNext && days.isNotEmpty()) 1 else 0
+        for (offset in 0L..14L) {
             val date = today.plusDays(offset)
             if (days.isNotEmpty() && date.dayOfWeek.value !in days) continue
             val at = date.atTime(hour, minute).atZone(zone).toInstant().toEpochMilli()
-            if (at > now) return at
+            if (at <= now) continue
+            if (toSkip-- > 0) continue
+            return at
         }
         return null
     }
@@ -41,12 +46,12 @@ data class Alarm(
         .put("id", id).put("hour", hour).put("minute", minute)
         .put("days", JSONArray(days.sorted()))
         .put("label", label).put("enabled", enabled)
-        .put("snooze_minutes", snoozeMinutes).put("snoozed_until", snoozedUntil)
+        .put("snooze_minutes", snoozeMinutes).put("snoozed_until", snoozedUntil).put("skip_next", skipNext)
 
     fun toMap(): Map<String, Any?> = mapOf(
         "id" to id, "hour" to hour, "minute" to minute, "days" to days.sorted(),
         "label" to label, "enabled" to enabled, "snooze_minutes" to snoozeMinutes,
-        "snoozed_until" to snoozedUntil, "next" to nextTriggerMillis(),
+        "snoozed_until" to snoozedUntil, "skip_next" to skipNext, "next" to nextTriggerMillis(),
     )
 
     companion object {
@@ -61,6 +66,7 @@ data class Alarm(
                 enabled = o.optBoolean("enabled", true),
                 snoozeMinutes = o.optInt("snooze_minutes", 9),
                 snoozedUntil = o.optLong("snoozed_until", 0),
+                skipNext = o.optBoolean("skip_next", false),
             )
         }
     }
@@ -127,4 +133,64 @@ object AlarmScheduler {
 
     fun nextAlarmMillis(ctx: Context): Long? =
         AlarmStore.all(ctx).mapNotNull { it.nextTriggerMillis() }.minOrNull()
+}
+
+/** Remote-control surface for alarms: mute (e.g. while away), skip the next occurrence, enable/disable. */
+object AlarmEngine {
+    fun isMuted(ctx: Context, now: Long = System.currentTimeMillis()) = Prefs.alarmsMutedUntil(ctx) > now
+
+    /** Called when an alarm's time is reached. Muted alarms do not ring but still advance their schedule. */
+    fun fire(ctx: Context, id: String) {
+        val alarm = AlarmStore.get(ctx, id) ?: return
+        if (!isMuted(ctx)) {
+            AlarmService.ring(ctx, id)
+            return
+        }
+        val next = alarm.copy(enabled = alarm.days.isNotEmpty(), snoozedUntil = 0, skipNext = false)
+        AlarmStore.upsert(ctx, next)
+        AlarmScheduler.schedule(ctx, next)
+        EventBus.emit("alarm_skipped", mapOf("id" to alarm.id, "label" to alarm.label, "reason" to "muted"))
+        EventBus.emit("status_changed")
+    }
+
+    /** @param untilMs epoch ms, [Long.MAX_VALUE] for "until unmuted", or null/<=now to unmute. */
+    fun setMuted(ctx: Context, untilMs: Long?) {
+        val until = if (untilMs != null && untilMs > System.currentTimeMillis()) untilMs else 0L
+        val was = Prefs.alarmsMutedUntil(ctx) > System.currentTimeMillis()
+        Prefs.setAlarmsMutedUntil(ctx, until)
+        if (until > 0 != was || until > 0) {
+            EventBus.emit(
+                if (until > 0) "alarms_muted" else "alarms_unmuted",
+                mapOf("until" to until.takeIf { it > 0 && it != Long.MAX_VALUE }),
+            )
+        }
+        EventBus.emit("status_changed")
+    }
+
+    /** One-shot alarms are disabled, repeating ones ring on their following occurrence. @return false if unknown. */
+    fun skipNext(ctx: Context, id: String?): Boolean {
+        val alarm = (if (id == null) nextAlarm(ctx) else AlarmStore.get(ctx, id)) ?: return false
+        val changed = if (alarm.days.isEmpty()) alarm.copy(enabled = false, snoozedUntil = 0)
+        else alarm.copy(skipNext = !alarm.skipNext)
+        AlarmStore.upsert(ctx, changed)
+        AlarmScheduler.schedule(ctx, changed)
+        EventBus.emit(
+            "alarm_skipped",
+            mapOf("id" to alarm.id, "label" to alarm.label, "reason" to if (changed.skipNext || alarm.days.isEmpty()) "skip_next" else "skip_cleared"),
+        )
+        EventBus.emit("status_changed")
+        return true
+    }
+
+    fun setEnabled(ctx: Context, id: String, enabled: Boolean): Boolean {
+        val alarm = AlarmStore.get(ctx, id) ?: return false
+        val changed = alarm.copy(enabled = enabled, snoozedUntil = 0, skipNext = false)
+        AlarmScheduler.schedule(ctx, changed)
+        AlarmStore.upsert(ctx, changed)
+        EventBus.emit("status_changed")
+        return true
+    }
+
+    private fun nextAlarm(ctx: Context): Alarm? =
+        AlarmStore.all(ctx).filter { it.nextTriggerMillis() != null }.minByOrNull { it.nextTriggerMillis()!! }
 }

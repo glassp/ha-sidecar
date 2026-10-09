@@ -150,7 +150,7 @@ object BrightnessController {
         val idleMs = now - InteractionTracker.lastMs
         val pm = c.getSystemService(PowerManager::class.java)
         if (idleMs <= (cfg["glance_after_s"] as Int) * 1000L || present || !pm.isInteractive ||
-            AlarmService.ringingId != null || UiHost.isShowing(UiHost.PIN)
+            AlarmService.ringingId != null || AlarmService.ringingTimerId != null || UiHost.isShowing(UiHost.PIN)
         ) return
 
         val glancePath = cfg["glance_dashboard"] as String

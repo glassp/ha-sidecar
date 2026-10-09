@@ -113,6 +113,7 @@
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <receiver android:name=".AlarmReceiver" android:exported="false" />
+        <receiver android:name=".TimerReceiver" android:exported="false" />
 
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>

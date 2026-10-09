@@ -25,13 +25,35 @@ class AlarmService : Service() {
         const val ACTION_RING = "dev.glassp.ha_sidecar.RING"
         const val ACTION_STOP = "dev.glassp.ha_sidecar.STOP"
         const val ACTION_SNOOZE = "dev.glassp.ha_sidecar.SNOOZE"
+        const val ACTION_RING_TIMER = "dev.glassp.ha_sidecar.RING_TIMER"
         const val ACTION_ENDED = "dev.glassp.ha_sidecar.ALARM_ENDED"
         private const val CHANNEL = "alarm"
         private const val NOTIFICATION_ID = 4711
         private const val AUTO_STOP_MS = 10 * 60_000L
 
+        /** Id of the ringing alarm (see [ringingTimerId] for timers). */
         @Volatile
         var ringingId: String? = null
+
+        /** Set instead of [ringingId] when a countdown timer is what rings. */
+        @Volatile
+        var ringingTimerId: String? = null
+
+        /** Ringing thing as a map for the UI: `kind` is `alarm` or `timer`. */
+        fun ringingSnapshot(ctx: Context): Map<String, Any?>? {
+            ringingTimerId?.let { id ->
+                val t = TimerStore.get(ctx, id) ?: return null
+                return mapOf("kind" to "timer", "id" to t.id, "label" to t.label, "duration_ms" to t.durationMs, "finished_at" to t.finishedAt.takeIf { it > 0 })
+            }
+            val alarm = ringingId?.let { AlarmStore.get(ctx, it) } ?: return null
+            return alarm.toMap() + ("kind" to "alarm")
+        }
+
+        fun ringTimer(ctx: Context, id: String) {
+            ctx.startForegroundService(
+                Intent(ctx, AlarmService::class.java).setAction(ACTION_RING_TIMER).putExtra("id", id)
+            )
+        }
 
         fun ring(ctx: Context, id: String) {
             ctx.startForegroundService(
@@ -47,12 +69,14 @@ class AlarmService : Service() {
     private val autoStop = Runnable { finishRinging(snooze = false, reason = "timeout") }
     private var player: MediaPlayer? = null
     private var current: Alarm? = null
+    private var currentTimer: SidecarTimer? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_RING -> startRinging(intent.getStringExtra("id"))
+            ACTION_RING_TIMER -> startRingingTimer(intent.getStringExtra("id"))
             ACTION_STOP -> finishRinging(snooze = false, reason = "dismissed")
             ACTION_SNOOZE -> finishRinging(snooze = true, reason = "snoozed")
             else -> stopSelf()
@@ -64,7 +88,7 @@ class AlarmService : Service() {
         val alarm = id?.let { AlarmStore.get(this, it) }
         if (alarm == null) {
             // startForegroundService() promises a startForeground(); keep the contract.
-            startForeground(NOTIFICATION_ID, buildNotification(null))
+            startForeground(NOTIFICATION_ID, buildNotification(null, null))
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return
@@ -73,11 +97,11 @@ class AlarmService : Service() {
         ringingId = alarm.id
 
         // One-shots disable themselves, repeating alarms schedule their next occurrence.
-        val next = alarm.copy(enabled = alarm.days.isNotEmpty(), snoozedUntil = 0)
+        val next = alarm.copy(enabled = alarm.days.isNotEmpty(), snoozedUntil = 0, skipNext = false)
         AlarmStore.upsert(this, next)
         AlarmScheduler.schedule(this, next)
 
-        val notification = buildNotification(alarm)
+        val notification = buildNotification(alarm, null)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         } else {
@@ -91,8 +115,50 @@ class AlarmService : Service() {
         EventBus.emit("status_changed")
     }
 
+    private fun startRingingTimer(id: String?) {
+        val timer = id?.let { TimerStore.get(this, it) }
+        if (timer == null) {
+            startForeground(NOTIFICATION_ID, buildNotification(null, null))
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return
+        }
+        if (currentTimer != null || current != null) {
+            // already ringing: this timer stays listed as finished (overtime counting) instead of fighting for the speaker
+            startForeground(NOTIFICATION_ID, buildNotification(current, currentTimer))
+            return
+        }
+        currentTimer = timer
+        ringingTimerId = timer.id
+        val notification = buildNotification(null, timer)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
+        playSound()
+        vibrate()
+        UiHost.show(this, UiHost.ALARM)
+        handler.postDelayed(autoStop, AUTO_STOP_MS)
+        EventBus.emit("status_changed")
+    }
+
     private fun finishRinging(snooze: Boolean, reason: String) {
         handler.removeCallbacks(autoStop)
+        val timer = currentTimer
+        if (timer != null) {
+            player?.run { runCatching { stop() }; release() }
+            player = null
+            getSystemService(Vibrator::class.java)?.cancel()
+            ringingTimerId = null
+            currentTimer = null
+            sendBroadcast(Intent(ACTION_ENDED).setPackage(packageName))
+            EventBus.emit("ring_ended", mapOf("id" to timer.id, "kind" to "timer"))
+            TimerEngine.ringEnded(this, timer.id, snooze, reason)
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return
+        }
         val alarm = current
         if (snooze && alarm != null) {
             val until = System.currentTimeMillis() + alarm.snoozeMinutes * 60_000L
@@ -106,6 +172,7 @@ class AlarmService : Service() {
         ringingId = null
         current = null
         sendBroadcast(Intent(ACTION_ENDED).setPackage(packageName))
+        EventBus.emit("ring_ended", mapOf("id" to alarm?.id, "kind" to "alarm"))
         EventBus.emit("alarm_stopped", mapOf("id" to alarm?.id, "reason" to reason))
         EventBus.emit("status_changed")
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -134,7 +201,7 @@ class AlarmService : Service() {
             ?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 600, 600), 0))
     }
 
-    private fun buildNotification(alarm: Alarm?): Notification {
+    private fun buildNotification(alarm: Alarm?, timer: SidecarTimer?): Notification {
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL, "Alarms", NotificationManager.IMPORTANCE_HIGH)
@@ -153,11 +220,11 @@ class AlarmService : Service() {
         )
         return Notification.Builder(this, CHANNEL)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle(alarm?.label?.ifBlank { null } ?: "Alarm")
+            .setContentTitle((alarm?.label ?: timer?.label)?.ifBlank { null } ?: if (timer != null) "Timer" else "Alarm")
             .setCategory(Notification.CATEGORY_ALARM)
             .setOngoing(true)
             .setFullScreenIntent(fullScreen, true)
-            .addAction(action("Snooze", ACTION_SNOOZE))
+            .addAction(action(if (timer != null) "+1 min" else "Snooze", ACTION_SNOOZE))
             .addAction(action("Dismiss", ACTION_STOP))
             .build()
     }

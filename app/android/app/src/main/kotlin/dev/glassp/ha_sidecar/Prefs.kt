@@ -62,6 +62,13 @@ object Prefs {
     fun alarmsJson(ctx: Context): String = sp(ctx).getString("alarms", "[]")!!
     fun setAlarmsJson(ctx: Context, v: String) = sp(ctx).edit().putString("alarms", v).apply()
 
+    fun timersJson(ctx: Context): String = sp(ctx).getString("timers", "[]")!!
+    fun setTimersJson(ctx: Context, v: String) = sp(ctx).edit().putString("timers", v).apply()
+
+    /** Alarms are silenced until this epoch ms (Long.MAX_VALUE = until unmuted); 0 = not muted. */
+    fun alarmsMutedUntil(ctx: Context): Long = sp(ctx).getLong("alarms_muted_until", 0)
+    fun setAlarmsMutedUntil(ctx: Context, v: Long) = sp(ctx).edit().putLong("alarms_muted_until", v).apply()
+
     fun pendingUpdate(ctx: Context): String? = sp(ctx).getString("pending_update", null)
     fun pendingUpdateFingerprint(ctx: Context): String? = sp(ctx).getString("pending_update_fp", null)
     fun setPendingUpdate(ctx: Context, json: String?, fingerprint: String?) =
