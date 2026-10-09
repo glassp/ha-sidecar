@@ -148,14 +148,31 @@ device over a day (dimming, glance, Wi-Fi changes), a start-up hang that is *not
 paths (`relaunch_only`), the Home Assistant entities (the integration was only compiled; the test Home Assistant was removed
 before this phase), a physical tablet and localized ANR dialogs.
 
-### Dashboard beacon card (unit level only)
+### Dashboard beacon: integration, tablet and ladder (emulator, real Home Assistant 2026.10)
 
-9 Node tests run the card against a stubbed page (ping on start and interval, no ping when nothing is drawn or the page is hidden,
-unknown tablet, escaping, leave notice on navigation, leave notice and listener cleanup on unmount); 12 Python tests cover the
-tracker (no verdict without a first ping, stale after the limit, paused while not watching, silence counted from when watching
-resumed, inactive is not stale, navigate-then-restart ladder, restart rate limit). `heal_dashboard` and the Python integration
-code compile; **nothing ran against a real Home Assistant, the companion app or the dashboard editor yet** (the test Home
-Assistant was removed; re-creating it needs a ~1 GB download).
+Run against a throwaway Home Assistant (pip install, loopback only, throwaway user created through the onboarding API, token via
+the WebSocket API; the companion app was never signed in) and the emulator. The tablet was paired with the manual code flow
+(`user` -> `details`), entity prefix `lab`; the card file is served (`/ha_sidecar_static/ha-sidecar-beacon-card.js`, 200,
+`text/javascript`); `ha_sidecar/tablets` lists the tablet; `ha_sidecar/beacon` answers. A script stood in for the card
+(pings over the WebSocket API); options: heal on, timeout 1 min. Companion app in front, screen on.
+
+| Case | Result |
+|---|---|
+| warm-up after the entry loads | `paused` for 2 min, then `ok` on the next ping |
+| pings stop without a goodbye, no kiosk dashboard set | stale after ~60 s + the 30 s tick (`dashboard_unresponsive`), then `heal_dashboard` straight away: companion restarted, restart counter +1 with reason `beacon` |
+| same, kiosk dashboard set | `dashboard_unresponsive` and `dashboard_navigate_attempt` in the same tick, the heal ~2 min later (the 90 s retry, rounded up by the tick), counter +1 |
+| first ping after an episode | `dashboard_recovered` fires once |
+| card says goodbye (`inactive`) | no `dashboard_unresponsive`, no navigate, no restart in 200 s |
+
+**Not verified:** the card inside a real signed-in dashboard and its editor (only the Node tests ran it; signing in to the
+companion app was out of bounds), whether the navigate intent really lands in a signed-in companion app, and the false-positive
+rate over days. In this lab the navigate attempt itself makes the not-signed-in companion app misbehave (ANR dialogs, restarts
+by the watchdog), so the restart counts above include those.
+
+Found on the way: after a completed pairing the app did not reconnect until its process was restarted (see ROADMAP "Known
+issues"); Home Assistant 2026.10 reverts an unconfirmed `http:` config after 5 minutes and restarts itself (exit code 100), so a
+test harness must restart it on that code; on macOS the `pyobjc` CoreBluetooth binding gets the Home Assistant process killed
+when it has no Bluetooth permission (remove the package or the `bluetooth` integration for lab runs).
 
 ## Not verified
 

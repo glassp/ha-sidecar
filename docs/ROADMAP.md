@@ -116,7 +116,7 @@ device-owner recovery ~3.5 s, the ANR dialog answered by view id, the 3-per-10-m
 3. *Visual freeze* (F3, optional, off by default): accessibility screenshot (Android 11+, needs the screenshot capability)
    hashed on a tiny grid; identical for `visual_timeout` while the screen is on and brightness is unchanged.
    Needs a live element on the dashboard (a clock card); otherwise static dashboards false-positive.
-4. *Dashboard beacon* (F3, built, not yet run end to end): an explicit card, `custom:ha-sidecar-beacon-card`, shipped by the
+4. *Dashboard beacon* (F3, built; ladder verified on the emulator against a real Home Assistant, the card itself only in Node tests): an explicit card, `custom:ha-sidecar-beacon-card`, shipped by the
    integration with a picker of the registered tablets (config = the tablet's entity prefix). It pings `ha_sidecar/beacon` over the
    page's own WebSocket every 30 s, skips pings when no animation frame ran or the page is hidden, and **announces when it
    leaves** (`location-changed`, `popstate`, `pagehide`, view unmounted), so leaving a page is `inactive`, not stale. The
@@ -187,6 +187,11 @@ Media player entity, intercom, camera-based motion/presence, Bluetooth proxy (ES
 - Dashboard buttons / blueprints for timers (Batch 1 style presets) and a voice front end for them.
 - Whether to allow `clearDeviceOwnerApp` from the app behind the PIN (currently only factory reset removes ownership).
 - Play Store distribution is doubtful (accessibility + device-owner use, `USE_FULL_SCREEN_INTENT`); plan on F-Droid/GitHub APKs.
+
+## Known issues (open)
+- After a pairing completes, the emulator app did not open its connection until the app process was restarted (no connect attempt
+  in the log for minutes, the UI stayed "Disconnected"; a process restart connected at once). Not yet reproduced on purpose or
+  traced: check that the `paired` event reaches `AppController._onPaired` and that `_restartClient` starts a client.
 
 ## First device test checklist
 Steps 2-5 (partly 7) were run on an emulator, see [TESTING.md](TESTING.md); all of it still needs a physical tablet.
