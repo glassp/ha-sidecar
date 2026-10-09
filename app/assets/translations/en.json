@@ -795,6 +795,7 @@
     "reason_ui_frozen": "frozen",
     "reason_anr": "not responding",
     "reason_startup_hang": "stuck at start",
-    "reason_manual": "manual"
+    "reason_manual": "manual",
+    "reason_beacon": "dashboard not responding"
   }
 }

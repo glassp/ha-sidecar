@@ -795,6 +795,7 @@
     "reason_ui_frozen": "eingefroren",
     "reason_anr": "reagiert nicht",
     "reason_startup_hang": "beim Start hängengeblieben",
-    "reason_manual": "manuell"
+    "reason_manual": "manuell",
+    "reason_beacon": "Dashboard reagiert nicht"
   }
 }

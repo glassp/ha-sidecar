@@ -251,7 +251,8 @@ object CompanionWatchdog {
         return true
     }
 
-    private fun recover(c: Context, target: String, reason: String, anrClose: AccessibilityNodeInfo?, force: Boolean = false) {
+    /** Counts a restart against the limit. @return false (and gives up) if the limit is reached. */
+    private fun reserveRestart(target: String, reason: String, force: Boolean): Boolean = synchronized(restartTimes) {
         val now = SystemClock.elapsedRealtime()
         while (restartTimes.isNotEmpty() && now - restartTimes.first() > WINDOW_MS) restartTimes.removeFirst()
         if (!force && restartTimes.size >= MAX_RESTARTS) {
@@ -263,9 +264,39 @@ object CompanionWatchdog {
                 mapOf("reason" to reason, "package" to target, "restarts_in_window" to restartTimes.size),
             )
             EventBus.emit("status_changed")
-            return
+            return false
         }
         restartTimes.addLast(now)
+        true
+    }
+
+    /**
+     * Restart requested from outside (the dashboard beacon in Home Assistant found the page dead). Same rules as the
+     * probe: not while the screen is off, an alarm rings or the PIN pad is open, not when the app is not in front, and
+     * counted against the limit. Works without the watchdog switch and without the accessibility service.
+     * @return `healed` true if a restart was started, else `why`.
+     */
+    fun heal(context: Context, reason: String): Map<String, Any?> {
+        val c = context.applicationContext
+        ctx = c
+        val target = KioskController.targetPackage(c) ?: return mapOf("healed" to false, "why" to "not_installed")
+        if (!c.getSystemService(PowerManager::class.java).isInteractive) return mapOf("healed" to false, "why" to "screen_off")
+        if (AlarmService.ringingId != null || AlarmService.ringingTimerId != null || UiHost.isShowing(UiHost.PIN) ||
+            UiHost.isShowing(UiHost.ALARM) || UpdateAutomation.isArmed()
+        ) return mapOf("healed" to false, "why" to "busy")
+        val fg = KioskController.lastForeground
+        if (fg != target && fg != ANR_PACKAGE) return mapOf("healed" to false, "why" to "not_in_front")
+        if (!reserveRestart(target, reason, force = false)) return mapOf("healed" to false, "why" to "rate_limited")
+        handler.post { execute(c, target, reason, null) }
+        return mapOf("healed" to true)
+    }
+
+    private fun recover(c: Context, target: String, reason: String, anrClose: AccessibilityNodeInfo?, force: Boolean = false) {
+        if (!reserveRestart(target, reason, force)) return
+        execute(c, target, reason, anrClose)
+    }
+
+    private fun execute(c: Context, target: String, reason: String, anrClose: AccessibilityNodeInfo?) {
         restarts++
         lastReason = reason
         lastRestartAt = System.currentTimeMillis()

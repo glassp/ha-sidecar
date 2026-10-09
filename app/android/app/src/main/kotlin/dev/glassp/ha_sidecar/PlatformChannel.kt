@@ -185,6 +185,8 @@ object PlatformChannel {
                 result.success(null)
             }
 
+            "healDashboard" ->
+                result.success(CompanionWatchdog.heal(ctx, call.argument<String>("reason") ?: "beacon"))
             "restartCompanion" ->
                 if (CompanionWatchdog.restartNow(ctx)) result.success(null)
                 else result.error("not_found", "no Home Assistant app installed", null)

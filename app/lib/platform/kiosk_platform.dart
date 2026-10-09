@@ -279,6 +279,10 @@ abstract class KioskPlatform {
   /// Silences alarms until [until] / [forever]; neither unmutes. Muted alarms do not ring but keep their schedule.
   Future<void> setAlarmsMuted({DateTime? until, bool forever = false});
 
+  /// Restart requested by Home Assistant (the dashboard beacon went silent). Returns `{healed, why?}`; refused while the
+  /// screen is off, an alarm rings, the PIN pad is open, the app is not in front, or the restart limit is reached.
+  Future<Map<String, dynamic>> healDashboard(String reason);
+
   /// Restarts the Home Assistant companion app now (device owner: hide + unhide; otherwise relaunch).
   Future<void> restartCompanion();
 

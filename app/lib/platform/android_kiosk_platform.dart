@@ -153,6 +153,12 @@ class AndroidKioskPlatform implements KioskPlatform {
   );
 
   @override
+  Future<Map<String, dynamic>> healDashboard(String reason) async =>
+      Map<String, dynamic>.from(
+        await _call<Map>('healDashboard', {'reason': reason}) ?? const {},
+      );
+
+  @override
   Future<void> restartCompanion() => _call('restartCompanion');
 
   @override

@@ -139,6 +139,8 @@ class CommandRouter {
               },
           ],
         };
+      case 'heal_dashboard':
+        return platform.healDashboard((d['reason'] ?? 'beacon') as String);
       case 'restart_companion':
         await platform.restartCompanion();
       case 'open_system_update':
