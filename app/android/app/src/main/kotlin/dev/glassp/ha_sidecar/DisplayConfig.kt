@@ -35,6 +35,11 @@ object DisplayConfig {
         "camera_facing" to "front", // front | back
         "camera_sensitivity" to 50, // 0..100
         "camera_fps" to 3,
+        // companion app watchdog: relaunch the Home Assistant app when it freezes (needs the accessibility service)
+        "watchdog" to false,
+        "watchdog_action" to "restart", // restart | notify
+        "watchdog_probe_s" to 20,
+        "watchdog_startup_s" to 90,
         // at-a-glance screen
         "glance" to false,
         "glance_after_s" to 300,
@@ -64,6 +69,7 @@ object DisplayConfig {
         Prefs.setDisplayConfigJson(ctx, current.toString())
         BrightnessController.poke()
         PresenceCamera.refresh(ctx)
+        CompanionWatchdog.refresh(ctx)
         EventBus.emit("status_changed")
         return Result(get(ctx), rejected)
     }
@@ -84,6 +90,8 @@ object DisplayConfig {
         key.startsWith("night_start") || key.startsWith("night_end") -> v.coerceIn(0, 24 * 60 - 1)
         key == "camera_sensitivity" -> v.coerceIn(0, 100)
         key == "camera_fps" -> v.coerceIn(1, 10)
+        key == "watchdog_probe_s" -> v.coerceIn(5, 300)
+        key == "watchdog_startup_s" -> v.coerceIn(20, 600)
         key.endsWith("_s") -> v.coerceIn(1, 24 * 3600)
         else -> v
     }
@@ -92,6 +100,7 @@ object DisplayConfig {
         "mode" -> v in MODES
         "camera_facing" -> v in FACINGS
         "theme" -> v in THEMES
+        "watchdog_action" -> v == "restart" || v == "notify"
         else -> true
     }
 }

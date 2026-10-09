@@ -200,6 +200,7 @@ object KioskController {
             // Lock-task is only applied to a task that is *started* with the option, so the
             // HA app is restarted once when lockdown is enabled (later bounces just reorder).
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            if (pkg == targetPackage(ctx)) CompanionWatchdog.noteLaunch() // a fresh start: expected to show content soon
             ActivityOptions.makeBasic().apply { setLockTaskEnabled(true) }.toBundle()
         } else null
         // An enabled accessibility service is exempt from the background-activity-start
@@ -325,6 +326,7 @@ object KioskController {
             "timers" to TimerEngine.snapshot(ctx),
             "pairing" to PairingServer.state(ctx),
             "network" to NetworkMonitor.snapshot(),
+            "watchdog" to CompanionWatchdog.snapshot(ctx),
             "alarms_muted" to AlarmEngine.isMuted(ctx),
             "alarms_muted_until" to Prefs.alarmsMutedUntil(ctx).takeIf { it > System.currentTimeMillis() && it != Long.MAX_VALUE },
             "last_interaction" to InteractionTracker.lastMs,

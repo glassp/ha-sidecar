@@ -185,6 +185,10 @@ object PlatformChannel {
                 result.success(null)
             }
 
+            "restartCompanion" ->
+                if (CompanionWatchdog.restartNow(ctx)) result.success(null)
+                else result.error("not_found", "no Home Assistant app installed", null)
+
             // pairing with Home Assistant ----------------------------------------------------------
             "startPairing" -> result.success(PairingServer.start(ctx))
             "stopPairing" -> {
