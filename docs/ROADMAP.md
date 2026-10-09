@@ -188,11 +188,6 @@ Media player entity, intercom, camera-based motion/presence, Bluetooth proxy (ES
 - Whether to allow `clearDeviceOwnerApp` from the app behind the PIN (currently only factory reset removes ownership).
 - Play Store distribution is doubtful (accessibility + device-owner use, `USE_FULL_SCREEN_INTENT`); plan on F-Droid/GitHub APKs.
 
-## Known issues (open)
-- After a pairing completes, the emulator app did not open its connection until the app process was restarted (no connect attempt
-  in the log for minutes, the UI stayed "Disconnected"; a process restart connected at once). Not yet reproduced on purpose or
-  traced: check that the `paired` event reaches `AppController._onPaired` and that `_restartClient` starts a client.
-
 ## First device test checklist
 Steps 2-5 (partly 7) were run on an emulator, see [TESTING.md](TESTING.md); all of it still needs a physical tablet.
 1. Debug APK installs; pairing works (**mDNS discovery on the real LAN**, then the manual code route across VLANs); entities appear and go unavailable when the app is killed.

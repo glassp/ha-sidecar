@@ -169,8 +169,11 @@ companion app was out of bounds), whether the navigate intent really lands in a 
 rate over days. In this lab the navigate attempt itself makes the not-signed-in companion app misbehave (ANR dialogs, restarts
 by the watchdog), so the restart counts above include those.
 
-Found on the way: after a completed pairing the app did not reconnect until its process was restarted (see ROADMAP "Known
-issues"); Home Assistant 2026.10 reverts an unconfirmed `http:` config after 5 minutes and restarts itself (exit code 100), so a
+Found on the way: after a completed pairing the app did not reconnect until its process was restarted. Cause:
+`SidecarClient.stop()` awaited `sink.close()` on a channel whose connection had failed ("not upgraded", as before the integration
+exists), which never completes, so the re-pairing's client restart hung. Fixed (`stop()` no longer waits, a connect that finishes
+after `stop()` is dropped); `test/sidecar_client_test.dart` reproduces it (3 tests, failed before the fix); re-checked on the
+emulator by pairing while the tablet sat in that state: it connected by itself. Home Assistant 2026.10 reverts an unconfirmed `http:` config after 5 minutes and restarts itself (exit code 100), so a
 test harness must restart it on that code; on macOS the `pyobjc` CoreBluetooth binding gets the Home Assistant process killed
 when it has no Bluetooth permission (remove the package or the `bluetooth` integration for lab runs).
 
@@ -215,3 +218,11 @@ python3.14 -m venv venv && venv/bin/pip install homeassistant && venv/bin/hass -
 Emulator caveats: a freshly wiped AVD is very slow for several minutes (adb `input` stalls), a device owner cannot be
 removed or uninstalled (wipe the AVD), `screencap` shows black for the PIN screen (`FLAG_SECURE`; use
 `uiautomator dump` to find buttons), and the emulator's timezone/clock follows the host.
+
+## Lab Home Assistant
+
+The throwaway Home Assistant keeps its data directory between runs (`ha/config`, with the onboarded throwaway user); it only
+needs a clean state when a test depends on one (for example "no integration loaded"). Boot it on loopback with
+`hass -c config --skip-pip` inside a restart-on-exit-100 loop, in a background task of its own (a detached `nohup` child dies with
+the shell). Remove the sidecar config entry through the API to re-pair; a manual flow left half-way blocks new ones until HA
+restarts, because the progress list hides user-started flows.

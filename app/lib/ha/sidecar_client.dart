@@ -53,12 +53,24 @@ class SidecarClient {
     _connect();
   }
 
+  /// Never waits for the socket: closing a channel whose connection failed or is still being
+  /// opened does not complete, and a hung stop() would keep a re-pairing from starting its client.
   Future<void> stop() async {
     _running = false;
     _retry?.cancel();
-    await _channel?.sink.close();
+    _drop(_channel);
     _channel = null;
     link.value = LinkState.disconnected;
+  }
+
+  void _drop(WebSocketChannel? ch) {
+    if (ch == null) return;
+    unawaited(
+      ch.sink
+          .close()
+          .timeout(const Duration(seconds: 2))
+          .then<void>((_) {}, onError: (_) {}),
+    );
   }
 
   void sendState(Map<String, dynamic> state) =>
@@ -79,6 +91,10 @@ class SidecarClient {
       final ch = WebSocketChannel.connect(uri);
       _channel = ch;
       await ch.ready.timeout(const Duration(seconds: 10));
+      if (!_running || !identical(_channel, ch)) {
+        _drop(ch); // stopped (or replaced) while connecting
+        return;
+      }
 
       ch.sink.add(
         jsonEncode({
@@ -118,8 +134,9 @@ class SidecarClient {
         debugPrint('SidecarClient: closed before handshake completed');
       }
     } catch (e) {
-      debugPrint('SidecarClient: connect failed: $e');
+      if (_running) debugPrint('SidecarClient: connect failed: $e');
     }
+    if (!_running) return; // stop() already reset the state
     if (link.value != LinkState.authFailed) link.value = LinkState.disconnected;
     _scheduleRetry();
   }
