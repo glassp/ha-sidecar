@@ -68,6 +68,8 @@ NUMBERS = [
     ("camera_sensitivity", "Camera motion sensitivity", 0, 100, 1, "%", "mdi:motion-sensor"),
     ("camera_fps", "Camera frame rate", 1, 10, 1, "fps", "mdi:camera-timer"),
     ("glance_after_s", "Glance screen after", 30, 3600, 10, UnitOfTime.SECONDS, "mdi:timer-sand"),
+    ("watchdog_probe_s", "Watchdog check interval", 5, 300, 5, UnitOfTime.SECONDS, "mdi:timer-outline"),
+    ("watchdog_startup_s", "Watchdog start-up timeout", 20, 600, 10, UnitOfTime.SECONDS, "mdi:timer-sand"),
 ]
 
 # key, name, icon
@@ -77,6 +79,7 @@ SWITCHES = [
     ("night_light", "Night light", "mdi:lightbulb-night-outline"),
     ("camera_presence", "Camera presence detection", "mdi:camera-account"),
     ("glance", "At-a-glance screen", "mdi:clock-digital"),
+    ("watchdog", "Companion app watchdog", "mdi:dog-service"),
 ]
 
 # key, name, options, icon
@@ -84,6 +87,7 @@ SELECTS = [
     ("mode", "Brightness mode", ["auto", "day", "night", "manual"], "mdi:theme-light-dark"),
     ("camera_facing", "Presence camera", ["front", "back"], "mdi:camera-switch"),
     ("theme", "App theme", ["system", "light", "dark", "night"], "mdi:theme-light-dark"),
+    ("watchdog_action", "Watchdog action", ["restart", "notify"], "mdi:wrench-clock"),
 ]
 
 # key, name, icon

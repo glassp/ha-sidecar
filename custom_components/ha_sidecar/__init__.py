@@ -62,6 +62,7 @@ SERVICES: dict[str, vol.Schema] = {
     ),
     "cancel_alarm": vol.Schema({**_TARGET, vol.Required("alarm_id"): cv.string}),
     "stop_alarm": vol.Schema(_TARGET),
+    "restart_companion": vol.Schema(_TARGET),
     "snooze_alarm": vol.Schema(_TARGET),
     "enter_night_mode": vol.Schema(_TARGET),
     "exit_night_mode": vol.Schema({**_TARGET, vol.Optional("follow_schedule", default=False): cv.boolean}),

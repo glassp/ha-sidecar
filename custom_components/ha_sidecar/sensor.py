@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
@@ -31,7 +31,7 @@ SENSORS = [
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
     add_entities(device, "sensor", async_add_entities, 
-        [*(SidecarSensor(device, *s) for s in SENSORS), TargetBrightnessSensor(device, raw=False), TargetBrightnessSensor(device, raw=True), NextTimerSensor(device), ActiveTimersSensor(device), AlarmsSensor(device)]
+        [*(SidecarSensor(device, *s) for s in SENSORS), CompanionRestartsSensor(device), CompanionLastRestartSensor(device), WatchdogStateSensor(device), TargetBrightnessSensor(device, raw=False), TargetBrightnessSensor(device, raw=True), NextTimerSensor(device), ActiveTimersSensor(device), AlarmsSensor(device)]
     )
 
 
@@ -167,3 +167,57 @@ class TargetBrightnessSensor(SidecarEntity, SensorEntity):
     def native_value(self) -> int | None:
         raw = self._state.get("target_brightness")
         return raw if raw is None or self._raw else round(raw * 100 / 255)
+
+
+class _WatchdogSensor(SidecarEntity, SensorEntity):
+    @property
+    def _watchdog(self) -> dict[str, Any]:
+        return self._state.get("watchdog") or {}
+
+
+class CompanionRestartsSensor(_WatchdogSensor):
+    """How often the watchdog restarted the Home Assistant app; the last reason is an attribute."""
+
+    _attr_name = "Companion app restarts"
+    _attr_icon = "mdi:restart-alert"
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+
+    def __init__(self, device) -> None:
+        super().__init__(device, "companion_restarts")
+
+    @property
+    def native_value(self) -> int | None:
+        return self._watchdog.get("restarts")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {"last_reason": self._watchdog.get("last_reason")}
+
+
+class CompanionLastRestartSensor(_WatchdogSensor):
+    _attr_name = "Companion app last restart"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:clock-alert-outline"
+
+    def __init__(self, device) -> None:
+        super().__init__(device, "companion_last_restart")
+
+    @property
+    def native_value(self):
+        ms = self._watchdog.get("last_restart_at")
+        return datetime.fromtimestamp(ms / 1000, tz=timezone.utc) if ms else None
+
+
+class WatchdogStateSensor(_WatchdogSensor):
+    """off | ok | idle | no_accessibility | unresponsive | restarting | gave_up."""
+
+    _attr_name = "Watchdog state"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:monitor-eye"
+
+    def __init__(self, device) -> None:
+        super().__init__(device, "watchdog_state")
+
+    @property
+    def native_value(self) -> str | None:
+        return self._watchdog.get("state")

@@ -296,6 +296,10 @@
           "description": "Instead of forcing day, hand control back to the Night starts / Night ends times."
         }
       }
+    },
+    "restart_companion": {
+      "name": "Restart companion app",
+      "description": "Closes and starts the Home Assistant companion app on the tablet again (device owner: hide and unhide; otherwise a relaunch)."
     }
   },
   "options": {

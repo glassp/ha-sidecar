@@ -232,3 +232,8 @@ exit_night_mode:
       default: false
       selector:
         boolean:
+
+restart_companion:
+  target:
+    device:
+      integration: ha_sidecar
