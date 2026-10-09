@@ -225,8 +225,26 @@ class HaSidecarBeaconCardEditor extends HTMLElement {
   }
 }
 
-customElements.define(CARD_NAME, HaSidecarBeaconCard);
-customElements.define(`${CARD_NAME}-editor`, HaSidecarBeaconCardEditor);
+// Home Assistant replaces `customElements` with a scoped-registry polyfill *after* extra modules like this one have run, and
+// its dashboard only looks cards up in the polyfilled registry. An element defined too early exists, but the dashboard reports
+// "Custom element doesn't exist". `ha-card` is defined by the frontend itself, so wait for it; the timeout keeps the card
+// usable if that ever changes.
+function defineElements() {
+  customElements.define(CARD_NAME, HaSidecarBeaconCard);
+  customElements.define(`${CARD_NAME}-editor`, HaSidecarBeaconCardEditor);
+}
+
+function defineWhenFrontendIsReady() {
+  const frontendReady = () => typeof customElements.get !== "function" || Boolean(customElements.get("ha-card"));
+  let waited = 0;
+  const poll = () => {
+    if (frontendReady() || (waited += 50) > 30000) defineElements();
+    else setTimeout(poll, 50);
+  };
+  poll();
+}
+
+defineWhenFrontendIsReady();
 
 window.customCards = window.customCards || [];
 window.customCards.push({

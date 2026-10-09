@@ -164,10 +164,40 @@ the WebSocket API; the companion app was never signed in) and the emulator. The 
 | first ping after an episode | `dashboard_recovered` fires once |
 | card says goodbye (`inactive`) | no `dashboard_unresponsive`, no navigate, no restart in 200 s |
 
-**Not verified:** the card inside a real signed-in dashboard and its editor (only the Node tests ran it; signing in to the
-companion app was out of bounds), whether the navigate intent really lands in a signed-in companion app, and the false-positive
-rate over days. In this lab the navigate attempt itself makes the not-signed-in companion app misbehave (ANR dialogs, restarts
-by the watchdog), so the restart counts above include those.
+**Not verified (this part):** whether the navigate intent really lands in a signed-in companion app. In this lab the navigate
+attempt makes the not-signed-in companion app misbehave (ANR dialogs, restarts by the watchdog), so the restart counts above
+include those.
+
+#### With the real card, in a real Home Assistant frontend
+
+A storage-mode dashboard `kiosk-test` (view *Home* with the card `tablet: lab`, `interval: 10`, plus an entities card; view
+*Other* without a card) was opened in the desktop app's built-in browser, logged in through a loopback-only `trusted_networks`
+provider (no credentials typed). The companion app on the emulator was in front; the lab tablet had heal on, timeout 1 min.
+The browser pane is hidden inside the desktop app (`visibilityState` hidden, animation frames throttled), which makes the card
+refuse to ping by design, so the page's `visibilityState` and `requestAnimationFrame` were shimmed to emulate a visible
+WebView. Nothing else in the page was touched.
+
+| Case | Result |
+|---|---|
+| card on the dashboard | **failed at first**: "Custom element doesn't exist". Home Assistant swaps in a scoped-registry polyfill for `customElements` *after* extra modules ran, and only looks cards up there; the element was defined, but in the old registry. Fixed: the card waits for the frontend's own `ha-card` before defining (new Node test); renders after that |
+| pings from the real card | `ok`, path `/kiosk-test/home`, last-beacon sensor updates |
+| switch to the view without the card | `inactive`, reason `navigation`, then `card removed from the page`; still `inactive` after 2+ minutes, no event, no restart |
+| back to the view with the card | `ok` again |
+| the page's JavaScript thread blocked for 270 s (a real freeze, no goodbye) | stale ~96 s after the hang, `dashboard_unresponsive` and `dashboard_navigate_attempt` in the same tick, `heal_dashboard` ~2 min later: `companion_unresponsive`, restart counter +1, `companion_restarted`, reason `beacon` |
+| editor | `getStubConfig` picks the registered tablet; the editor lists `Lab Tablet (lab)`; choosing it emits `config-changed` with `tablet: lab` (driven by script against the real `hass`, not by clicking through the dashboard editor) |
+
+Still **not** verified: the card inside the companion app's own WebView (the companion app was never signed in), the editor
+used through the dashboard UI by hand, and the false-positive rate over days.
+
+#### Service sweep against the tablet (16 checks, all passing)
+
+`start_timer` ("batch 1"), `pause_timer`, `resume_timer`, `adjust_timer`, `cancel_timer`, `start_stopwatch`, a short timer that
+finishes (event `timer_finished`, ringing sensor on), `set_alarm`, `mute_alarms` and `unmute_alarms` (switch follows), `skip_next_alarm`,
+`set_alarm_enabled`, `cancel_alarm`, brightness projection both ways (50 % -> raw 128, raw 100 -> 39 %), `exit_night_mode` (day) and
+`enter_night_mode` (night) with `follow_schedule`, a switch, the kiosk dashboard text, the *bring dashboard to front* button and
+`launch_app`. Two checks first looked like failures and were wrong expectations: a `treadmill` stopwatch from an earlier session
+already existed (same label = same timer, so the count does not change), and `enter_night_mode` does not change the brightness
+*mode* select (it forces the night state; the select stays `manual`).
 
 Found on the way: after a completed pairing the app did not reconnect until its process was restarted. Cause:
 `SidecarClient.stop()` awaited `sink.close()` on a channel whose connection had failed ("not upgraded", as before the integration
@@ -224,5 +254,5 @@ removed or uninstalled (wipe the AVD), `screencap` shows black for the PIN scree
 The throwaway Home Assistant keeps its data directory between runs (`ha/config`, with the onboarded throwaway user); it only
 needs a clean state when a test depends on one (for example "no integration loaded"). Boot it on loopback with
 `hass -c config --skip-pip` inside a restart-on-exit-100 loop, in a background task of its own (a detached `nohup` child dies with
-the shell). Remove the sidecar config entry through the API to re-pair; a manual flow left half-way blocks new ones until HA
+the shell). For the browser, add a loopback-only `trusted_networks` auth provider (with `allow_bypass_login`) instead of seeding tokens or typing a password, and finish onboarding through its API. Remove the sidecar config entry through the API to re-pair; a manual flow left half-way blocks new ones until HA
 restarts, because the progress list hides user-started flows.

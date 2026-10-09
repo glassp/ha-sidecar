@@ -116,7 +116,7 @@ device-owner recovery ~3.5 s, the ANR dialog answered by view id, the 3-per-10-m
 3. *Visual freeze* (F3, optional, off by default): accessibility screenshot (Android 11+, needs the screenshot capability)
    hashed on a tiny grid; identical for `visual_timeout` while the screen is on and brightness is unchanged.
    Needs a live element on the dashboard (a clock card); otherwise static dashboards false-positive.
-4. *Dashboard beacon* (F3, built; ladder verified on the emulator against a real Home Assistant, the card itself only in Node tests): an explicit card, `custom:ha-sidecar-beacon-card`, shipped by the
+4. *Dashboard beacon* (F3, built; ladder verified on the emulator against a real Home Assistant, the card verified in a real Home Assistant frontend, not yet inside the companion app's WebView): an explicit card, `custom:ha-sidecar-beacon-card`, shipped by the
    integration with a picker of the registered tablets (config = the tablet's entity prefix). It pings `ha_sidecar/beacon` over the
    page's own WebSocket every 30 s, skips pings when no animation frame ran or the page is hidden, and **announces when it
    leaves** (`location-changed`, `popstate`, `pagehide`, view unmounted), so leaving a page is `inactive`, not stale. The

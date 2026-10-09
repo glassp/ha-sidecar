@@ -6,7 +6,7 @@ import vm from "node:vm";
 
 const source = readFileSync(new URL("../../custom_components/ha_sidecar/www/ha-sidecar-beacon-card.js", import.meta.url), "utf8");
 
-function load() {
+function load(opts = {}) {
   const timers = [];
   const defined = {};
   let now = 0;
@@ -18,7 +18,7 @@ function load() {
   }
   const sandbox = {
     HTMLElement: FakeElement,
-    customElements: { define: (n, c) => { defined[n] = c; } },
+    customElements: { define: (n, c) => { defined[n] = c; }, ...(opts.registry ? { get: (n) => opts.registry[n] } : {}) },
     window: {
       customCards: [],
       location: { pathname: "/lovelace/wall" },
@@ -132,4 +132,14 @@ test("announces when its view is unmounted and stops listening", async () => {
   await new Promise((r) => setImmediate(r));
   assert.ok(calls.some((c) => c.state === "inactive" && /removed/.test(c.reason)));
   assert.equal(env.sandbox.window.listeners["location-changed"].length, 0);
+});
+
+test("waits for the frontend's own elements before defining (HA swaps its element registry in late)", async () => {
+  const registry = {};
+  const env = load({ registry });
+  assert.deepEqual(Object.keys(env.defined), [], "nothing is defined while ha-card is missing");
+  assert.ok(env.sandbox.window.customCards.length === 1, "the editor catalog entry is still added right away");
+  registry["ha-card"] = class {};
+  await new Promise((r) => setTimeout(r, 200));
+  assert.deepEqual(Object.keys(env.defined).sort(), ["ha-sidecar-beacon-card", "ha-sidecar-beacon-card-editor"]);
 });
