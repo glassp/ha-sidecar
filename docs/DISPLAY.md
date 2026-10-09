@@ -40,10 +40,33 @@ settings. A device owner grants the camera permission silently; otherwise the ap
 Android 14+ only lets camera foreground services start while the app has a visible window; the sidecar's touch-watcher
 overlay counts, and a failure is reported in `Presence camera error` instead of crashing.
 
+## Dashboards
+
+Two text settings (entities `Kiosk dashboard` / `Glance dashboard`, and fields under *Display & presence → Dashboards*):
+
+- **Kiosk dashboard** (required before lockdown can be enabled): opened on boot, on Home, after a crash and when lockdown
+  starts. Plain bounces back from other apps keep the page you were on.
+- **Glance dashboard** (optional): an ordinary Home Assistant dashboard shown when idle instead of the built-in clock screen.
+  Build it in HA's editor with any cards (weather with animation, temperatures per floor, camera / WebRTC cards, ...).
+  A touch or presence navigates back to the kiosk dashboard. Needs a kiosk dashboard to return to.
+
+Paste the address straight from the browser. Only the path is kept:
+
+| You paste | Stored |
+|---|---|
+| `https://home.glassp.dev/lovelace/wall-panel` | `lovelace/wall-panel` |
+| `/dashboard-kitchen/0?kiosk` | `dashboard-kitchen/0?kiosk` |
+| `homeassistant://navigate/lovelace/default` | `lovelace/default` |
+| `https://home.glassp.dev/` (no dashboard) | rejected |
+
+The sidecar opens it with the companion app's deep link `homeassistant://navigate/<path>?server=default`, so the companion
+app does the login. If the pasted host differs from the paired HA, the app tells you only the path is used.
+Dashboards with animations or live cameras draw more power than the clock screen; the idle brightness still applies.
+
 ## At-a-glance screen (off by default)
 
-After `Glance screen after` without touch or presence a native black screen shows clock, date, next alarm and the glance
-entities. A touch or detected presence dismisses it (and restarts the idle timer, so it does not pop straight back).
+Enable it with `At-a-glance screen`. After `Glance screen after` without touch or presence it shows either your glance
+dashboard (above) or, if none is set, a native black screen with clock, date, next alarm and the glance entities. A touch or detected presence dismisses it (and restarts the idle timer, so it does not pop straight back).
 It does not hold the screen on: use `Keep screen on` (or the system timeout).
 
 ## Other new entities

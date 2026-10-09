@@ -44,7 +44,7 @@ companion app as the launcher.
 1. **HA:** install the integration (HACS custom repository, category *Integration*), restart,
    *Settings → Devices & services → Add → HA Sidecar*, name the tablet, copy the token.
 2. **Tablet:** `cd app && flutter build apk` and install; open the app, enter HA URL + token.
-3. In the app: set a PIN, grant the listed permissions, then either
+3. In the app: set the **kiosk dashboard** (paste the address of the HA dashboard from your browser) and a PIN, grant the listed permissions, then either
    - provision as device owner ([docs/PROVISIONING.md](docs/PROVISIONING.md)) - recommended, or
    - enable the accessibility guard (weaker). Enabling it is also recommended with device owner (foreground reporting).
 4. Install and sign in to the HA companion app (enable its fullscreen setting; do not make it the launcher).

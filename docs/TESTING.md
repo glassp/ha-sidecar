@@ -57,6 +57,22 @@ Bugs found: glance state was not pushed when the screen appeared/disappeared; gl
 repeated the device name (both fixed); `Camera app` on the emulator image cannot hold the camera, so `camera_in_use` and
 `mic_in_use` stay **unverified**; `app_blocked` / `guard_disabled` need the accessibility route and were not re-run.
 
+### Dashboard mode run
+
+| Area | Result |
+|---|---|
+| `DashboardPath` URL normalizer + deep-link builder: 15 JVM unit tests (`./gradlew :app:testDebugUnitTest`) | ✅ |
+| Lockdown refused without a kiosk dashboard (`dashboard_required`) | ✅ |
+| Pasting `https://home.glassp.dev/lovelace/wall-panel` into the HA text entity stores `lovelace/wall-panel`; host-only URL rejected with a clear error | ✅ |
+| Lockdown start launches the companion app's `LinkActivity` with the deep link, in lock-task | ✅ |
+| Glance dashboard: after idle the companion is sent to the glance path, touch and presence send it back to the kiosk path, `Glance screen showing` follows | ✅ (intent level) |
+| Empty glance dashboard falls back to the native clock screen | ✅ |
+
+**Not verified:** that a *signed-in* companion app actually switches dashboards on `homeassistant://navigate/...` while it is
+already running (the emulator's companion app is not logged in; entering credentials there was out of scope). Android
+redacts the deep-link URI in logs, so the exact path is covered by the unit tests, not by the device log. Please check this
+once on your real tablet; if the companion app only handles it on cold start, the glance mode needs a different approach.
+
 ## Not verified
 
 - Update **detection** (`onSystemUpdatePending`) and the download/install/restart taps: need a real pending OTA.

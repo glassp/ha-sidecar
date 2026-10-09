@@ -41,7 +41,7 @@ Events: `app_blocked`, `pin_failed`, `guard_disabled`, `device_admin_disabled`, 
 ```
 | Command | Data | Notes |
 |---|---|---|
-| `set_lockdown` | `enabled` | enabling fails with `pin_required` / `no_enforcement_available` |
+| `set_lockdown` | `enabled` | enabling fails with `pin_required` / `dashboard_required` / `no_enforcement_available` |
 | `set_allowlist` | `packages[]` | |
 | `set_kiosk_launcher` | `enabled` | sidecar acts as home app (boot start + crash recovery); device owner forces it, otherwise the user picks it in Android settings |
 | `set_target_package` | `package` | default: HA companion (full or minimal) |
@@ -51,6 +51,7 @@ Events: `app_blocked`, `pin_failed`, `guard_disabled`, `device_admin_disabled`, 
 | `set_brightness` | `level` 0-255 | needs *modify system settings* |
 | `set_keep_screen_on` | `enabled` | |
 | `set_config` | `config{key: value}` | any display/presence/camera/glance/theme setting (see `cfg` in state, docs/DISPLAY.md) |
+| (`set_config` result) | | returns `{config: {...}}`, the validated config; dashboard values are reduced to paths, invalid ones fail with `invalid_value` |
 | `external_presence` | `present` | HA presence entities → tablet |
 | `external_night` | `night` (bool or null) | HA night entity → tablet; null falls back to the schedule |
 | `glance_items` | `items[{name,value}]` | values for the glance screen |
