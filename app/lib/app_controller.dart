@@ -37,6 +37,17 @@ class AppController extends ChangeNotifier {
   static const _forwarded = {
     'alarm_ringing',
     'alarm_stopped',
+    'alarm_skipped',
+    'alarms_muted',
+    'alarms_unmuted',
+    'timer_started',
+    'timer_paused',
+    'timer_resumed',
+    'timer_cancelled',
+    'timer_extended',
+    'timer_finished',
+    'timer_snoozed',
+    'timer_dismissed',
     'system_update_pending',
     'system_update_install_error',
     'update_automation_started',
@@ -149,7 +160,7 @@ class AppController extends ChangeNotifier {
       onUiRoute?.call(e.data['route'] as String);
       return;
     }
-    if (e.type == 'alarm_stopped') await platform.closeUi('/alarm');
+    if (e.type == 'ring_ended') await platform.closeUi('/alarm');
     await refresh();
     if (_forwarded.contains(e.type)) _client?.sendEvent(e.type, e.data);
   }

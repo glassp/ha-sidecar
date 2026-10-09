@@ -516,7 +516,16 @@
     "repeat": "Repeat",
     "rings_once": "Rings once",
     "repeats_days": "Repeats on the chosen days",
-    "snooze": "Snooze"
+    "snooze": "Snooze",
+    "skipping": "skipping next",
+    "mute": "Mute alarms",
+    "mute_desc": "Silence all alarms, for example while you are away. They keep their schedule.",
+    "muted_forever": "Muted until you turn this off",
+    "muted_until": "Muted until {}",
+    "mute_for": "Mute alarms for",
+    "mute_day": "1 day",
+    "mute_week": "1 week",
+    "mute_forever": "Until I turn it off"
   },
   "alarm": {
     "ringing": "Alarm",
@@ -643,5 +652,26 @@
       "intro_extras": "Home Assistant now gets sensors and can set alarms on this device.",
       "intro_open": "A few things are still open. You can finish them later from the Home screen."
     }
+  },
+  "timers": {
+    "timer": "Timer",
+    "stopwatch": "Stopwatch",
+    "add": "Start timer",
+    "add_stopwatch": "Stopwatch",
+    "new": "New timer",
+    "new_stopwatch": "New stopwatch",
+    "label": "Name (optional)",
+    "label_hint": "e.g. Batch 1",
+    "stopwatch_hint": "e.g. Treadmill",
+    "start": "Start",
+    "invalid": "Choose a time between 1 second and 99 hours.",
+    "paused": "paused",
+    "of": "of {}",
+    "plus_minute": "+1 min",
+    "pause": "Pause",
+    "resume": "Resume",
+    "cancel": "Cancel timer",
+    "times_up": "Time's up",
+    "over": "over"
   }
 }

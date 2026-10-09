@@ -87,6 +87,56 @@ class CommandRouter {
         await platform.stopAlarm();
       case 'snooze_alarm':
         await platform.snoozeAlarm();
+      case 'set_alarm_enabled':
+        await platform.setAlarmEnabled(d['id'] as String, d['enabled'] == true);
+      case 'skip_next_alarm':
+        await platform.skipNextAlarm(d['id'] as String?);
+      case 'mute_alarms':
+        if (d['until_ms'] != null) {
+          await platform.setAlarmsMuted(
+            until: DateTime.fromMillisecondsSinceEpoch(
+              (d['until_ms'] as num).toInt(),
+            ),
+          );
+        } else {
+          await platform.setAlarmsMuted(forever: true);
+        }
+      case 'unmute_alarms':
+        await platform.setAlarmsMuted();
+      case 'start_timer':
+        await platform.startTimer(
+          id: d['id'] as String,
+          label: (d['label'] ?? '') as String,
+          kind: (d['kind'] ?? 'countdown') as String,
+          duration: Duration(milliseconds: ((d['duration_s'] ?? 0) as num).round() * 1000),
+        );
+      case 'pause_timer':
+        await platform.pauseTimer(d['id'] as String);
+      case 'resume_timer':
+        await platform.resumeTimer(d['id'] as String);
+      case 'cancel_timer':
+        await platform.cancelTimer(d['id'] as String);
+      case 'adjust_timer':
+        await platform.adjustTimer(
+          d['id'] as String,
+          Duration(milliseconds: ((d['delta_s'] ?? 0) as num).round() * 1000),
+        );
+      case 'get_timers':
+        final timers = await platform.getTimers();
+        return {
+          'timers': [
+            for (final t in timers)
+              {
+                'id': t.id,
+                'label': t.label,
+                'kind': t.kind,
+                'state': t.state,
+                'duration_s': t.durationMs ~/ 1000,
+                'remaining_s': t.remainingMs ~/ 1000,
+                'elapsed_s': t.elapsedMs ~/ 1000,
+              },
+          ],
+        };
       case 'open_system_update':
         await platform.openSettings('system_update');
       case 'run_system_update':

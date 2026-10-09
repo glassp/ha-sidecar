@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../app_controller.dart';
+import '../timers.dart';
 
 /// Ringing alarm, shown over the lock screen by its own Android activity. Sound is played natively
 /// (independent of this UI), so a slow start of the UI never delays the alarm.
@@ -16,10 +17,16 @@ class AlarmPage extends StatefulWidget {
 }
 
 class _AlarmPageState extends State<AlarmPage> {
-  late final Timer _clock = Timer.periodic(
-    const Duration(seconds: 1),
-    (_) => setState(() {}),
-  );
+  late final Timer _clock;
+
+  @override
+  void initState() {
+    super.initState();
+    // started here, not lazily: a `late final` initializer would only run when first read (in dispose)
+    _clock = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   void dispose() {
@@ -32,6 +39,7 @@ class _AlarmPageState extends State<AlarmPage> {
     final c = widget.controller;
     final alarm = c.status.ringingAlarm;
     final label = (alarm?['label'] ?? '') as String;
+    final isTimer = alarm?['kind'] == 'timer';
     final use24 = MediaQuery.alwaysUse24HourFormatOf(context);
     final time = DateFormat(
       use24 ? 'HH:mm' : 'h:mm',
@@ -55,19 +63,32 @@ class _AlarmPageState extends State<AlarmPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.alarm, size: 40, color: Colors.white54),
+                      Icon(
+                        isTimer ? Icons.timer_outlined : Icons.alarm,
+                        size: 40,
+                        color: Colors.white54,
+                      ),
                       const SizedBox(height: 16),
                       Text(
-                        time,
+                        isTimer ? 'timers.times_up'.tr() : time,
                         style: t.displayLarge?.copyWith(
-                          fontSize: 112,
+                          fontSize: isTimer ? 72 : 112,
                           fontWeight: FontWeight.w200,
                           color: Colors.white,
                         ),
                       ),
+                      if (isTimer && alarm?['finished_at'] != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '+${formatClock(DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch((alarm!['finished_at'] as num).toInt())))} ${'timers.over'.tr()}',
+                          style: t.headlineMedium?.copyWith(color: Colors.redAccent),
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       Text(
-                        label.isEmpty ? 'alarm.ringing'.tr() : label,
+                        label.isEmpty
+                            ? (isTimer ? 'timers.timer'.tr() : 'alarm.ringing'.tr())
+                            : label,
                         style: t.headlineSmall?.copyWith(color: Colors.white70),
                         textAlign: TextAlign.center,
                       ),
@@ -81,7 +102,7 @@ class _AlarmPageState extends State<AlarmPage> {
                             await c.platform.closeUi('/alarm');
                           },
                           child: Text(
-                            'alarm.snooze'.tr(),
+                            isTimer ? 'timers.plus_minute'.tr() : 'alarm.snooze'.tr(),
                             style: const TextStyle(fontSize: 20),
                           ),
                         ),

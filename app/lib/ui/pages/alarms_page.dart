@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../app_controller.dart';
 import '../../platform/kiosk_platform.dart';
 import '../design.dart';
+import '../timers.dart';
 import 'section_page.dart';
 
 List<String> _dayNames() => [
@@ -38,6 +39,10 @@ class AlarmsPage extends StatelessWidget {
           ),
           children: [
             HelpText('alarms.intro'.tr()),
+            TimersSection(controller: controller),
+            const SizedBox(height: 16),
+            _MuteCard(controller: controller),
+            const SizedBox(height: 8),
             if (alarms.isEmpty) ...[
               const SizedBox(height: 64),
               Icon(
@@ -80,6 +85,12 @@ class AlarmsPage extends StatelessWidget {
                       },
                       child: InkWell(
                         onTap: () => editAlarm(context, controller, a),
+                        onLongPress: a.days.isEmpty
+                            ? null
+                            : () async {
+                                await controller.platform.skipNextAlarm(a.id);
+                                await controller.refresh();
+                              },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -114,6 +125,7 @@ class AlarmsPage extends StatelessWidget {
                                                                   1],
                                                         )
                                                         .join(' ')),
+                                        if (a.skipNext) 'alarms.skipping'.tr(),
                                       ].join(' · '),
                                       style: t.textTheme.bodyMedium?.copyWith(
                                         color: t.colorScheme.onSurfaceVariant,
@@ -294,5 +306,81 @@ Future<void> editAlarm(
       ),
     );
     await c.refresh();
+  }
+}
+
+/// Silences every alarm for a while (e.g. while away) without deleting them; HA can do the same.
+class _MuteCard extends StatelessWidget {
+  const _MuteCard({required this.controller});
+  final AppController controller;
+
+  Future<void> _toggle(BuildContext context, bool on) async {
+    final p = controller.platform;
+    if (!on) {
+      await p.setAlarmsMuted();
+    } else {
+      final choice = await showModalBottomSheet<Duration?>(
+        context: context,
+        showDragHandle: true,
+        builder: (ctx) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text('alarms.mute_for'.tr()),
+                titleTextStyle: Theme.of(ctx).textTheme.titleMedium,
+              ),
+              ListTile(
+                title: Text('alarms.mute_day'.tr()),
+                onTap: () => Navigator.pop(ctx, const Duration(days: 1)),
+              ),
+              ListTile(
+                title: Text('alarms.mute_week'.tr()),
+                onTap: () => Navigator.pop(ctx, const Duration(days: 7)),
+              ),
+              ListTile(
+                title: Text('alarms.mute_forever'.tr()),
+                onTap: () => Navigator.pop(ctx, Duration.zero),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (choice == null) return;
+      await p.setAlarmsMuted(
+        until: choice == Duration.zero ? null : DateTime.now().add(choice),
+        forever: choice == Duration.zero,
+      );
+    }
+    await controller.refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = controller.status;
+    final until = s.alarmsMutedUntil;
+    return GroupCard(
+      children: [
+        SwitchListTile(
+          secondary: const Icon(Icons.notifications_paused_outlined),
+          title: Text('alarms.mute'.tr()),
+          subtitle: Text(
+            !s.alarmsMuted
+                ? 'alarms.mute_desc'.tr()
+                : until == null
+                ? 'alarms.muted_forever'.tr()
+                : 'alarms.muted_until'.tr(
+                    args: [
+                      DateFormat.MMMEd(context.locale.toString()).add_Hm().format(
+                        DateTime.fromMillisecondsSinceEpoch(until),
+                      ),
+                    ],
+                  ),
+          ),
+          value: s.alarmsMuted,
+          onChanged: (v) => _toggle(context, v),
+        ),
+      ],
+    );
   }
 }

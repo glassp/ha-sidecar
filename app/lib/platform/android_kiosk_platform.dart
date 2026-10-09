@@ -140,6 +140,52 @@ class AndroidKioskPlatform implements KioskPlatform {
   Future<void> snoozeAlarm() => _call('snoozeAlarm');
 
   @override
+  Future<void> setAlarmEnabled(String id, bool enabled) =>
+      _call('setAlarmEnabled', {'id': id, 'enabled': enabled});
+
+  @override
+  Future<void> skipNextAlarm(String? id) => _call('skipNextAlarm', {'id': id});
+
+  @override
+  Future<void> setAlarmsMuted({DateTime? until, bool forever = false}) =>
+      _call('setAlarmsMuted', {
+        'until_ms': until?.millisecondsSinceEpoch,
+        'forever': forever,
+      });
+
+  @override
+  Future<List<TimerSpec>> getTimers() async {
+    final list = await _call<List>('getTimers') ?? const [];
+    return [for (final e in list) TimerSpec.fromMap(e as Map)];
+  }
+
+  @override
+  Future<void> startTimer({
+    required String id,
+    String label = '',
+    String kind = 'countdown',
+    Duration duration = Duration.zero,
+  }) => _call('startTimer', {
+    'id': id,
+    'label': label,
+    'kind': kind,
+    'duration_ms': duration.inMilliseconds,
+  });
+
+  @override
+  Future<void> pauseTimer(String id) => _call('pauseTimer', {'id': id});
+
+  @override
+  Future<void> resumeTimer(String id) => _call('resumeTimer', {'id': id});
+
+  @override
+  Future<void> cancelTimer(String id) => _call('cancelTimer', {'id': id});
+
+  @override
+  Future<void> adjustTimer(String id, Duration delta) =>
+      _call('adjustTimer', {'id': id, 'delta_ms': delta.inMilliseconds});
+
+  @override
   Future<void> startKeepAlive() => _call('startKeepAlive');
 
   @override

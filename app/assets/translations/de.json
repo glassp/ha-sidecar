@@ -516,7 +516,16 @@
     "repeat": "Wiederholen",
     "rings_once": "Klingelt einmal",
     "repeats_days": "Wiederholt sich an den gewählten Tagen",
-    "snooze": "Schlummern"
+    "snooze": "Schlummern",
+    "skipping": "nächster entfällt",
+    "mute": "Wecker stummschalten",
+    "mute_desc": "Alle Wecker stummschalten, z. B. während du weg bist. Sie behalten ihren Zeitplan.",
+    "muted_forever": "Stumm, bis du es ausschaltest",
+    "muted_until": "Stumm bis {}",
+    "mute_for": "Wecker stummschalten für",
+    "mute_day": "1 Tag",
+    "mute_week": "1 Woche",
+    "mute_forever": "Bis ich es ausschalte"
   },
   "alarm": {
     "ringing": "Wecker",
@@ -643,5 +652,26 @@
       "intro_extras": "Home Assistant erhält nun Sensoren und kann auf diesem Gerät Wecker stellen.",
       "intro_open": "Ein paar Dinge sind noch offen. Du kannst sie später vom Startbildschirm aus erledigen."
     }
+  },
+  "timers": {
+    "timer": "Timer",
+    "stopwatch": "Stoppuhr",
+    "add": "Timer starten",
+    "add_stopwatch": "Stoppuhr",
+    "new": "Neuer Timer",
+    "new_stopwatch": "Neue Stoppuhr",
+    "label": "Name (optional)",
+    "label_hint": "z. B. Blech 1",
+    "stopwatch_hint": "z. B. Laufband",
+    "start": "Starten",
+    "invalid": "Wähle eine Zeit zwischen 1 Sekunde und 99 Stunden.",
+    "paused": "pausiert",
+    "of": "von {}",
+    "plus_minute": "+1 Min.",
+    "pause": "Pausieren",
+    "resume": "Fortsetzen",
+    "cancel": "Timer abbrechen",
+    "times_up": "Zeit abgelaufen",
+    "over": "vorbei"
   }
 }

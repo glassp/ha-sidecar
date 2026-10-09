@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../app_controller.dart';
+import '../timers.dart';
 
 /// At a glance: clock, date, next alarm and a few Home Assistant values on pure black.
 /// Any touch dismisses it; presence dismisses it from the native side.
@@ -16,10 +17,16 @@ class GlancePage extends StatefulWidget {
 }
 
 class _GlancePageState extends State<GlancePage> {
-  late final Timer _clock = Timer.periodic(
-    const Duration(seconds: 1),
-    (_) => setState(() {}),
-  );
+  late final Timer _clock;
+
+  @override
+  void initState() {
+    super.initState();
+    // started here, not lazily: a `late final` initializer would only run when first read (in dispose)
+    _clock = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   void dispose() {
@@ -108,6 +115,45 @@ class _GlancePageState extends State<GlancePage> {
                               ),
                             ],
                           ),
+                        ],
+                        if (s.timers.isNotEmpty) ...[
+                          const SizedBox(height: 28),
+                          for (final tm in s.timers.take(4))
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    tm.isCountdown ? Icons.timer_outlined : Icons.directions_run,
+                                    size: 28,
+                                    color: Colors.white54,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    timerText(tm, now),
+                                    style: TextStyle(
+                                      fontSize: 44,
+                                      fontWeight: FontWeight.w300,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                      color: tm.paused
+                                          ? Colors.white38
+                                          : tm.finished
+                                          ? Colors.redAccent
+                                          : Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Flexible(
+                                    child: Text(
+                                      timerTitle(tm),
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 22, color: Colors.white54),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                         ],
                         if (items.isNotEmpty) ...[
                           const SizedBox(height: 48),
