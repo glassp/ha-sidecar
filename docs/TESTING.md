@@ -2,7 +2,7 @@
 
 Last full run: 2026-10-10 (beacon, pairing reconnect and service sweep; earlier parts 2026-10-09), emulator `ha_sidecar_tablet` (Android 15 / API 35 google_apis arm64, tablet 2560x1800)
 + Home Assistant Core 2026.10.0 (venv, Python 3.14) + HA companion app 2026.8.4 (`app-minimal-release.apk`).
-No physical device yet.
+A physical phone joined on 2026-10-10 (Pixel 6, Android 17, over Wi-Fi adb): see *Pixel 6 run* below. No physical *tablet* yet.
 
 ## Verified on the emulator
 
@@ -427,3 +427,48 @@ needs a clean state when a test depends on one (for example "no integration load
 `python tests/lab/run_hass.py -c config --skip-pip` (a wrapper around `hass`, see *The lab and the emulator* below: it avoids a crash of the interpreter at exit) inside a restart-on-exit-100 loop, in a background task of its own (a detached `nohup` child dies with
 the shell). For the browser, add a loopback-only `trusted_networks` auth provider (with `allow_bypass_login`) instead of seeding tokens or typing a password, and finish onboarding through its API. Remove the sidecar config entry through the API to re-pair; a manual flow left half-way blocks new ones until HA
 restarts, because the progress list hides user-started flows.
+
+## Pixel 6 run (physical phone, Android 17, 2026-10-10)
+
+Wi-Fi adb, `adb reverse tcp:8123` to the lab Home Assistant (so the phone's `127.0.0.1:8123` is the Mac's) and `adb forward tcp:8750`
+for pairing. The phone is *not* a tablet (1080x2400, 360 dp wide), which is why it found layout bugs the tablet emulator never would.
+Speaker volumes were capped at about 20 % (`cmd audio set-volume`, preferred voice volume 20 %).
+
+| Area | Result |
+|---|---|
+| Discovery by mDNS on a real LAN (`_ha-sidecar._tcp`), configuration flow, matching six-digit number and Allow on the phone | ✅ (never run on a real network before) |
+| Setup wizard (sensors-only path), the five tabs, permission rows (write settings, notifications, battery, full-screen alarms) | ✅ walked through |
+| 97 entities created; remote lockdown without a PIN refused (`pin_required`) | ✅ |
+| Camera presence: front camera, motion on/off with the hold time, "permission needed" state before the grant | ✅ |
+| Timer and alarm: ring on the alarm stream at a low volume, snooze and stop from HA, one-time alarm removed | ✅ (heard by the tester) |
+| Voice turn: microphone permission state, docked card, answer, follow-up, volume 2 → 5 → 2 restored | ✅ (lab STT answers a fixed phrase, see *The lab*) |
+| Kiosk lock (accessibility guard, no device owner): other apps bounced, Home goes back, hot corner → PIN pad, wrong PIN counted, right PIN unlocks | ✅ |
+| Companion app signed in to the lab (needs `mobile_app:` in the lab config; trusted-network login, no password) | ✅ |
+| Idle screen (built-in clock) | ✅ after the fix below |
+| Notification shade / quick settings pulled down slowly, fast, and from the quick-settings side, with the lock on | ✅ never visible in frames (see below) |
+| Back pressed 10 times at 0.1–0.8 s intervals with the lock on | ✅ companion back in front every time |
+| Brightness: adaptive setup (mode 1, level 2) and manual level (140) restored after Day / Night / Manual | ✅ |
+
+Bugs found and fixed (each with a test where one can exist):
+
+- **Idle clock wrapped** ("23:0" / "2") on 360 dp: it is 150 sp text; now scaled to one line (`test/glance_page_test.dart`).
+- **Weather card unreadable on a phone**, in the full page and in the docked overlay: four forecast days beside the text left it no
+  width; below 560 dp the forecast now goes under the text (`test/voice_cards_layout_test.dart`; the overlay is checked on the device only).
+- **Shade could be pulled open under the accessibility guard.** The shade sends no window-state event while it is dragged and the
+  global dismiss action returns `false` on this phone. The guard now watches System UI content changes, recognises an open shade by a
+  System UI window taller than a quarter of the screen (never on the lock screen), and swipes it shut with an injected gesture
+  (`canPerformGestures`); Back and Home are fallbacks. A first version also fired on the lock screen and made the PIN pad unusable.
+  An app that is not device owner can only *react*: the lock-task route stays the complete fix.
+- **Fast repeated Back left the Pixel launcher in front** (the second launcher event fell inside the bounce debounce and no
+  event followed): a bounce is now verified 700 ms later and repeated.
+- **Brightness `manual` left the phone dark** after Day/Night: the controller now restores the system mode and level it found.
+- Review fixes found by reading the code: a tablet's event data could replace `device_id` / `event` on the bus, a socket closing
+  mid-write leaked a raw error and a pending entry, reloading the integration duplicated mirrored timers in the timer manager, and
+  malformed JSON frames from either side could raise (`tests/test_device.py`, `test/sidecar_client_test.dart`).
+
+Lab and tooling notes: the phone's screen timeout (30 s) puts it back on the lock screen between steps, so tests need the timeout raised
+(and restored); `dumpsys window | grep mCurrentFocus` says `NotificationShade` even when nothing is pulled down on Android 17, so judge
+the shade by screenshots; the lab's `internal_url` must be the address the phone reaches (`http://127.0.0.1:8123` with `adb reverse`),
+not the emulator's `10.0.2.2`. Not verified: wake word CPU and battery over time, the docked card over other apps (needs the
+"draw over other apps" permission, which stayed off), Settings staying blocked after the 30 minute system-update exception, and
+anything with real speech (the lab speech-to-text is a fixed phrase).

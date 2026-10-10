@@ -490,14 +490,18 @@ object VoiceBubble {
                 col.addView(text(ctx, str("subtitle"), 14f, p.textDim))
                 (c["details"] as? List<*>)?.joinToString("  ·  ")?.takeIf { it.isNotEmpty() }?.let { col.addView(text(ctx, it, 11f, p.textDim)) }
                 row.addView(col, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                // beside the text on a tablet; under it on a phone, where four days would leave the text no room at all
+                val narrow = ctx.resources.displayMetrics.widthPixels / ctx.resources.displayMetrics.density < NARROW_DP
+                val days = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(ctx, 12), 0, dp(ctx, 12), dp(ctx, 10)) }
                 for (f in (c["forecast"] as? List<*>).orEmpty().mapNotNull { it as? Map<*, *> }) {
-                    val day = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(ctx, 8), 0, 0, 0) }
+                    val day = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; if (!narrow) setPadding(dp(ctx, 8), 0, 0, 0) }
                     day.addView(text(ctx, (f["label"] as? String).orEmpty(), 11f, p.textDim))
                     day.addView(TextView(ctx).apply { text = glyph(f["icon"] as? String); setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f); gravity = Gravity.CENTER })
                     day.addView(text(ctx, (f["value"] as? String).orEmpty(), 11f, p.text))
-                    row.addView(day)
+                    if (narrow) days.addView(day, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)) else row.addView(day)
                 }
                 box.addView(row)
+                if (narrow && days.childCount > 0) box.addView(days)
             }
             else -> {
                 row.addView(lead(32, 24f), LinearLayout.LayoutParams(dp(ctx, 40), ViewGroup.LayoutParams.WRAP_CONTENT))
@@ -518,6 +522,8 @@ object VoiceBubble {
         percent < 75 -> "🔉"
         else -> "🔊"
     }
+
+    private const val NARROW_DP = 560 // below this the forecast goes under the weather text (same rule as the full page)
 
     private fun dp(ctx: Context, v: Int) = (v * ctx.resources.displayMetrics.density).toInt()
 
