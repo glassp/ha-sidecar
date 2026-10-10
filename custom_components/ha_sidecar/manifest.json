@@ -4,11 +4,13 @@
   "codeowners": [],
   "config_flow": true,
   "dependencies": [
-    "http",
-    "network",
+    "assist_pipeline",
+    "assist_satellite",
     "frontend",
-    "websocket_api",
-    "assist_satellite"
+    "http",
+    "intent",
+    "network",
+    "websocket_api"
   ],
   "documentation": "https://github.com/glassp/ha-sidecar",
   "integration_type": "device",
