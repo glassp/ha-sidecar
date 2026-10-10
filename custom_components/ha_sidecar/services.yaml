@@ -247,3 +247,42 @@ cancel_listening:
   target:
     device:
       integration: ha_sidecar
+
+show_card:
+  target:
+    device:
+      integration: ha_sidecar
+  fields:
+    entity_id:
+      example: weather.home
+      selector:
+        entity:
+    type:
+      selector:
+        select:
+          options: [weather, media, image, entity]
+    title:
+      example: Front door
+      selector:
+        text:
+    subtitle:
+      selector:
+        text:
+    value:
+      example: 21 °C
+      selector:
+        text:
+    image:
+      example: https://example.com/snapshot.jpg
+      selector:
+        text:
+    details:
+      selector:
+        object:
+    duration:
+      default: 20
+      selector:
+        number:
+          min: 3
+          max: 300
+          unit_of_measurement: s

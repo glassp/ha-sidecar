@@ -393,6 +393,11 @@
       "title": "Docked voice card",
       "desc": "Show what you say and the answer as a small card at the bottom of the screen, over the dashboard, instead of a full-screen page. Tap the card to open the full page.",
       "kw": "bubble, card, overlay, voice, docked, full screen"
+    },
+    "voice_skin": {
+      "title": "Voice skin",
+      "desc": "The look of the voice screen and the docked card.",
+      "kw": "skin, theme, colors, look, voice, card"
     }
   },
   "pin": {
@@ -855,7 +860,12 @@
     "err_tts_failed": "I could not speak the answer",
     "err_pipeline_not_found": "No voice assistant is set up in Home Assistant",
     "listening_followup": "Listening for a follow-up…",
-    "end_conversation": "End conversation"
+    "end_conversation": "End conversation",
+    "skin_midnight": "Midnight",
+    "skin_aurora": "Aurora",
+    "skin_sunrise": "Sunrise",
+    "skin_paper": "Paper",
+    "skin_contrast": "High contrast"
   },
   "wd": {
     "action_restart": "Restart it",

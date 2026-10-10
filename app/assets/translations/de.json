@@ -393,6 +393,11 @@
       "title": "Angedockte Sprachkarte",
       "desc": "Zeigt, was du sagst, und die Antwort als kleine Karte am unteren Bildrand über dem Dashboard statt als Vollbildseite. Ein Tipp auf die Karte öffnet die volle Seite.",
       "kw": "blase, karte, overlay, sprache, angedockt, vollbild"
+    },
+    "voice_skin": {
+      "title": "Sprach-Skin",
+      "desc": "Das Aussehen des Sprachbildschirms und der angedockten Karte.",
+      "kw": "skin, thema, farben, aussehen, sprache, karte"
     }
   },
   "pin": {
@@ -855,7 +860,12 @@
     "err_tts_failed": "Ich konnte die Antwort nicht sprechen",
     "err_pipeline_not_found": "In Home Assistant ist kein Sprachassistent eingerichtet",
     "listening_followup": "Hört auf eine Rückfrage …",
-    "end_conversation": "Gespräch beenden"
+    "end_conversation": "Gespräch beenden",
+    "skin_midnight": "Mitternacht",
+    "skin_aurora": "Polarlicht",
+    "skin_sunrise": "Sonnenaufgang",
+    "skin_paper": "Papier",
+    "skin_contrast": "Hoher Kontrast"
   },
   "wd": {
     "action_restart": "Neu starten",

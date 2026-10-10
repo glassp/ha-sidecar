@@ -67,6 +67,60 @@ object VoiceBubble {
         lateinit var volText: TextView
         var dragging = false
         var lastVolumeSent = 0L
+        lateinit var card: LinearLayout
+        lateinit var cardsBox: LinearLayout
+        var cardsKey = ""
+        var paletteKey = ""
+    }
+
+    /** The skin's colours, sent by the Dart side with every snapshot (midnight when missing). */
+    private class Palette(
+        val key: String,
+        val surface: Int,
+        val text: Int,
+        val textDim: Int,
+        val accent: Int,
+        val onAccent: Int,
+        val thinking: Int,
+        val error: Int,
+        val userBubble: Int,
+        val onUserBubble: Int,
+        val outline: Int,
+        val bubble: Int,
+    ) {
+        companion object {
+            fun from(raw: Any?): Palette {
+                val m = (raw as? Map<*, *>)?.mapKeys { it.key.toString() }?.mapValues { it.value?.toString().orEmpty() }.orEmpty()
+                fun c(key: String, fallback: String) = runCatching { Color.parseColor(m[key] ?: fallback) }.getOrDefault(Color.parseColor(fallback))
+                return Palette(
+                    key = m["id"] ?: "midnight",
+                    surface = c("surface", "#201C27"), text = c("text", "#E6E1EC"), textDim = c("text_dim", "#CAC4D0"),
+                    accent = c("accent", "#CFBCFF"), onAccent = c("on_accent", "#381E72"), thinking = c("thinking", "#EFB8C8"),
+                    error = c("error", "#F2B8B5"), userBubble = c("user_bubble", "#4F378B"), onUserBubble = c("on_user_bubble", "#EADDFF"),
+                    outline = c("outline", "#4A4458"), bubble = c("assistant_bubble", "#36343B"),
+                )
+            }
+        }
+    }
+
+    private fun applyPalette(ctx: Context, h: Holder, p: Palette) {
+        (h.card.background as GradientDrawable).apply { setColor(p.surface); setStroke(dp(ctx, 1), p.outline) }
+        h.close.setTextColor(p.textDim)
+        h.user.setTextColor(p.onUserBubble)
+        (h.user.background as GradientDrawable).setColor(p.userBubble)
+        h.volText.setTextColor(p.textDim)
+        val tint = android.content.res.ColorStateList.valueOf(p.accent)
+        h.volBar.progressTintList = tint
+        h.volBar.thumbTintList = tint
+        h.volBar.progressBackgroundTintList = android.content.res.ColorStateList.valueOf(p.outline)
+        (h.waitTrack.background as GradientDrawable).setColor((p.accent and 0xFFFFFF) or 0x33000000)
+        (h.wait.background as GradientDrawable).setColor(p.accent)
+        for (b in listOf(h.done, h.again)) {
+            b.setTextColor(p.onAccent)
+            b.background = GradientDrawable().apply { cornerRadius = dp(ctx, 20).toFloat(); setColor(p.accent) }
+        }
+        h.end.setTextColor(p.accent)
+        h.end.background = GradientDrawable().apply { cornerRadius = dp(ctx, 20).toFloat(); setStroke(dp(ctx, 1), p.outline) }
     }
 
     fun available(ctx: Context): Boolean {
@@ -96,23 +150,30 @@ object VoiceBubble {
         val level = (s["level"] as? Number)?.toFloat() ?: 0f
         val inConversation = s["in_conversation"] == true
 
-        val accent = when (state) {
-            "error" -> Color.parseColor("#F2B8B5")
-            "thinking" -> Color.parseColor("#EFB8C8")
-            else -> Color.parseColor("#CFBCFF")
+        val p = Palette.from(s["skin"])
+        if (h.paletteKey != p.key) {
+            h.paletteKey = p.key
+            applyPalette(ctx, h, p)
         }
-        h.status.text = labels[if (state == "listening" && s["follow_up"] == true) "follow_up" else state].orEmpty()
+        val accent = when (state) {
+            "error" -> p.error
+            "thinking" -> p.thinking
+            else -> p.accent
+        }
+        // a card shown on its own (show_card, outside a conversation) has no status and no waveform
+        val standalone = state == "idle" && user.isEmpty() && answer.isEmpty()
+        h.status.text = if (standalone) "" else labels[if (state == "listening" && s["follow_up"] == true) "follow_up" else state].orEmpty()
         h.status.setTextColor(accent)
         h.wave.mode = state
         h.wave.accent = accent
         h.wave.push(level)
-        h.wave.visibility = if (state == "error") View.GONE else View.VISIBLE
+        h.wave.visibility = if (state == "error" || state == "idle") View.GONE else View.VISIBLE
         h.user.visibility = if (user.isEmpty()) View.GONE else View.VISIBLE
         h.user.text = user
         val shown = if (state == "error") error else answer
         h.answer.visibility = if (shown.isEmpty() && state != "thinking") View.GONE else View.VISIBLE
         h.answer.text = if (shown.isEmpty()) "• • •" else shown
-        h.answer.setTextColor(if (state == "error") Color.parseColor("#F2B8B5") else Color.parseColor("#E6E1EC"))
+        h.answer.setTextColor(if (state == "error") p.error else p.text)
 
         // the draining bar: how long the conversation waits for you to start speaking (a new deadline restarts it)
         val deadline = (s["wait_deadline_ms"] as? Number)?.toLong() ?: 0L
@@ -140,6 +201,8 @@ object VoiceBubble {
             h.waitKey = -1
             h.waitTrack.visibility = View.GONE
         }
+
+        applyCards(ctx, h, p, s["cards"])
 
         // the voice volume: shown while the voice volume is managed; not fought over while it is being dragged
         val volume = (s["volume"] as? Number)?.toInt() ?: -1
@@ -215,6 +278,8 @@ object VoiceBubble {
             ellipsize = TextUtils.TruncateAt.END
         }
         card.addView(answer, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(owner, 10) })
+        val cardsBox = LinearLayout(owner).apply { orientation = LinearLayout.VERTICAL }
+        card.addView(cardsBox, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         val volRow = LinearLayout(owner).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val volIcon = TextView(owner).apply { setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f); gravity = Gravity.CENTER }
@@ -277,6 +342,8 @@ object VoiceBubble {
         h.volBar = volBar
         h.volIcon = volIcon
         h.volText = volText
+        h.card = card
+        h.cardsBox = cardsBox
         volBar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(bar: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
                 if (!fromUser) return
@@ -324,6 +391,125 @@ object VoiceBubble {
             if (filled) setColor(Color.parseColor("#CFBCFF")) else setStroke(dp(ctx, 1), Color.parseColor("#938F99"))
         }
         setOnClickListener { onClick() }
+    }
+
+    // --- result cards (weather, media, picture, entity): the same cards the full page shows, compact -----------------------
+
+    private val glyphs = mapOf(
+        "sunny" to "☀️", "clear-night" to "🌙", "partlycloudy" to "⛅", "cloudy" to "☁️", "rainy" to "🌧️", "pouring" to "🌧️",
+        "snowy" to "❄️", "lightning" to "⛈️", "fog" to "🌫️", "windy" to "💨", "exceptional" to "⚠️", "media" to "🎵",
+        "light" to "💡", "switch" to "🔌", "cover" to "🪟", "lock" to "🔒", "climate" to "🌡️", "fan" to "🌀", "vacuum" to "🧹",
+        "sensor" to "📟", "camera" to "📷", "person" to "👤",
+    )
+
+    private fun glyph(key: String?) = glyphs[key] ?: "ℹ️"
+
+    private val pictures = object : android.util.LruCache<String, android.graphics.Bitmap>(6) {}
+
+    /** Loads [url] into [view] in the background; the view shows its fallback glyph until then (and when it cannot be loaded). */
+    private fun loadPicture(url: String, view: android.widget.ImageView) {
+        view.tag = url
+        pictures.get(url)?.let { view.setImageBitmap(it); return }
+        Thread {
+            val bitmap = runCatching {
+                val c = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+                c.connectTimeout = 4000
+                c.readTimeout = 8000
+                c.inputStream.use { android.graphics.BitmapFactory.decodeStream(it, null, android.graphics.BitmapFactory.Options().apply { inSampleSize = 2 }) }
+            }.getOrNull()
+            if (bitmap != null) {
+                pictures.put(url, bitmap)
+                main.post { if (view.tag == url) view.setImageBitmap(bitmap) }
+            }
+        }.start()
+    }
+
+    private fun applyCards(ctx: Context, h: Holder, p: Palette, raw: Any?) {
+        val list = (raw as? List<*>)?.mapNotNull { it as? Map<*, *> }.orEmpty()
+        val key = p.key + list.joinToString("|") { listOf("type", "title", "subtitle", "value", "icon", "image", "forecast").joinToString("~") { k -> it[k].toString() } }
+        if (key == h.cardsKey) return // the same cards: do not rebuild (a picture would flicker)
+        h.cardsKey = key
+        h.cardsBox.removeAllViews()
+        h.cardsBox.visibility = if (list.isEmpty()) View.GONE else View.VISIBLE
+        for (c in list.take(2)) h.cardsBox.addView(buildCard(ctx, p, c), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(ctx, 8) })
+    }
+
+    private fun text(ctx: Context, s: String, sp: Float, color: Int, bold: Boolean = false, lines: Int = 1) = TextView(ctx).apply {
+        text = s
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
+        setTextColor(color)
+        if (bold) typeface = Typeface.DEFAULT_BOLD
+        maxLines = lines
+        ellipsize = TextUtils.TruncateAt.END
+    }
+
+    private fun buildCard(ctx: Context, p: Palette, c: Map<*, *>): View {
+        fun str(k: String) = (c[k] as? String).orEmpty()
+        val type = str("type")
+        val box = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GradientDrawable().apply { cornerRadius = dp(ctx, 16).toFloat(); setColor(p.bubble) }
+            clipToOutline = true
+        }
+        val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(ctx, 12), dp(ctx, 10), dp(ctx, 12), dp(ctx, 10)) }
+        fun lead(sizeDp: Int, spSize: Float): View {
+            val image = str("image")
+            if (image.isEmpty() || type == "weather") return TextView(ctx).apply { text = glyph(str("icon")); setTextSize(TypedValue.COMPLEX_UNIT_SP, spSize); gravity = Gravity.CENTER }
+            return android.widget.ImageView(ctx).apply {
+                scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                setBackgroundColor(p.surface)
+                loadPicture(image, this)
+            }
+        }
+        when (type) {
+            "image" -> {
+                if (str("image").isNotEmpty()) {
+                    val img = android.widget.ImageView(ctx).apply { scaleType = android.widget.ImageView.ScaleType.CENTER_CROP; setBackgroundColor(p.surface) }
+                    loadPicture(str("image"), img)
+                    box.addView(img, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(ctx, 150)))
+                }
+                row.addView(text(ctx, glyph(str("icon")) + "  " + str("title"), 14f, p.text, bold = true), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                if (str("subtitle").isNotEmpty()) row.addView(text(ctx, str("subtitle"), 12f, p.textDim))
+                box.addView(row)
+            }
+            "media" -> {
+                row.setPadding(0, 0, dp(ctx, 12), 0)
+                row.addView(lead(64, 28f), LinearLayout.LayoutParams(dp(ctx, 64), dp(ctx, 64)))
+                val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(ctx, 12), 0, 0, 0) }
+                col.addView(text(ctx, str("title"), 16f, p.text, bold = true, lines = 2))
+                col.addView(text(ctx, str("subtitle"), 13f, p.textDim))
+                if (str("value").isNotEmpty()) col.addView(text(ctx, str("value"), 12f, p.accent))
+                row.addView(col, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                box.addView(row)
+            }
+            "weather" -> {
+                row.addView(lead(40, 34f), LinearLayout.LayoutParams(dp(ctx, 48), ViewGroup.LayoutParams.WRAP_CONTENT))
+                val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(ctx, 10), 0, 0, 0) }
+                col.addView(text(ctx, str("title"), 12f, p.textDim))
+                if (str("value").isNotEmpty()) col.addView(text(ctx, str("value"), 24f, p.text, bold = true))
+                col.addView(text(ctx, str("subtitle"), 14f, p.textDim))
+                (c["details"] as? List<*>)?.joinToString("  ·  ")?.takeIf { it.isNotEmpty() }?.let { col.addView(text(ctx, it, 11f, p.textDim)) }
+                row.addView(col, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                for (f in (c["forecast"] as? List<*>).orEmpty().mapNotNull { it as? Map<*, *> }) {
+                    val day = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(ctx, 8), 0, 0, 0) }
+                    day.addView(text(ctx, (f["label"] as? String).orEmpty(), 11f, p.textDim))
+                    day.addView(TextView(ctx).apply { text = glyph(f["icon"] as? String); setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f); gravity = Gravity.CENTER })
+                    day.addView(text(ctx, (f["value"] as? String).orEmpty(), 11f, p.text))
+                    row.addView(day)
+                }
+                box.addView(row)
+            }
+            else -> {
+                row.addView(lead(32, 24f), LinearLayout.LayoutParams(dp(ctx, 40), ViewGroup.LayoutParams.WRAP_CONTENT))
+                val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(ctx, 8), 0, 0, 0) }
+                col.addView(text(ctx, str("title"), 15f, p.text, bold = true))
+                if (str("subtitle").isNotEmpty()) col.addView(text(ctx, str("subtitle"), 12f, p.textDim))
+                row.addView(col, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                if (str("value").isNotEmpty()) row.addView(text(ctx, str("value"), 20f, p.text, bold = true))
+                box.addView(row)
+            }
+        }
+        return box
     }
 
     private fun volumeGlyph(percent: Int) = when {

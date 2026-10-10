@@ -563,6 +563,7 @@ void dockedTests() {
   late List<Map<String, dynamic>> sent;
   late VoiceController v;
   late bool docked;
+  var skin = 'midnight';
 
   setUp(() {
     platform = FakePlatform();
@@ -581,6 +582,7 @@ void dockedTests() {
       soundsEnabled: () => false,
       dockedEnabled: () => docked,
       bubbleText: (k) => 'T:$k',
+      skinId: () => skin,
     );
   });
   tearDown(() => v.dispose());
@@ -613,6 +615,21 @@ void dockedTests() {
         expect(platform.bubbles.last['assistant'], 'Yes, it is locked.');
       },
     );
+
+    test('the card gets the palette of the chosen skin', () async {
+      skin = 'aurora';
+      await v.listen();
+      final palette = platform.bubbles.last['skin'] as Map;
+      expect(palette['id'], 'aurora');
+      expect(palette['accent'], '#5EEAD4');
+      skin = 'nope';
+      v.notifyListeners();
+      expect(
+        (platform.bubbles.last['skin'] as Map)['id'],
+        'midnight',
+        reason: 'unknown skin: the default',
+      );
+    });
 
     test('it carries no timers', () async {
       await v.listen();

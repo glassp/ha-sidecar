@@ -63,6 +63,11 @@ class CommandRouter {
         await platform.downloadWakeWord(d['id'] as String? ?? '');
       case 'voice_cancel':
         await voice?.cancel();
+      case 'voice_card':
+        await voice?.showCards(
+          (d['cards'] as List?) ?? const [],
+          seconds: (d['seconds'] as num?)?.toInt() ?? 20,
+        );
       case 'voice_volume':
         await voice?.setVolumeCommand(
           percent: (d['percent'] as num?)?.toInt(),

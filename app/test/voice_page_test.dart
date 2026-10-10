@@ -5,10 +5,12 @@ import 'package:ha_sidecar/app_controller.dart';
 import 'package:ha_sidecar/platform/kiosk_platform.dart';
 import 'package:ha_sidecar/ui/pages/voice_page.dart';
 import 'package:ha_sidecar/voice/voice_controller.dart';
+import 'package:ha_sidecar/voice/voice_skin.dart';
 
 class FakePlatform extends Fake implements KioskPlatform {
   @override
-  Future<DeviceStatus> getStatus() async => DeviceStatus({'timers': timers});
+  Future<DeviceStatus> getStatus() async =>
+      DeviceStatus({'timers': timers, 'cfg': cfg});
   @override
   Future<List<AlarmSpec>> getAlarms() async => const [];
   @override
@@ -24,6 +26,7 @@ class FakePlatform extends Fake implements KioskPlatform {
   @override
   Future<String?> voiceStart(String session) async => null;
   List<Map<String, dynamic>> timers = [];
+  Map<String, dynamic> cfg = {};
 }
 
 Map<String, dynamic> timer(
@@ -47,12 +50,15 @@ Map<String, dynamic> timer(
 Future<(AppController, FakePlatform)> show(
   WidgetTester tester, {
   List<Map<String, dynamic>> timers = const [],
+  Map<String, dynamic> cfg = const {},
 }) async {
   EasyLocalization.logger.enableLevels = [];
   tester.view.physicalSize = const Size(1600, 1000);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  final platform = FakePlatform()..timers = [...timers];
+  final platform = FakePlatform()
+    ..timers = [...timers]
+    ..cfg = {...cfg};
   final c = AppController(platform: platform);
   await c.refresh();
   await tester.pumpWidget(MaterialApp(home: VoicePage(controller: c)));
@@ -195,4 +201,40 @@ void main() {
       ); // stop the animations before the test ends
     },
   );
+
+  testWidgets('the skin setting changes the look of the page', (tester) async {
+    final (c, _) = await show(tester, cfg: {'voice_skin': 'paper'});
+    c.voice
+      ..state = VoiceState.speaking
+      ..turns.add(VoiceTurn(user: 'hi', assistant: 'Hello.'))
+      ..notifyListeners();
+    await tester.pump();
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(scaffold.backgroundColor, VoiceSkin.paper.background);
+    final scheme = Theme.of(tester.element(find.byType(Scaffold))).colorScheme;
+    expect(scheme.primary, VoiceSkin.paper.accent);
+  });
+
+  testWidgets('an unknown skin falls back to midnight', (tester) async {
+    await show(tester, cfg: {'voice_skin': 'does-not-exist'});
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(scaffold.backgroundColor, VoiceSkin.midnight.background);
+  });
+
+  testWidgets('a skin chosen while the page is open applies at once', (
+    tester,
+  ) async {
+    final (c, platform) = await show(tester);
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      VoiceSkin.midnight.background,
+    );
+    platform.cfg = {'voice_skin': 'paper'};
+    await c.refresh();
+    await tester.pump();
+    expect(
+      tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+      VoiceSkin.paper.background,
+    );
+  });
 }

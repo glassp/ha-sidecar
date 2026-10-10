@@ -289,6 +289,30 @@ Media volume read with `cmd media_session volume --stream 3 --get` (range 0..15)
 
 Not verified: the sound itself (the emulator has no speaker to listen to), devices whose media stream is fixed or whose volume the system locks.
 
+### Result cards and skins (slice 3.7, emulator, lab Home Assistant with the `demo` integration)
+
+- **Cards through the satellite:** "turn on the kitchen light" answered "Turned on the switch" with a *Kitchen light - On* card; "what's the weather like" gave the weather
+  card (21.6 °C, sunny, humidity / wind / pressure and a four-day forecast with the right icons) on the docked card, which kept answer and card on screen while it waited for the follow-up.
+  (Home Assistant only exposes weather to Assist when you expose it; the lab needed that.)
+- **`ha_sidecar.show_card`:** a camera (the demo camera's picture loaded into the docked card), a media player (title, artist - album, *Playing*), and a hand-made card
+  (title, value, subtitle) appeared on their own over the dashboard, without a conversation (no status line, no waveform) and closed after their `duration`.
+- **Skins:** all five were captured on the docked card and on the full-screen page. This found a bug: the page read the skin when it was first built and stayed in
+  Midnight when the setting changed; it now rebuilds with the controller (test: *a skin chosen while the page is open applies at once*).
+- **Tests:** 14 Python tests for the card builder (`tests/test_cards.py`), 18 Dart tests for the skins (every skin readable by WCAG contrast, palette strings, theme) and 12 for the
+  cards (parsing and tolerance, cards for a turn that is no longer the current one, picture paths rebased, `show_card` with and without a conversation, the page rendering all four card types,
+  the follow-up behaviour). The card parser had a bug the test found (a malformed `details` threw instead of being ignored).
+
+Not verified: card pictures from an external URL or with a slow link, the cards with an LLM agent (they need `show_card`), very long forecasts or names (the card ellipsizes), and the
+native card's glyph fallback when a picture cannot be loaded.
+
+### The lab and the emulator (notes from this session)
+
+- **Python crash at exit.** Stopping the lab Home Assistant crashed the interpreter while it tore its modules down (a compiled extension; `Py_Finalize` -> `finalize_modules`), and
+  macOS showed "Python quit unexpectedly" every time (21 reports). Start the lab with `tests/lab/run_hass.py` (it lets Home Assistant shut down, flushes the logs and leaves with `os._exit`) and stop it
+  with SIGTERM: no crash report any more.
+- **"HA Sidecar isn't responding" on the emulator.** It appeared when the emulator itself was starved (17 Chrome tabs from the test scripts; the same stall showed in SystemUI and Chrome:
+  hundreds of skipped frames, our app 45). Measured with the app idle: main thread 4-9 % of a core, the wake word thread about 12 %. Use one Chrome tab (`--es com.android.browser.application_id`).
+
 ### Wake word (slice 3.3, emulator)
 
 - **The engine against a reference.** `tests/lab/wakeword/reference.py` is a Python port of the openWakeWord pipeline (LiteRT for
@@ -400,6 +424,6 @@ removed or uninstalled (wipe the AVD), `screencap` shows black for the PIN scree
 
 The throwaway Home Assistant keeps its data directory between runs (`ha/config`, with the onboarded throwaway user); it only
 needs a clean state when a test depends on one (for example "no integration loaded"). Boot it on loopback with
-`hass -c config --skip-pip` inside a restart-on-exit-100 loop, in a background task of its own (a detached `nohup` child dies with
+`python tests/lab/run_hass.py -c config --skip-pip` (a wrapper around `hass`, see *The lab and the emulator* below: it avoids a crash of the interpreter at exit) inside a restart-on-exit-100 loop, in a background task of its own (a detached `nohup` child dies with
 the shell). For the browser, add a loopback-only `trusted_networks` auth provider (with `allow_bypass_login`) instead of seeding tokens or typing a password, and finish onboarding through its API. Remove the sidecar config entry through the API to re-pair; a manual flow left half-way blocks new ones until HA
 restarts, because the progress list hides user-started flows.

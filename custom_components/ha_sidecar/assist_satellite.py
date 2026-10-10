@@ -29,11 +29,14 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .cards_ha import async_cards_for_intent
 from .const import ANNOUNCE_TIMEOUT, CONF_DEVICE_ID, DOMAIN
 from .entity import SidecarEntity, add_entities
 from .voice import AudioStream, trim_event
 
 _LOGGER = logging.getLogger(__name__)
+
+CARD_DELAY = 0.7  # seconds: lets the state of what an action switched settle before a card shows it
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
@@ -196,7 +199,22 @@ class SidecarSatellite(SidecarEntity, AssistSatelliteEntity):
     @callback
     def on_pipeline_event(self, event: PipelineEvent) -> None:
         kind = event.type.value
-        self._send(self._active.session if self._active else None, kind, trim_event(kind, event.data))
+        session = self._active.session if self._active else None
+        self._send(session, kind, trim_event(kind, event.data))
+        if kind == "intent-end" and session:
+            self.hass.async_create_task(self._async_cards(session, event.data))
+
+    async def _async_cards(self, session: str, data: dict[str, Any] | None) -> None:
+        """Result cards for the answer (what an action switched, what a question was about): a `cards` event for the same turn."""
+        intent_output = (data or {}).get("intent_output")
+        try:
+            await asyncio.sleep(CARD_DELAY)
+            built = await async_cards_for_intent(self.hass, intent_output)
+        except Exception as err:  # noqa: BLE001 - a card is a bonus: never break the answer
+            _LOGGER.debug("Could not build result cards: %s", err)
+            return
+        if built:
+            self._send(session, "cards", {"cards": built})
 
     def _send(self, session: str | None, event: str, data: dict[str, Any]) -> None:
         self._device.push({"type": "voice_event", "session": session, "event": event, "data": data})

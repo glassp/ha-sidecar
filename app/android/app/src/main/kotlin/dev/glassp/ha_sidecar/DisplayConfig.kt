@@ -45,6 +45,7 @@ object DisplayConfig {
         "conversation_timeout_s" to 8,
         "voice_sounds" to true, // the ping when listening starts and when the conversation ends
         "voice_volume" to 50, // media volume (%) during a voice session; the previous level comes back afterwards
+        "voice_skin" to "midnight", // the look of the voice screen and the card
         "voice_docked" to true, // voice shows as a small card over whatever is on screen instead of a full-screen page
         // on-device wake word (off by default: it keeps the microphone open; the models are downloaded when it is switched on)
         "wake_word" to false,
@@ -58,6 +59,7 @@ object DisplayConfig {
     private val MODES = setOf("auto", "day", "night", "manual")
     private val FACINGS = setOf("front", "back")
     private val THEMES = setOf("system", "light", "dark", "night")
+    private val VOICE_SKINS = setOf("midnight", "aurora", "sunrise", "paper", "contrast")
 
     fun get(ctx: Context): Map<String, Any> {
         val stored = runCatching { JSONObject(Prefs.displayConfigJson(ctx)) }.getOrDefault(JSONObject())
@@ -114,6 +116,7 @@ object DisplayConfig {
         "mode" -> v in MODES
         "camera_facing" -> v in FACINGS
         "theme" -> v in THEMES
+        "voice_skin" -> v in VOICE_SKINS
         "watchdog_action" -> v == "restart" || v == "notify"
         "wake_word_ids" -> v.split(',').map { it.trim() }.filter { it.isNotEmpty() }.all { WakeWordModels.word(it) != null }
         else -> true

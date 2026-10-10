@@ -56,6 +56,14 @@ owner: hide + unhide; otherwise via the dialog's "Close app"), at most three tim
 (`companion_unresponsive` / `companion_restarted` / `companion_restart_gave_up` events, a *Companion app responsive* sensor,
 a restart counter and a *Restart companion app* button). See the 2.5 section of [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## Result cards and skins
+
+Voice answers can come with cards (weather with a forecast, what is playing, a camera picture, the state of what was switched); push one yourself with
+`ha_sidecar.show_card` (an entity, or title / value / picture), also from a script an LLM agent calls as a tool. The voice page and the docked card come in five skins
+(*Voice skin* in the app and `select.<prefix>_voice_skin`) and have a volume slider that applies to the current conversation only; the *preferred voice volume*
+(`number.<prefix>_preferred_voice_volume`) is what the tablet uses while it talks and is put back afterwards. "Set the volume to 30 percent" works through
+`media_player.<prefix>_voice`. See [docs/VOICE.md](docs/VOICE.md).
+
 ## Dashboard timers card
 
 Timers do not float over the screen. Add the card **HA Sidecar timers** to a dashboard to see and control the tablet's timers there:

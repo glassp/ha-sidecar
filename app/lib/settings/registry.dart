@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:beamer/beamer.dart';
 
+import '../voice/voice_skin.dart';
 import '../app_controller.dart';
 import '../ha/sidecar_client.dart';
 import '../permissions.dart';
@@ -560,6 +561,20 @@ List<SettingEntry> buildRegistry(AppController c) {
       _g('voice'),
       Icons.notifications_active_outlined,
       'voice_sounds',
+    ),
+    base(
+      'voice_skin',
+      Section.system,
+      _g('voice'),
+      (ctx) => SkinPickerSetting(
+        icon: Icons.palette_outlined,
+        title: _t('voice_skin', 'title'),
+        subtitle: _t('voice_skin', 'desc'),
+        skins: VoiceSkin.all,
+        names: {for (final s in VoiceSkin.all) s.id: 'voice.skin_${s.id}'.tr()},
+        value: VoiceSkin.byId(cfg()['voice_skin']).id,
+        onChanged: (v) => set(ctx, 'voice_skin', v),
+      ),
     ),
     switchEntry(
       'voice_docked',

@@ -1,3 +1,4 @@
+import '../voice/voice_skin.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -113,6 +114,171 @@ class _SliderSettingState extends State<SliderSetting> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Chooses a voice skin by looking at it: every skin is a small preview (its background, a user bubble, an answer bubble and its accent).
+class SkinPickerSetting extends StatelessWidget {
+  const SkinPickerSetting({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.skins,
+    required this.names,
+    required this.value,
+    required this.onChanged,
+  });
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final List<VoiceSkin> skins;
+  final Map<String, String> names; // id -> label
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconBadge(icon),
+              const SizedBox(width: 16),
+              Expanded(child: Text(title, style: t.textTheme.titleMedium)),
+            ],
+          ),
+          if (subtitle != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 56, top: 2),
+              child: Text(
+                subtitle!,
+                style: t.textTheme.bodyMedium?.copyWith(
+                  color: t.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              for (final s in skins)
+                _SkinChip(
+                  skin: s,
+                  label: names[s.id] ?? s.id,
+                  selected: s.id == value,
+                  onTap: () => onChanged(s.id),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkinChip extends StatelessWidget {
+  const _SkinChip({
+    required this.skin,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final VoiceSkin skin;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context);
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: InkWell(
+        key: Key('skin-${skin.id}'),
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          width: 112,
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected
+                  ? t.colorScheme.primary
+                  : t.colorScheme.outlineVariant,
+              width: selected ? 2.5 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Container(
+                height: 66,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: skin.background,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      height: 5,
+                      margin: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: skin.accent,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    const Spacer(),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Container(
+                        width: 44,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: skin.userBubble,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        width: 56,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: skin.assistantBubble,
+                          borderRadius: BorderRadius.circular(6),
+                          border: skin.id == 'contrast'
+                              ? Border.all(color: skin.outline)
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: t.textTheme.labelMedium,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

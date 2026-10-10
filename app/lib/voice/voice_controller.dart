@@ -3,14 +3,27 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../platform/kiosk_platform.dart';
+import 'voice_card.dart';
+import 'voice_skin.dart';
 
 enum VoiceState { idle, listening, thinking, speaking, error }
 
 /// One exchange on the voice screen: what the user said and what the assistant answered (either may still be empty).
 class VoiceTurn {
-  VoiceTurn({this.user = '', this.assistant = ''});
+  VoiceTurn({
+    this.user = '',
+    this.assistant = '',
+    this.session,
+    List<VoiceCard>? cards,
+  }) : cards = cards ?? [];
   String user;
   String assistant;
+
+  /// The run this turn belongs to (a card for it can arrive after the next listening has started).
+  final String? session;
+
+  /// Result cards for the answer (weather, what was switched, ...).
+  final List<VoiceCard> cards;
 }
 
 /// One push-to-talk turn at a time against Home Assistant's Assist pipeline (docs/VOICE.md).
@@ -31,12 +44,14 @@ class VoiceController extends ChangeNotifier {
     this.dockedEnabled = _no,
     this.volumeLevel = _noVolume,
     this.saveVolume = _noSave,
+    this.skinId = _defaultSkin,
     this.bubbleText = _identity,
   });
 
   static bool _yes() => true;
   static bool _no() => false;
   static int? _noVolume() => null;
+  static String _defaultSkin() => VoiceSkin.defaultId;
   static Future<void> _noSave(int percent) async {}
   static String _identity(String key) => key;
   static Duration _eight() => const Duration(seconds: 8);
@@ -58,6 +73,9 @@ class VoiceController extends ChangeNotifier {
 
   /// Persists the preferred voice volume (a volume command outside a conversation).
   final Future<void> Function(int percent) saveVolume;
+
+  /// The id of the skin (look) of the docked card.
+  final String Function() skinId;
 
   /// Localized text for the docked card (a key of the `voice.*` translations).
   final String Function(String key) bubbleText;
@@ -142,7 +160,7 @@ class VoiceController extends ChangeNotifier {
     final id = 'v${DateTime.now().microsecondsSinceEpoch}-${_counter++}';
     session = id;
     if (!continuing) turns.clear();
-    turns.add(VoiceTurn());
+    turns.add(VoiceTurn(session: id));
     _continue = false;
     _heardSpeech = false;
     _spokeAnswer = false;
@@ -329,6 +347,15 @@ class VoiceController extends ChangeNotifier {
 
   void onVoiceEvent(Map<String, dynamic> msg) {
     final id = msg['session'] as String?;
+    if (msg['event'] == 'cards') {
+      // cards belong to a turn that may already be followed by the next listening (a new session)
+      final turn = turns.where((t) => t.session == id).firstOrNull;
+      final data = (msg['data'] as Map?) ?? const {};
+      if (turn == null) return;
+      turn.cards.addAll(_parseCards(data['cards']));
+      notifyListeners();
+      return;
+    }
     if (id == null || id != session) return; // an event of a cancelled turn
     final data = Map<String, dynamic>.from((msg['data'] as Map?) ?? const {});
     _armWatchdog();
@@ -382,6 +409,36 @@ class VoiceController extends ChangeNotifier {
       _spokeAnswer = true;
       _finish();
     }
+  }
+
+  List<VoiceCard> _parseCards(Object? raw) => [
+    for (final c in (raw as List? ?? const []))
+      ?VoiceCard.fromJson(c, url: _cardUrl),
+  ];
+
+  /// A path on Home Assistant is fetched through the address we are connected through; any other URL stays as it is.
+  String? _cardUrl(String url) => url.startsWith('/') ? _absolute(url) : url;
+
+  /// Cards to show from Home Assistant (`show_card`): during a conversation they join the answer; otherwise they appear
+  /// on their own for [seconds].
+  Future<void> showCards(List<dynamic> raw, {int seconds = 20}) async {
+    final cards = _parseCards(raw);
+    if (cards.isEmpty) return;
+    if (turns.isNotEmpty && (active || inConversation)) {
+      turns.last.cards.addAll(cards);
+      notifyListeners();
+      return;
+    }
+    _dismiss?.cancel();
+    turns
+      ..clear()
+      ..add(VoiceTurn(cards: cards));
+    errorCode = errorMessage = null;
+    state = VoiceState.idle;
+    notifyListeners();
+    await _open();
+    notifyListeners();
+    _scheduleClose(Duration(seconds: seconds));
   }
 
   String? _absolute(String url) {
@@ -578,18 +635,35 @@ class VoiceController extends ChangeNotifier {
     return t == key || t.endsWith(key) ? bubbleText('err_unknown') : t;
   }
 
+  /// The turn the docked card shows: the current one, except while waiting for a follow-up that has not started yet, when the
+  /// last answer (and its cards) stays on the card until you speak.
+  VoiceTurn? get _shownTurn {
+    if (turns.isEmpty) return null;
+    final last = turns.last;
+    final blank =
+        last.user.isEmpty && last.assistant.isEmpty && last.cards.isEmpty;
+    return state == VoiceState.listening && blank && turns.length > 1
+        ? turns[turns.length - 2]
+        : last;
+  }
+
   void _pushBubble({bool force = false}) {
+    final shown = _shownTurn;
     final deadline = waitingForSpeech
         ? speechDeadline?.millisecondsSinceEpoch ?? 0
         : 0;
     final fixed = {
       'state': state.name,
       'follow_up': followUp,
-      'user': transcript,
-      'assistant': answer,
+      'user': shown?.user ?? '',
+      'assistant': shown?.assistant ?? '',
       'error': state == VoiceState.error ? _bubbleError() : '',
       'in_conversation': inConversation,
       'volume': volume ?? -1,
+      'cards': [
+        for (final c in shown?.cards ?? const <VoiceCard>[]) c.toSnapshot(),
+      ],
+      'skin': VoiceSkin.byId(skinId()).toSnapshot(),
       'wait_deadline_ms': deadline,
       'wait_total_ms': speechWindow.inMilliseconds,
       'labels': {

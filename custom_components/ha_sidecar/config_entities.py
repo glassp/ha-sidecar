@@ -95,6 +95,7 @@ SELECTS = [
     ("camera_facing", "Presence camera", ["front", "back"], "mdi:camera-switch"),
     ("theme", "App theme", ["system", "light", "dark", "night"], "mdi:theme-light-dark"),
     ("watchdog_action", "Watchdog action", ["restart", "notify"], "mdi:wrench-clock"),
+    ("voice_skin", "Voice skin", ["midnight", "aurora", "sunrise", "paper", "contrast"], "mdi:palette"),
 ]
 
 # key, name, icon

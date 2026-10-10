@@ -308,6 +308,44 @@
     "cancel_listening": {
       "name": "Cancel listening",
       "description": "Ends the assistant turn that is running on the tablet and closes its screen."
+    },
+    "show_card": {
+      "name": "Show card",
+      "description": "Shows a card on the tablet's voice screen: the weather, what is playing, a camera picture or any entity (give an entity), or one made by hand with a title, value and picture. During a conversation it is added to the answer; otherwise it appears on its own for a while. For an LLM, put this action in a script it can call as a tool.",
+      "fields": {
+        "entity_id": {
+          "name": "Entity",
+          "description": "A weather, media player, camera/image or any other entity to show."
+        },
+        "type": {
+          "name": "Type",
+          "description": "How a hand-made card looks (weather, media, image or entity)."
+        },
+        "title": {
+          "name": "Title",
+          "description": "The first line."
+        },
+        "subtitle": {
+          "name": "Subtitle",
+          "description": "The second line."
+        },
+        "value": {
+          "name": "Value",
+          "description": "The big text, for example a temperature."
+        },
+        "image": {
+          "name": "Image",
+          "description": "A picture: a URL, or a path on Home Assistant such as /local/snapshot.jpg."
+        },
+        "details": {
+          "name": "Details",
+          "description": "Up to four short lines of small print."
+        },
+        "duration": {
+          "name": "Show for",
+          "description": "How long a card without a conversation stays (seconds)."
+        }
+      }
     }
   },
   "options": {

@@ -18,6 +18,8 @@ from homeassistant.util import dt as dt_util, slugify
 from .const import DOMAIN, VERSION
 from . import beacon_api
 from .device import SidecarDevice
+from . import cards
+from .cards_ha import async_cards_for_states
 from .frontend import async_register_card
 from .websocket_view import SidecarWebSocketView
 
@@ -93,6 +95,25 @@ SERVICES: dict[str, vol.Schema] = {
 }
 
 
+SHOW_CARD_SCHEMA = vol.All(
+    vol.Schema(
+        {
+            **_TARGET,
+            vol.Optional("entity_id"): cv.entity_id,
+            vol.Optional("type"): vol.In(["weather", "media", "image", "entity"]),
+            vol.Optional("title"): cv.string,
+            vol.Optional("subtitle"): cv.string,
+            vol.Optional("value"): cv.string,
+            vol.Optional("icon"): cv.string,
+            vol.Optional("image"): cv.string,
+            vol.Optional("details"): vol.All(cv.ensure_list, [cv.string]),
+            vol.Optional("duration", default=20): vol.All(vol.Coerce(int), vol.Range(min=3, max=300)),
+        }
+    ),
+    cv.has_at_least_one_key("entity_id", "title", "image", "value"),
+)
+
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.data.setdefault(DOMAIN, {"devices": {}})
     hass.http.register_view(SidecarWebSocketView())
@@ -104,8 +125,21 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             command, data = _build_command(call.service, call.data)
             await device.send_command(command, data)
 
+    async def handle_show_card(call: ServiceCall) -> None:
+        """Shows a card on the tablet's voice screen: the one of an entity, or one made by hand (an automation, an LLM tool)."""
+        shown: list[dict] = []
+        if entity_id := call.data.get("entity_id"):
+            shown = await async_cards_for_states(hass, [hass.states.get(entity_id)])
+            if not shown:
+                raise ServiceValidationError(f"{entity_id} has nothing to show (unavailable, or no picture)")
+        if any(call.data.get(k) for k in ("title", "image", "value", "subtitle")):
+            shown.append(cards.custom_card(call.data))
+        for device in _resolve_devices(hass, call.data["device_id"]):
+            await device.send_command("voice_card", {"cards": shown, "seconds": call.data["duration"]})
+
     for name, schema in SERVICES.items():
         hass.services.async_register(DOMAIN, name, handle_service, schema=schema)
+    hass.services.async_register(DOMAIN, "show_card", handle_show_card, schema=SHOW_CARD_SCHEMA)
     return True
 
 

@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import '../../app_controller.dart';
 import '../../platform/kiosk_platform.dart';
 import '../../voice/voice_controller.dart';
+import '../../voice/voice_skin.dart';
 import '../timers.dart';
+import '../voice_cards.dart';
 
 /// The assistant's screen, shown by its own Android activity over whatever is on screen (a docked bubble over the
 /// dashboard is a later step, see docs/VOICE.md). Top: the status and any running timers. Middle: a live waveform of
@@ -18,53 +20,58 @@ class VoicePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final v = controller.voice;
-    return Theme(
-      data: ThemeData.dark(
-        useMaterial3: true,
-      ).copyWith(scaffoldBackgroundColor: Colors.black),
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: SafeArea(
-          child: ListenableBuilder(
-            listenable: Listenable.merge([v, controller]),
-            builder: (context, _) => GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onDoubleTap: () => v.endConversation(),
-              child: Column(
-                children: [
-                  _TopBar(v),
-                  _Timers(controller.status.timers),
-                  Expanded(
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 720),
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 8,
-                          ),
-                          reverse: true,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _Wave(v),
-                              _WaitBar(v),
-                              const SizedBox(height: 24),
-                              _Conversation(v),
-                            ],
+    // the skin is a setting that can change while the page is open (a long-lived activity): rebuild with the controller
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final skin = VoiceSkin.byId(controller.status.cfg['voice_skin']);
+        return Theme(
+          data: skin.theme,
+          child: Scaffold(
+            backgroundColor: skin.background,
+            body: SafeArea(
+              child: ListenableBuilder(
+                listenable: Listenable.merge([v, controller]),
+                builder: (context, _) => GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onDoubleTap: () => v.endConversation(),
+                  child: Column(
+                    children: [
+                      _TopBar(v),
+                      _Timers(controller.status.timers),
+                      Expanded(
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 720),
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 8,
+                              ),
+                              reverse: true,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _Wave(v),
+                                  _WaitBar(v),
+                                  const SizedBox(height: 24),
+                                  _Conversation(v),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                      _VolumeRow(v),
+                      _Actions(v),
+                    ],
                   ),
-                  _VolumeRow(v),
-                  _Actions(v),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -477,6 +484,7 @@ class _TurnView extends StatelessWidget {
                         ),
                 ),
               ),
+            ResultCards(turn.cards),
           ],
         ),
       ),
@@ -648,7 +656,9 @@ class _VolumeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final volume = v.volume;
-    if (volume == null || v.state == VoiceState.error) return const SizedBox.shrink();
+    if (volume == null || v.state == VoiceState.error) {
+      return const SizedBox.shrink();
+    }
     final scheme = Theme.of(context).colorScheme;
     return Center(
       child: ConstrainedBox(
@@ -658,7 +668,9 @@ class _VolumeRow extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                volume == 0 ? Icons.volume_off : (volume < 40 ? Icons.volume_down : Icons.volume_up),
+                volume == 0
+                    ? Icons.volume_off
+                    : (volume < 40 ? Icons.volume_down : Icons.volume_up),
                 color: scheme.onSurfaceVariant,
                 size: 22,
               ),
@@ -674,7 +686,11 @@ class _VolumeRow extends StatelessWidget {
               ),
               SizedBox(
                 width: 48,
-                child: Text('$volume %', textAlign: TextAlign.end, style: TextStyle(color: scheme.onSurfaceVariant)),
+                child: Text(
+                  '$volume %',
+                  textAlign: TextAlign.end,
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
               ),
             ],
           ),

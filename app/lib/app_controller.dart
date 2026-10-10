@@ -12,6 +12,7 @@ import 'platform/kiosk_platform.dart';
 import 'settings/connection_route.dart';
 import 'settings/connection_settings.dart';
 import 'voice/voice_controller.dart';
+import 'voice/voice_skin.dart';
 
 /// Wires platform <-> HA client and exposes UI state.
 class AppController extends ChangeNotifier {
@@ -32,6 +33,7 @@ class AppController extends ChangeNotifier {
     soundsEnabled: () => status.cfg['voice_sounds'] != false,
     dockedEnabled: () => status.cfg['voice_docked'] != false,
     volumeLevel: () => (status.cfg['voice_volume'] as num?)?.toInt() ?? 50,
+    skinId: () => '${status.cfg['voice_skin'] ?? VoiceSkin.defaultId}',
     saveVolume: (p) async {
       await setConfig('voice_volume', p);
     },

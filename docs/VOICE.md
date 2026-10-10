@@ -14,6 +14,7 @@ TTS), the tablet shows and speaks the answer. Everything runs over the existing 
 | 3.4 | Real conversations (listen again after an answer), timers by voice, `start_conversation` and `ask_question`, the redesigned screen | done, see below (skins are not) |
 | 3.5 | The docked card over the dashboard, and the timers card for the dashboard | done, see below |
 | 3.6 | Voice volume: preferred level, restored afterwards, per conversation by slider and voice | done, see below |
+| 3.7 | Result cards (weather, media, picture, entity) and skins | done, see below |
 
 ## Design decisions
 
@@ -132,6 +133,11 @@ Screenshots from the lab run (tablet 2560x1800; the speech is synthetic, see [TE
 | ![ask](images/voice/11-ask-question-waiting-for-answer.png) `ask_question`: the question stays, the answer is awaited | ![ended](images/voice/12-conversation-ended.png) After a silence: Done, the conversation stays readable |
 | ![docked listening](images/voice/14-docked-card-listening-over-dashboard.png) The docked card over a dashboard, listening | ![docked answer](images/voice/15-docked-card-answer.png) The answer on the card; the dashboard stays visible |
 | ![expanded](images/voice/16-docked-card-expanded-to-the-page.png) Tapping the card opens the page with the same conversation | ![timers card](images/voice/17-dashboard-timers-card.png) The timers card on a dashboard: running, paused, rung and a stopwatch |
+| ![skins on the docked card](images/voice/18-skins-docked-card.png) The five skins on the docked card (the same answer with a weather card) | |
+| ![skins on the page](images/voice/19-skins-full-page.png) The five skins on the full-screen page | |
+| ![entity card](images/voice/20-result-card-entity-after-an-action.png) "Turn on the kitchen light": the answer and the light's card | ![weather docked](images/voice/21-result-card-weather-docked.png) "What's the weather like": weather card with forecast on the docked card |
+| ![weather page](images/voice/24-result-card-weather-full-page.png) The same on the full-screen page (Midnight) | ![camera](images/voice/22-result-card-camera-picture.png) `show_card` with a camera: the picture on the docked card |
+| ![media](images/voice/23-result-card-media.png) `show_card` with a media player | ![volume](images/voice/13-llm-answer-follow-up.png) A voice turn answered by a local LLM |
 
 ## The docked card and the timers card (slice 3.5)
 
@@ -170,6 +176,33 @@ Screenshots from the lab run (tablet 2560x1800; the speech is synthetic, see [TE
   `media_player.<prefix>_voice` entity (it plays nothing; it is the handle for the voice volume; it needs the tablet to be in an
   area, like any satellite, so that "the volume" means this tablet). During a conversation such a command is for the conversation
   only; outside one (a dashboard, an automation, `media_player.volume_set`) it sets the preferred volume.
+
+## Result cards (slice 3.7)
+
+An answer can come with cards under it, on the voice page and on the docked card: **weather** (condition, temperature, humidity, wind, pressure and
+a four-day forecast), **media** (title, artist, album, state and the cover when there is one), **picture** (a camera or image entity, or any
+URL) and **entity** (a light, a cover, a sensor, a climate entity, ... with a value that reads like a person would say it: "On", "Open", "21.5 °C").
+
+- **Where they come from.** (1) What Home Assistant's intent response says it used: after "turn on the kitchen light" the entities it switched (a
+  moment later, so the card shows the new state), after "what's the weather like" or "what is playing on the walkman" the entity named in the
+  answer. Weather, media players, cameras, images, lights, switches, covers, locks, climate, fans, vacuums, sensors and persons qualify; at most three
+  cards. (2) The service **`ha_sidecar.show_card`**: give an `entity_id` (its card is built, with the forecast for a weather entity) or a hand-made
+  card (`title`, `subtitle`, `value`, `image`, `details`, `type`). During a conversation it joins the answer, otherwise it appears on its own
+  for `duration` seconds. Put it in a script an LLM agent can call as a tool ("show me the front door camera"): LLM agents do not report which
+  entities they used, so for them this is the way.
+- **Pictures** are fetched by the tablet: a path on Home Assistant (`/api/camera_proxy/...?token=...`, `/local/...`) through the address the tablet is connected through, any
+  other URL as it is. The docked card loads them in the background (a glyph until then and when it fails).
+- **Wire.** A `voice_event` event `cards` (`{"cards": [...]}`) for the turn it belongs to (it can arrive after the next listening has started, so it
+  carries the turn's session), and a `voice_card` command for `show_card`. The card format is in `custom_components/ha_sidecar/cards.py`.
+  While the docked card waits for a follow-up it keeps the last answer and its cards until you start speaking.
+- **Values are English** ("On", "Open", "Sunny"): they come from the states, not from Home Assistant's translations.
+
+## Skins (slice 3.7)
+
+The look of the voice page and the docked card, one palette for both (the page uses it as its theme, the native card gets the colors with every
+update): **Midnight** (the default), **Aurora** (teal), **Sunrise** (amber), **Paper** (light) and **High contrast** (black, white and yellow). Setting *Voice skin* in
+the app (a row of previews) and `select.<prefix>_voice_skin`; a change applies at once, also to a page that is open. A skin is an entry in `app/lib/voice/voice_skin.dart`;
+the tests check that every text is readable on what it sits on (WCAG contrast of at least 7 for the answer, 4.5 for the rest).
 
 ## Wake word (slice 3.3)
 
@@ -213,6 +246,6 @@ Screenshots from the lab run (tablet 2560x1800; the speech is synthetic, see [TE
 
 - More phrases (own models can be trained with openWakeWord; a custom model slot is not built), several active wake words at once.
 - Wake word detection on the tablet while HA is unreachable still starts a turn that fails with *Not connected*; there is no local fallback.
-- Result cards (weather, images), skins, a microphone/speaker test, a volume setting.
+- A microphone/speaker test in the app, custom wake word models.
 - Binary audio frames (base64 in JSON is used), a microphone/speaker test in the app, a volume setting, echo cancellation while
   the answer plays (the engine is paused instead).
