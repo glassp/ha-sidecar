@@ -71,7 +71,10 @@ class SidecarAccessibilityService : AccessibilityService() {
 
         // Device owner already enforces via lock task; only bounce as belt and braces.
         if (pkg == KioskController.SYSTEM_UI) {
-            closeShade()
+            if (getSystemService(KeyguardManager::class.java).isKeyguardLocked) return // the lock screen is the phone's, not ours
+            // The power menu (power off / restart / emergency call) and other System UI dialogs are windows of their own that a
+            // swipe does not close; Back does. Everything else System UI shows (the shade) is swiped shut.
+            if (cls.contains("Dialog", ignoreCase = true)) performGlobalAction(GLOBAL_ACTION_BACK) else closeShade()
             if (cls.contains("Recents", ignoreCase = true)) bounce()
             return
         }
