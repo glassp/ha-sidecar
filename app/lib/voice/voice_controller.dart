@@ -23,6 +23,7 @@ class VoiceController extends ChangeNotifier {
     required this.baseUrl,
     this.dismissAfter = const Duration(seconds: 4),
     this.silenceTimeout = const Duration(seconds: 20),
+    this.thinkTimeout = const Duration(seconds: 120),
     this.firstTimeout = const Duration(seconds: 12),
     this.conversationEnabled = _yes,
     this.followUpTimeout = _eight,
@@ -43,6 +44,9 @@ class VoiceController extends ChangeNotifier {
 
   /// Safety net: a run that has not said anything for this long (Home Assistant stalled) is given up.
   final Duration silenceTimeout;
+
+  /// The same, once the words are understood and the agent is working: a local LLM can take a minute to answer.
+  final Duration thinkTimeout;
 
   /// How long the first listening waits for the user to start speaking (wake word or tap).
   final Duration firstTimeout;
@@ -302,6 +306,7 @@ class VoiceController extends ChangeNotifier {
         if (turns.isNotEmpty) turns.last.user = (data['text'] as String?) ?? '';
         _speechStarted();
         state = VoiceState.thinking;
+        _armWatchdog(); // with the longer thinking limit
         unawaited(_stopRecording());
         send({'type': 'voice', 'action': 'stop', 'session': id});
         notifyListeners();
@@ -424,7 +429,7 @@ class VoiceController extends ChangeNotifier {
 
   void _armWatchdog() {
     _watchdog?.cancel();
-    _watchdog = Timer(silenceTimeout, () {
+    _watchdog = Timer(state == VoiceState.thinking ? thinkTimeout : silenceTimeout, () {
       if (active && state != VoiceState.speaking) {
         send({'type': 'voice', 'action': 'cancel', 'session': session});
         _fail('timeout');

@@ -208,6 +208,14 @@ void main() {
     expect(actions().last, 'cancel');
   });
 
+  test('a slow agent (a local LLM) is waited for: the thinking stage has its own, longer limit', () async {
+    await v.listen();
+    v.onVoiceEvent(hae('stt-end', {'text': 'what is the average temperature'}));
+    await Future<void>.delayed(const Duration(milliseconds: 500)); // longer than silenceTimeout (300 ms)
+    expect(v.state, VoiceState.thinking);
+    expect(v.errorCode, isNull);
+  });
+
   test('losing the connection cancels the turn', () async {
     await v.listen();
     connected = false;

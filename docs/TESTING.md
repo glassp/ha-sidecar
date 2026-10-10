@@ -222,6 +222,19 @@ ends the turn, and a turn after reconnecting works. The barge-in check found a r
 `run-end` was tagged with the new session, so the tablet would have taken the new turn for finished); a new run now starts only after the
 old one ended. Unit tests (`tests/test_voice.py`, 11) cover the audio queue (order, close, back-pressure, bad frames) and the event trimming.
 
+### With an LLM agent (Ollama, emulator, lab Home Assistant)
+
+Ollama (`brew install ollama`, loopback only) with `llama3.2:3b` (2 GB) as the Lab pipeline's conversation agent, Assist API on; two floors, four
+rooms with a temperature sensor each (`tests/lab/llm_setup.py`; HA's Ollama integration needs `pip install ollama==0.6.2` in the lab venv).
+On an 8 GB Mac the model, the emulator and Home Assistant together swap heavily (an Android "not responding" dialog appeared once).
+
+- **A voice turn through the LLM works end to end:** "what is the temperature in the kitchen" was answered "The temperature in the kitchen is 21.5°C."
+  after about 34 s of thinking, spoken, and the tablet listened for a follow-up. This found a bug: the app's 20 s watchdog gave up on the
+  silent thinking stage; it now has its own limit of 120 s (`thinkTimeout`, one controller test).
+- **The model is the limit, not the satellite:** the 3B model failed "what is the average temperature on each floor" (said it had no data) and once
+  called the broadcast tool by itself. A bigger model or a cloud agent is needed for aggregation; a template sensor per floor does it without one.
+- Not run: `start_conversation` with the LLM agent, conversation context across follow-ups with a capable model.
+
 Not verified: real speech (the lab STT ignores the audio content), a real VAD end-of-speech (the fake tablet ends the turn itself),
 any of the app side.
 

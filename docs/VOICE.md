@@ -107,7 +107,7 @@ selects, the satellite entity reads them like it does for ESPHome or VoIP device
 - **`start_conversation` and `ask_question`.** The entity now advertises *start conversation*: the tablet plays the (pre-announce
   sound and the) question, then listens by itself (command `voice_conversation`); `assist_satellite.ask_question` returns the matched answer
   (verified: `{id: yes, sentence: "yes please"}`). `start_conversation` itself needs an LLM conversation agent (HA refuses the built-in
-  one), so it was not run end to end.
+  one), so it was not run end to end. A voice turn through an LLM agent (Ollama, llama3.2:3b) was run: the answer waits up to 120 s (`thinkTimeout`).
 - **The screen** (`/voice`): a status chip (Listening, Listening for a follow-up, Thinking, Speaking, Problem), running timers as pills
   (a ring that empties, the time, the label; paused ones dimmed with a pause icon, finished ones red with the time over), a live
   waveform (the microphone level while listening, a ripple while thinking and speaking), and the conversation as chat bubbles: what you
