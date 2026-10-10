@@ -1,8 +1,16 @@
 name: CI
 
+# Supply-chain rules for this workflow (docs/CI.md):
+#  - every `uses:` is a full commit SHA, the release it belongs to is in the comment after it;
+#  - container images are run by digest, never by tag;
+#  - the token can only read the repository, and checkout does not keep it around;
+#  - Flutter, Gradle and the Dart packages are pinned (exact version, checksum, lockfile).
 on:
   push:
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   app:
@@ -11,24 +19,56 @@ jobs:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: 17
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           channel: stable
-      - run: flutter pub get
+          flutter-version: 3.44.6
+      - run: flutter pub get --enforce-lockfile
       - run: flutter analyze
       - run: flutter test
       - run: flutter build apk --debug
+      # android lint found real crashes (API 27 calls with minSdk 26) that nothing else reports; the Gradle dependency
+      # verification (android/gradle/verification-metadata.xml) rejects any library or plugin whose checksum changed
+      - run: ./gradlew :app:lintDebug :app:testDebugUnitTest
+        working-directory: app/android
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      # standard library only: the pure-Python parts of the integration (cards, beacon, voice audio); tests that need
+      # Home Assistant itself skip themselves here and run in the lab (docs/TESTING.md)
+      - run: python -m unittest discover -s tests -v
+      - run: node --test tests/js
 
   integration:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: home-assistant/actions/hassfest@master
-      - uses: hacs/action@main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Both validators are Docker actions whose action.yml pulls a floating tag (`hassfest` = latest, `hacs/action:main`),
+      # so pinning the action commit would not pin what runs. They are run here by image digest instead.
+      # hassfest, image ghcr.io/home-assistant/hassfest built 2026-10-10:
+      - name: hassfest
+        run: docker run --rm -v "${{ github.workspace }}":/github/workspace ghcr.io/home-assistant/hassfest@sha256:4b1adfb1e0a37710af0390708eb8000230b80b2193ccffbeed0a901fa9765181
+      # HACS validation, image ghcr.io/hacs/action (tag main) as of 2026-10-10. A `docker://` step is what the action does
+      # itself, so the runner provides the same environment, event file and workspace mount.
+      - name: HACS validation
+        uses: docker://ghcr.io/hacs/action@sha256:dc92fdad2f6ffbe74bffb7269d781ea8e064f52d9bb486cdf3925d74e7ab6ebf
         with:
           category: integration
+          comment: "false"
+          github_token: ${{ github.token }}

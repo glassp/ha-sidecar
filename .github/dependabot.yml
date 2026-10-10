@@ -1,0 +1,20 @@
+# Keeps the pinned versions current without anyone having to remember. Each update arrives as a pull request to review
+# (the new commit SHA / version is in the diff), never as a silent change. `cooldown` waits a week after a release before
+# proposing it, so a hijacked release is usually yanked before it reaches this repository.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: pub
+    directory: /app
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
