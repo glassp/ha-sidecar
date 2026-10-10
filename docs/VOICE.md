@@ -113,6 +113,19 @@ selects, the satellite entity reads them like it does for ESPHome or VoIP device
   conversation*; after an error or the end *Talk again* and *Close*. Not built: cards (weather, images, media) from the conversation
   log, and the draggable timer pills of the design notes.
 
+### The screen, as it looks on the emulator
+
+Screenshots from the lab run (tablet 2560x1800; the speech is synthetic, see [TESTING.md](TESTING.md)):
+
+| | |
+|---|---|
+| ![listening](images/voice/01-listening-live-waveform.png) Listening: the waveform follows the microphone, a bubble waits for the words | ![answer](images/voice/02-answer-speaking.png) What you said (right) and the spoken answer (left) |
+| ![second turn](images/voice/03-second-turn-answer-with-history.png) A second turn; the first stays dimmed above | ![follow-up](images/voice/04-follow-up-listening-wait-bar.png) Listening for a follow-up: the bar drains, the timer pill keeps counting |
+| ![timer](images/voice/05-timer-set-by-voice.png) "Set a timer for 3 minutes called pasta" | ![two timers](images/voice/06-two-timers-one-paused.png) Two timers, one paused by voice |
+| ![ring](images/voice/07-voice-timer-rings.png) The voice timer rings by itself | ![long answer](images/voice/08-long-answer.png) A long answer wraps in its bubble |
+| ![error](images/voice/09-error.png) An error names what failed and offers to try again | ![announce](images/voice/10-announcement.png) An announcement from Home Assistant |
+| ![ask](images/voice/11-ask-question-waiting-for-answer.png) `ask_question`: the question stays, the answer is awaited | ![ended](images/voice/12-conversation-ended.png) After a silence: Done, the conversation stays readable |
+
 ## Wake word (slice 3.3)
 
 - **How it works:** the one microphone loop (`Voice.micLoop`) feeds 80 ms frames to the wake word engine while no turn is
