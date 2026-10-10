@@ -9,9 +9,10 @@ TTS), the tablet shows and speaks the answer. Everything runs over the existing 
 | Slice | What | State |
 |---|---|---|
 | 3.1 | Integration: `assist_satellite` entity, voice messages, announcements. Tested against a real Home Assistant with a fake tablet | done, see [TESTING.md](TESTING.md) |
-| 3.2 | App: microphone capture, TTS playback, push-to-talk, answer page | done as v1 (full-screen page; the docked bubble over the dashboard is still to do) |
+| 3.2 | App: microphone capture, TTS playback, push-to-talk, answer page | done (full-screen page; the docked card is 3.5) |
 | 3.3 | Wake word on the device (openWakeWord models on LiteRT) | done, see below |
-| 3.4 | Real conversations (listen again after an answer), timers by voice, `start_conversation` and `ask_question`, the redesigned screen | done, see below (skins and the docked bubble are not) |
+| 3.4 | Real conversations (listen again after an answer), timers by voice, `start_conversation` and `ask_question`, the redesigned screen | done, see below (skins are not) |
+| 3.5 | The docked card over the dashboard, and the timers card for the dashboard | done, see below |
 
 ## Design decisions
 
@@ -128,6 +129,30 @@ Screenshots from the lab run (tablet 2560x1800; the speech is synthetic, see [TE
 | ![ring](images/voice/07-voice-timer-rings.png) The voice timer rings by itself | ![long answer](images/voice/08-long-answer.png) A long answer wraps in its bubble |
 | ![error](images/voice/09-error.png) An error names what failed and offers to try again | ![announce](images/voice/10-announcement.png) An announcement from Home Assistant |
 | ![ask](images/voice/11-ask-question-waiting-for-answer.png) `ask_question`: the question stays, the answer is awaited | ![ended](images/voice/12-conversation-ended.png) After a silence: Done, the conversation stays readable |
+| ![docked listening](images/voice/14-docked-card-listening-over-dashboard.png) The docked card over a dashboard, listening | ![docked answer](images/voice/15-docked-card-answer.png) The answer on the card; the dashboard stays visible |
+| ![expanded](images/voice/16-docked-card-expanded-to-the-page.png) Tapping the card opens the page with the same conversation | ![timers card](images/voice/17-dashboard-timers-card.png) The timers card on a dashboard: running, paused, rung and a stopwatch |
+
+## The docked card and the timers card (slice 3.5)
+
+- **The docked card.** A turn no longer takes the whole screen: while another app (usually the HA companion app with the
+  dashboard) is in front, the voice screen is a small card at the bottom edge, drawn by the sidecar app as a native overlay window
+  (the same kind as the hot corner, so it needs an enabled accessibility service or "draw over other apps"). It shows the status,
+  a small waveform, what you said, the answer, the draining follow-up bar and the buttons that apply (*Done talking*, *End
+  conversation*, *Talk again* after an error). It carries **no timers**. The dashboard behind it stays visible and usable (only the
+  card's own area takes touches). Tapping the card opens the full-screen page with the same conversation, the ✕ ends the turn, and
+  the card closes by itself after the answer like the page did. Setting *Docked voice card* (switch `switch.<prefix>_voice_as_a_docked_card`,
+  on by default). Without the permission, with the screen off (the page wakes it) or switched off, the full-screen page opens as
+  before.
+- **How it is built.** Dart owns all state: `VoiceController` decides at the start of a turn (docked or page), sends a snapshot to
+  `VoiceBubble.kt` on every change (microphone levels throttled to about ten a second, the texts already translated) and receives
+  `bubble_action` events (`done`, `end`, `again`, `close`, `expand`). The buttons are created once and only shown or hidden: they used to be
+  rebuilt with every snapshot, which swallowed presses.
+- **The timers card.** Timers do not float over the screen: put the card **HA Sidecar timers** on the dashboard (it is served by the
+  integration next to the beacon card, pick the tablet in the editor). It lists the tablet's timers and stopwatches live (ring,
+  remaining or elapsed time, label), with pause / resume, +1 min and cancel (dismiss for one that rang). It reads `sensor.<prefix>_timers`
+  and calls the timer services, so voice timers, tablet timers and `ha_sidecar.start_timer` timers all show up. `hide_when_empty`
+  (default on) shows nothing while there is no timer. The numbers tick in the browser from the end time the tablet reported (so the
+  tablet's and the viewer's clocks should agree to a second or so); the tiles are updated in place, not rebuilt every second.
 
 ## Wake word (slice 3.3)
 
@@ -169,9 +194,8 @@ Screenshots from the lab run (tablet 2560x1800; the speech is synthetic, see [TE
 
 ## Not built yet
 
-- The **docked bubble** over the dashboard (the page is full screen for now).
 - More phrases (own models can be trained with openWakeWord; a custom model slot is not built), several active wake words at once.
 - Wake word detection on the tablet while HA is unreachable still starts a turn that fails with *Not connected*; there is no local fallback.
-- Result cards, skins, the docked bubble, a microphone/speaker test, a volume setting.
+- Result cards (weather, images), skins, a microphone/speaker test, a volume setting.
 - Binary audio frames (base64 in JSON is used), a microphone/speaker test in the app, a volume setting, echo cancellation while
   the answer plays (the engine is paused instead).

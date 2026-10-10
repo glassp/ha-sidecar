@@ -28,9 +28,13 @@ class VoiceController extends ChangeNotifier {
     this.conversationEnabled = _yes,
     this.followUpTimeout = _eight,
     this.soundsEnabled = _yes,
+    this.dockedEnabled = _no,
+    this.bubbleText = _identity,
   });
 
   static bool _yes() => true;
+  static bool _no() => false;
+  static String _identity(String key) => key;
   static Duration _eight() => const Duration(seconds: 8);
 
   final KioskPlatform platform;
@@ -41,6 +45,12 @@ class VoiceController extends ChangeNotifier {
   /// The address Home Assistant is reached at right now (answers are fetched from there), or null.
   final String? Function() baseUrl;
   final Duration dismissAfter;
+
+  /// Whether the voice screen may be shown as a small card over whatever is in front (it still needs the permission).
+  final bool Function() dockedEnabled;
+
+  /// Localized text for the docked card (a key of the `voice.*` translations).
+  final String Function(String key) bubbleText;
 
   /// Safety net: a run that has not said anything for this long (Home Assistant stalled) is given up.
   final Duration silenceTimeout;
@@ -91,6 +101,15 @@ class VoiceController extends ChangeNotifier {
   double level = 0;
   bool get active => state != VoiceState.idle;
 
+  /// The voice screen is open (as the full page or as the docked card).
+  bool shown = false;
+
+  /// The voice screen is the docked card; the user can expand it to the full page ([expanded] then stays until it closes).
+  bool docked = false;
+  bool expanded = false;
+  String _lastBubbleSignature = '';
+  final Stopwatch _sinceBubble = Stopwatch()..start();
+
   Timer? _dismiss;
   Timer? _watchdog;
   bool _recording = false;
@@ -132,7 +151,7 @@ class VoiceController extends ChangeNotifier {
     }
     state = VoiceState.listening;
     notifyListeners();
-    unawaited(platform.showUi('/voice'));
+    await _open();
     // the ping comes first and the microphone opens after it, so the ping is not recorded
     if (soundsEnabled()) await platform.voicePing('start');
     if (session != id) return 'cancelled'; // ended while the ping played
@@ -221,7 +240,7 @@ class VoiceController extends ChangeNotifier {
     errorCode = errorMessage = null;
     state = VoiceState.speaking;
     notifyListeners();
-    unawaited(platform.showUi('/voice'));
+    await _open();
     try {
       for (final u in [?preannounceUrl, url]) {
         final abs = _absolute(u);
@@ -429,12 +448,15 @@ class VoiceController extends ChangeNotifier {
 
   void _armWatchdog() {
     _watchdog?.cancel();
-    _watchdog = Timer(state == VoiceState.thinking ? thinkTimeout : silenceTimeout, () {
-      if (active && state != VoiceState.speaking) {
-        send({'type': 'voice', 'action': 'cancel', 'session': session});
-        _fail('timeout');
-      }
-    });
+    _watchdog = Timer(
+      state == VoiceState.thinking ? thinkTimeout : silenceTimeout,
+      () {
+        if (active && state != VoiceState.speaking) {
+          send({'type': 'voice', 'action': 'cancel', 'session': session});
+          _fail('timeout');
+        }
+      },
+    );
   }
 
   void _scheduleClose([Duration? after]) {
@@ -444,8 +466,100 @@ class VoiceController extends ChangeNotifier {
     });
   }
 
+  /// Opens the voice screen: the docked card when it is on and possible, otherwise the full page.
+  Future<void> _open() async {
+    shown = true;
+    if (docked)
+      return; // the card is already up from an earlier turn of this conversation
+    if (!expanded && dockedEnabled() && await platform.bubbleAvailable()) {
+      docked = true;
+      _pushBubble(force: true);
+    } else {
+      unawaited(platform.showUi('/voice'));
+    }
+  }
+
+  /// The user tapped the card: continue on the full page.
+  Future<void> expand() async {
+    if (!docked) return;
+    docked = false;
+    expanded = true;
+    unawaited(platform.bubbleHide());
+    unawaited(platform.showUi('/voice'));
+    notifyListeners();
+  }
+
+  /// A button on the docked card (`bubble_action` event from the platform).
+  Future<void> onBubbleAction(String action) async {
+    switch (action) {
+      case 'done':
+        await stopListening();
+      case 'end' || 'close':
+        await endConversation();
+      case 'again':
+        await listen();
+      case 'expand':
+        await expand();
+    }
+  }
+
+  @override
+  void notifyListeners() {
+    super.notifyListeners();
+    if (docked) _pushBubble();
+  }
+
+  String _bubbleError() {
+    final key = 'err_${(errorCode ?? 'unknown').replaceAll('-', '_')}';
+    final t = bubbleText(key);
+    return t == key || t.endsWith(key) ? bubbleText('err_unknown') : t;
+  }
+
+  void _pushBubble({bool force = false}) {
+    final deadline = waitingForSpeech
+        ? speechDeadline?.millisecondsSinceEpoch ?? 0
+        : 0;
+    final fixed = {
+      'state': state.name,
+      'follow_up': followUp,
+      'user': transcript,
+      'assistant': answer,
+      'error': state == VoiceState.error ? _bubbleError() : '',
+      'in_conversation': inConversation,
+      'wait_deadline_ms': deadline,
+      'wait_total_ms': speechWindow.inMilliseconds,
+      'labels': {
+        'listening': bubbleText('listening'),
+        'follow_up': bubbleText('listening_followup'),
+        'thinking': bubbleText('thinking'),
+        'speaking': bubbleText('speaking'),
+        'idle': bubbleText('done'),
+        'error': bubbleText('error_chip'),
+        'done': bubbleText('done_talking'),
+        'end': bubbleText('end_conversation'),
+        'again': bubbleText('talk_again'),
+      },
+    };
+    final signature = fixed.toString();
+    // microphone levels arrive about ten times a second: send them, but not faster than the card can use
+    if (!force &&
+        signature == _lastBubbleSignature &&
+        _sinceBubble.elapsedMilliseconds < 90)
+      return;
+    _lastBubbleSignature = signature;
+    _sinceBubble.reset();
+    unawaited(platform.bubbleUpdate({...fixed, 'level': level}));
+  }
+
   void _closeUi() {
-    unawaited(platform.closeUi('/voice'));
+    if (docked) {
+      unawaited(platform.bubbleHide());
+    } else {
+      unawaited(platform.closeUi('/voice'));
+    }
+    docked = false;
+    expanded = false;
+    shown = false;
     if (state == VoiceState.error) {
       state = VoiceState.idle;
       notifyListeners();

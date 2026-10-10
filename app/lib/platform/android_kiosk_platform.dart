@@ -104,6 +104,17 @@ class AndroidKioskPlatform implements KioskPlatform {
   Future<void> closeUi(String route) => _call('closeUi', {'route': route});
 
   @override
+  Future<bool> bubbleAvailable() async =>
+      (await _call<bool>('bubbleAvailable')) ?? false;
+
+  @override
+  Future<void> bubbleUpdate(Map<String, Object?> snapshot) =>
+      _call('bubbleUpdate', snapshot);
+
+  @override
+  Future<void> bubbleHide() => _call('bubbleHide');
+
+  @override
   Future<void> reportTouch() => _call('reportTouch');
 
   @override

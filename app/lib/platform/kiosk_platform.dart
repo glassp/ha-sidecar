@@ -277,6 +277,13 @@ abstract class KioskPlatform {
   /// Closes the Android activity hosting [route] (`/pin`, `/alarm`, `/glance`) if it is the one in front.
   Future<void> closeUi(String route);
 
+  /// Whether the voice card can be drawn over other apps right now (permission or accessibility service, screen on).
+  Future<bool> bubbleAvailable();
+
+  /// Shows or updates the docked voice card with a snapshot of the voice state; [bubbleHide] removes it.
+  Future<void> bubbleUpdate(Map<String, Object?> snapshot);
+  Future<void> bubbleHide();
+
   /// Counts as a touch for dimming / idle timers (the idle screen reports taps this way).
   Future<void> reportTouch();
 

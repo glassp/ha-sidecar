@@ -112,6 +112,7 @@ class ActiveTimersSensor(SidecarEntity, SensorEntity):
                     "elapsed": t["elapsed_ms"] // 1000,
                     "ends_at": _iso(t.get("ends_at")),
                     "started_at": _iso(t.get("started_at")),
+                    "finished_at": _iso(t.get("finished_at")),
                 }
                 for t in self._state.get("timers") or []
             ]

@@ -549,6 +549,13 @@ List<SettingEntry> buildRegistry(AppController c) {
       Icons.notifications_active_outlined,
       'voice_sounds',
     ),
+    switchEntry(
+      'voice_docked',
+      Section.system,
+      _g('voice'),
+      Icons.dock_outlined,
+      'voice_docked',
+    ),
     base('wake_word_status', Section.system, _g('voice'), (ctx) {
       final st = c.status;
       final chosenMissing = [

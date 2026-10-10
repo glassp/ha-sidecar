@@ -383,6 +383,11 @@
       "title": "Pings",
       "desc": "A short ping when the assistant starts listening and another when the conversation is over.",
       "kw": "sound, ping, beep, chime, voice, listening"
+    },
+    "voice_docked": {
+      "title": "Docked voice card",
+      "desc": "Show what you say and the answer as a small card at the bottom of the screen, over the dashboard, instead of a full-screen page. Tap the card to open the full page.",
+      "kw": "bubble, card, overlay, voice, docked, full screen"
     }
   },
   "pin": {

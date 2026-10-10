@@ -102,6 +102,16 @@ object PlatformChannel {
             }
 
             "closeUi" -> result.success(UiHost.close(call.argument<String>("route").orEmpty()))
+            "bubbleAvailable" -> result.success(VoiceBubble.available(ctx))
+            "bubbleUpdate" -> {
+                @Suppress("UNCHECKED_CAST")
+                VoiceBubble.update(ctx, (call.arguments as? Map<String, Any?>).orEmpty())
+                result.success(null)
+            }
+            "bubbleHide" -> {
+                VoiceBubble.hide()
+                result.success(null)
+            }
             "reportTouch" -> {
                 InteractionTracker.touch()
                 result.success(null)

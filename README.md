@@ -56,6 +56,21 @@ owner: hide + unhide; otherwise via the dialog's "Close app"), at most three tim
 (`companion_unresponsive` / `companion_restarted` / `companion_restart_gave_up` events, a *Companion app responsive* sensor,
 a restart counter and a *Restart companion app* button). See the 2.5 section of [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## Dashboard timers card
+
+Timers do not float over the screen. Add the card **HA Sidecar timers** to a dashboard to see and control the tablet's timers there:
+
+```yaml
+type: custom:ha-sidecar-timers-card
+tablet: wallpanel        # the entity prefix of the tablet
+hide_when_empty: true    # optional: show nothing while there is no timer (default)
+title: Timers            # optional
+```
+
+It shows every timer and stopwatch live (ring, time, label) with pause / resume, +1 min and cancel, including timers set by voice.
+Voice itself appears as a small card at the bottom of the screen over whatever is in front (setting *Docked voice card*); tapping it
+opens the full page. See [docs/VOICE.md](docs/VOICE.md).
+
 ## Dashboard beacon card (frozen page detection)
 
 The watchdog above sees a frozen *app*; a frozen or dead *page* inside a healthy app needs the page's help. Add the card

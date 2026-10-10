@@ -254,8 +254,26 @@ Dart unit tests (`test/voice_controller_test.dart`) cover the controller (a full
 connection errors, stale events, barge-in, errors, timeout, disconnect, cancel while speaking, announce order and failure).
 
 Not verified: real speech and a real microphone (the emulator's microphone delivers silence or host audio, the lab STT ignores the
-content), the permission dialog for a non-device-owner install, a physical tablet's speaker and echo, the docked bubble (not built),
+content), the permission dialog for a non-device-owner install, a physical tablet's speaker and echo,
 wake word (not built).
+
+### The docked card and the timers card (slice 3.5, emulator, lab Home Assistant)
+
+Chrome on the emulator (passwordless trusted-network login to the lab) stood in for the companion app's dashboard; the card is the
+sidecar app's own overlay window, so it does not matter what is behind it.
+
+- **Docked card:** `ha_sidecar.listen` while the dashboard was in front drew the card at the bottom (listening, waveform, *Done talking*, *End conversation*);
+  "Done talking" took the turn on, the card showed what was said and the answer ("12:29 PM") with *End conversation*; the
+  dashboard stayed where it was. Tapping the card brought the full page forward with the same conversation (already speaking).
+  Five turns in a row, each with a tap on *Done talking*: five times the satellite went on to answering. (This found a bug: the buttons were rebuilt
+  with every snapshot and presses were lost; also the card was a little transparent. Both fixed.)
+- **Timers card** in the real Home Assistant frontend (a test dashboard): running, paused, finished (red) and a stopwatch tile, each ticking; clicking pause on
+  one, +1 min on another and dismiss on the finished one reached the tablet (states and remaining time checked on the entity).
+- **Tests:** 9 more controller tests (docked or page, fallback without permission, expand, buttons, error, throttling) and 9 JS tests for the card
+  (`node --test tests/js`: registration, tiles and buttons, hiding, unknown tablet, the time maths, no rebuild on a tick, the service calls).
+
+Not verified: the card on a real tablet with the HA companion app in front, the overlay with only an accessibility service (no "draw over other apps"),
+a microphone started from a docked card on Android 14+ when the app is not a device owner, the timers card in the companion app's WebView.
 
 ### Wake word (slice 3.3, emulator)
 

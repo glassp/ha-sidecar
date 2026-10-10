@@ -40,10 +40,26 @@ class FakePlatform extends Fake implements KioskPlatform {
 
   @override
   Future<void> closeUi(String route) async => calls.add('close:$route');
+
+  bool bubbleOk = true;
+  final bubbles = <Map<String, Object?>>[];
+
+  @override
+  Future<bool> bubbleAvailable() async => bubbleOk;
+
+  @override
+  Future<void> bubbleUpdate(Map<String, Object?> snapshot) async {
+    bubbles.add(snapshot);
+    calls.add('bubble');
+  }
+
+  @override
+  Future<void> bubbleHide() async => calls.add('bubbleHide');
 }
 
 void main() {
   voiceTurnTests();
+  dockedTests();
   late FakePlatform platform;
   late List<Map<String, dynamic>> sent;
   late bool connected;
@@ -208,13 +224,20 @@ void main() {
     expect(actions().last, 'cancel');
   });
 
-  test('a slow agent (a local LLM) is waited for: the thinking stage has its own, longer limit', () async {
-    await v.listen();
-    v.onVoiceEvent(hae('stt-end', {'text': 'what is the average temperature'}));
-    await Future<void>.delayed(const Duration(milliseconds: 500)); // longer than silenceTimeout (300 ms)
-    expect(v.state, VoiceState.thinking);
-    expect(v.errorCode, isNull);
-  });
+  test(
+    'a slow agent (a local LLM) is waited for: the thinking stage has its own, longer limit',
+    () async {
+      await v.listen();
+      v.onVoiceEvent(
+        hae('stt-end', {'text': 'what is the average temperature'}),
+      );
+      await Future<void>.delayed(
+        const Duration(milliseconds: 500),
+      ); // longer than silenceTimeout (300 ms)
+      expect(v.state, VoiceState.thinking);
+      expect(v.errorCode, isNull);
+    },
+  );
 
   test('losing the connection cancels the turn', () async {
     await v.listen();
@@ -524,5 +547,170 @@ void voiceTurnTests() {
     }
     expect(v.levels.length, VoiceController.levelHistory);
     expect(v.levels.last, (VoiceController.levelHistory + 9) / 100);
+  });
+}
+
+void dockedTests() {
+  late FakePlatform platform;
+  late List<Map<String, dynamic>> sent;
+  late VoiceController v;
+  late bool docked;
+
+  setUp(() {
+    platform = FakePlatform();
+    sent = [];
+    docked = true;
+    v = VoiceController(
+      platform: platform,
+      send: (m) {
+        sent.add(m);
+        return true;
+      },
+      baseUrl: () => 'http://ha.local:8123',
+      dismissAfter: const Duration(milliseconds: 50),
+      silenceTimeout: const Duration(seconds: 5),
+      conversationEnabled: () => false,
+      soundsEnabled: () => false,
+      dockedEnabled: () => docked,
+      bubbleText: (k) => 'T:$k',
+    );
+  });
+  tearDown(() => v.dispose());
+
+  Map<String, dynamic> ev(
+    String event, [
+    Map<String, dynamic> data = const {},
+  ]) => {
+    'type': 'voice_event',
+    'session': v.session,
+    'event': event,
+    'data': data,
+  };
+
+  group('docked card', () {
+    test(
+      'a turn shows the card instead of the full page and feeds it the state',
+      () async {
+        await v.listen();
+        expect(platform.calls, isNot(contains('show:/voice')));
+        expect(v.docked, isTrue);
+        expect(platform.bubbles.last['state'], 'listening');
+        expect(
+          (platform.bubbles.last['labels'] as Map)['listening'],
+          'T:listening',
+        );
+        v.onVoiceEvent(ev('stt-end', {'text': 'is the door locked'}));
+        v.onVoiceEvent(ev('intent-end', {'text': 'Yes, it is locked.'}));
+        expect(platform.bubbles.last['user'], 'is the door locked');
+        expect(platform.bubbles.last['assistant'], 'Yes, it is locked.');
+      },
+    );
+
+    test('it carries no timers', () async {
+      await v.listen();
+      expect(
+        platform.bubbles.last.keys.any((k) => k.contains('timer')),
+        isFalse,
+      );
+    });
+
+    test('closing removes the card, not the page', () async {
+      await v.listen();
+      v.onVoiceEvent(ev('stt-end', {'text': 'hi'}));
+      v.onVoiceEvent(ev('tts-end', {'url': '/a.mp3'}));
+      await v.endConversation();
+      expect(platform.calls, contains('bubbleHide'));
+      expect(platform.calls, isNot(contains('close:/voice')));
+      expect(v.docked, isFalse);
+      expect(v.shown, isFalse);
+    });
+
+    test('without permission (or a dark screen) the full page opens', () async {
+      platform.bubbleOk = false;
+      await v.listen();
+      expect(platform.calls, contains('show:/voice'));
+      expect(v.docked, isFalse);
+      expect(platform.bubbles, isEmpty);
+    });
+
+    test('switched off, the full page opens', () async {
+      docked = false;
+      await v.listen();
+      expect(platform.calls, contains('show:/voice'));
+      expect(platform.bubbles, isEmpty);
+    });
+
+    test(
+      'tapping the card opens the full page and the card stays away for this conversation',
+      () async {
+        await v.listen();
+        final before = platform.bubbles.length;
+        await v.onBubbleAction('expand');
+        expect(
+          platform.calls,
+          containsAllInOrder(['bubbleHide', 'show:/voice']),
+        );
+        expect(v.docked, isFalse);
+        v.onVoiceEvent(ev('stt-end', {'text': 'hello'}));
+        expect(
+          platform.bubbles.length,
+          before,
+          reason: 'no more updates to a card that is gone',
+        );
+        await v.endConversation();
+        expect(platform.calls, contains('close:/voice'));
+        // the next conversation is docked again
+        await v.listen();
+        expect(v.docked, isTrue);
+      },
+    );
+
+    test(
+      'its buttons act: done talking stops, end conversation ends',
+      () async {
+        await v.listen();
+        await v.onBubbleAction('done');
+        expect(sent.where((m) => m['action'] == 'stop'), isNotEmpty);
+        await v.onBubbleAction('end');
+        expect(v.state, VoiceState.idle);
+        expect(platform.calls, contains('bubbleHide'));
+      },
+    );
+
+    test(
+      'an error shows a message on the card and Talk again starts a new turn',
+      () async {
+        await v.listen();
+        v.onVoiceEvent(
+          ev('error', {'code': 'stt-no-text-recognized', 'message': 'x'}),
+        );
+        expect(platform.bubbles.last['state'], 'error');
+        expect(
+          platform.bubbles.last['error'],
+          'T:err_unknown',
+        ); // the fake translates nothing: falls back
+        final sessions = sent.where((m) => m['action'] == 'start').length;
+        await v.onBubbleAction('again');
+        expect(sent.where((m) => m['action'] == 'start').length, sessions + 1);
+      },
+    );
+
+    test(
+      'microphone levels are throttled but the first one of a burst gets through',
+      () async {
+        await v.listen();
+        final n = platform.bubbles.length;
+        for (var i = 0; i < 20; i++) {
+          v.onPlatformEvent(
+            PlatformEvent('voice_frame', {
+              'session': v.session,
+              'data': 'AAAA',
+              'level': i / 20,
+            }),
+          );
+        }
+        expect(platform.bubbles.length - n, lessThan(20));
+      },
+    );
   });
 }

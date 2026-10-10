@@ -44,6 +44,7 @@ object DisplayConfig {
         "conversation" to true,
         "conversation_timeout_s" to 8,
         "voice_sounds" to true, // the ping when listening starts and when the conversation ends
+        "voice_docked" to true, // voice shows as a small card over whatever is on screen instead of a full-screen page
         // on-device wake word (off by default: it keeps the microphone open; the models are downloaded when it is switched on)
         "wake_word" to false,
         "wake_word_ids" to WakeWordModels.DEFAULT_ID, // comma separated catalogue ids

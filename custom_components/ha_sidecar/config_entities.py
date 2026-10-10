@@ -85,6 +85,7 @@ SWITCHES = [
     ("wake_word", "Wake word", "mdi:microphone-message"),
     ("conversation", "Keep listening after an answer", "mdi:forum-outline"),
     ("voice_sounds", "Voice pings", "mdi:bell-ring-outline"),
+    ("voice_docked", "Voice as a docked card", "mdi:dock-bottom"),
 ]
 
 # key, name, options, icon

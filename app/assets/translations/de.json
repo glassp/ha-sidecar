@@ -383,6 +383,11 @@
       "title": "Signaltöne",
       "desc": "Ein kurzer Ton, wenn der Assistent zu hören beginnt, und ein anderer, wenn das Gespräch vorbei ist.",
       "kw": "ton, signal, piep, klang, sprache, zuhören"
+    },
+    "voice_docked": {
+      "title": "Angedockte Sprachkarte",
+      "desc": "Zeigt, was du sagst, und die Antwort als kleine Karte am unteren Bildrand über dem Dashboard statt als Vollbildseite. Ein Tipp auf die Karte öffnet die volle Seite.",
+      "kw": "blase, karte, overlay, sprache, angedockt, vollbild"
     }
   },
   "pin": {

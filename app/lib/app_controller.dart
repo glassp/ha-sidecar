@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -29,6 +30,8 @@ class AppController extends ChangeNotifier {
       seconds: (status.cfg['conversation_timeout_s'] as num?)?.toInt() ?? 8,
     ),
     soundsEnabled: () => status.cfg['voice_sounds'] != false,
+    dockedEnabled: () => status.cfg['voice_docked'] != false,
+    bubbleText: (key) => 'voice.$key'.tr(),
   );
 
   ConnectionSettings settings = const ConnectionSettings();
@@ -254,6 +257,10 @@ class AppController extends ChangeNotifier {
     }
     if (e.type == 'wake_word') {
       unawaited(voice.listen(wakeWord: e.data['phrase'] as String?));
+      return;
+    }
+    if (e.type == 'bubble_action') {
+      await voice.onBubbleAction('${e.data['action']}');
       return;
     }
     if (e.type.startsWith('voice_')) {
