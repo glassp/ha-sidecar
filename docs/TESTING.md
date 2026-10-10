@@ -284,6 +284,31 @@ Not verified: a real microphone, a real speaker and distances/noise (all audio h
 false activations over days (the first number to watch on a real tablet), CPU and battery of the always-open microphone, the
 foreground-service start after a reboot, 16 KB page-size devices (the LiteRT 1.4 libraries are used as published).
 
+### Conversations, voice timers and the voice screen (slice 3.4, emulator, lab Home Assistant)
+
+Scenes were run on the real app with the lab STT "hearing" a phrase from a file (`LAB_VOICE_PHRASE_FILE`) and `say` speech played into
+the microphone loop, so the waveform moves; frames were captured every ~1.2 s (`e2e/scene.py`, `e2e/conv.py` in the lab, not shipped).
+
+- **A whole conversation without a button.** `ha_sidecar.listen`: start ping, "what time is it" (spoken), HA's voice detection ended the
+  turn, the answer was shown and spoken, the tablet listened again by itself ("Listening for a follow-up", the first exchange dimmed above,
+  a new dots bubble, an *End conversation* button), "set a timer for 2 minutes called tea" (spoken) got its answer and a timer pill, the
+  tablet listened a third time, nothing was said, the draining bar ran out after the 8 s window and the screen closed. Pings in the log: start,
+  start, start, end.
+- **Timers by voice.** "Set a timer for 3 minutes called pasta" (HA's built-in timer intent) put a native timer on the tablet (label `pasta`, 180 s,
+  running) and a pill on the screen; "pause the pasta timer" paused it (pill dimmed with a pause icon, 1:48 stays); "set a timer for 25 seconds"
+  added a second pill; when it ended the tablet rang by itself ("Time's up", +0:03 over, *+1 min* / *Dismiss*).
+- **Other scenes:** a long answer wraps in its bubble; "turn on the kitchen light" switched `input_boolean.kitchen_light`; an empty
+  STT result gives a red bubble with *Talk again* and *Close*; `assist_satellite.announce` shows the message and the speaking waveform;
+  `assist_satellite.ask_question` played the question, listened, returned `{id: yes, sentence: "yes please"}` to the automation, and kept the question
+  on screen above the waiting answer bubble.
+- **Tests:** 22 Dart tests for the controller (the loop, the pings before the microphone opens, the follow-up window, speech detection by
+  HA's events and by loud frames, ending, follow-ups off, pings off, turns kept and trimmed) and 7 widget tests for the screen (bubbles, pills, paused and
+  finished timers, error, the follow-up listening).
+
+Not verified: real speech (the lab STT ignores the audio), the HA voice detection on noisy rooms (the silence length is HA's *VAD sensitivity*), how the
+pings sound on a real speaker (they were only seen in the log), `start_conversation` with an LLM agent, voice timers when the tablet is offline when
+they finish (code only), and timers created on the tablet being unknown to the voice intents (by design).
+
 ## Not verified
 
 - Update **detection** (`onSystemUpdatePending`) and the download/install/restart taps: need a real pending OTA.

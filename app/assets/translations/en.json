@@ -368,6 +368,21 @@
       "title": "Wake word status",
       "desc": "The microphone permission is needed.",
       "kw": "wake word, status, download, models"
+    },
+    "conversation": {
+      "title": "Keep listening after an answer",
+      "desc": "After the assistant has answered, listen again for a follow-up (a real conversation). It ends when nothing is said for a while or you end it.",
+      "kw": "conversation, follow-up, continued, keep listening, assistant, voice"
+    },
+    "conversation_timeout": {
+      "title": "Wait for a follow-up",
+      "desc": "How long to wait for you to say something before the conversation ends.",
+      "kw": "timeout, silence, follow-up, wait, conversation"
+    },
+    "voice_sounds": {
+      "title": "Pings",
+      "desc": "A short ping when the assistant starts listening and another when the conversation is over.",
+      "kw": "sound, ping, beep, chime, voice, listening"
     }
   },
   "pin": {
@@ -822,7 +837,15 @@
     "err_stt_no_text_recognized": "I did not understand that",
     "err_pipeline_failed": "The assistant failed",
     "err_playback_error": "The answer could not be played",
-    "err_playback_timeout": "The answer could not be loaded"
+    "err_playback_timeout": "The answer could not be loaded",
+    "error_chip": "Problem",
+    "talk_again": "Talk again",
+    "err_stt_stream_failed": "I could not hear that",
+    "err_intent_failed": "I could not work that out",
+    "err_tts_failed": "I could not speak the answer",
+    "err_pipeline_not_found": "No voice assistant is set up in Home Assistant",
+    "listening_followup": "Listening for a follow-up…",
+    "end_conversation": "End conversation"
   },
   "wd": {
     "action_restart": "Restart it",

@@ -229,6 +229,49 @@ object Voice {
         if (WakeWord.wanted) WakeWord.micFailed(code)
     }
 
+    // --- ping sounds ---------------------------------------------------------------------------------
+
+    /**
+     * A short synthesized ping, so the user hears when the assistant starts listening (`start`, rising) and when the conversation
+     * is over (`end`, falling). [done] is called when it has been played, so recording can start right after it and not hear it.
+     */
+    fun ping(kind: String, done: () -> Unit) {
+        val notes = if (kind == "end") listOf(700.0 to 90, 440.0 to 140) else listOf(660.0 to 70, 990.0 to 100)
+        val rate = 22_050
+        val pcm = ArrayList<Short>()
+        for ((hz, ms) in notes) {
+            val n = rate * ms / 1000
+            for (i in 0 until n) {
+                // a short fade at both ends so the blip does not click
+                val env = minOf(1.0, i / (rate * 0.008), (n - i) / (rate * 0.012))
+                pcm.add((Math.sin(2 * Math.PI * hz * i / rate) * env * 9000).toInt().toShort())
+            }
+        }
+        val data = pcm.toShortArray()
+        val ms = notes.sumOf { it.second }
+        try {
+            val track = android.media.AudioTrack.Builder()
+                .setAudioAttributes(
+                    AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANT).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build(),
+                )
+                .setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(rate).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                .setBufferSizeInBytes(data.size * 2)
+                .setTransferMode(android.media.AudioTrack.MODE_STATIC)
+                .build()
+            track.write(data, 0, data.size)
+            track.play()
+            android.util.Log.i("VoicePing", kind)
+            main.postDelayed({
+                runCatching { track.stop() }
+                track.release()
+                done()
+            }, ms + 40L)
+        } catch (e: Exception) {
+            android.util.Log.w("VoicePing", "ping failed: $e")
+            main.post(done)
+        }
+    }
+
     // --- playback ------------------------------------------------------------------------------------
 
     private var player: MediaPlayer? = null

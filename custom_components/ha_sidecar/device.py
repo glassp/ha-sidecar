@@ -119,9 +119,25 @@ class SidecarDevice:
     def handle_event(self, event: str, data: dict[str, Any]) -> None:
         if event == "companion_restarted":
             self.beacon.disarm()
+        elif event == "timer_cancelled" and data.get("id"):
+            self._forget_voice_timer(str(data["id"]))
         self.hass.bus.async_fire(
             EVENT_SIDECAR, {"device_id": self.device_id, "name": self.name, "event": event, **data}
         )
+
+    @callback
+    def _forget_voice_timer(self, timer_id: str) -> None:
+        """A timer that was set by voice and is cancelled or dismissed on the tablet must not live on in Home Assistant."""
+        from homeassistant.components.intent.const import TIMER_DATA
+        from homeassistant.components.intent.timers import TimerNotFoundError
+
+        manager = self.hass.data.get(TIMER_DATA)
+        if manager is None or timer_id not in manager.timers:
+            return
+        try:
+            manager.cancel_timer(timer_id)
+        except TimerNotFoundError:
+            pass
 
     @callback
     def handle_voice(self, msg: dict[str, Any]) -> None:

@@ -1,4 +1,6 @@
-"""STT that "recognises" a fixed phrase whenever it receives audio (LAB_VOICE_PHRASE, default "what time is it")."""
+"""STT that "recognises" a fixed phrase whenever it receives audio. The phrase is read at every call from the file named by
+LAB_VOICE_PHRASE_FILE (default /tmp/lab_voice_phrase.txt), so a test can change what the "user" says without restarting;
+an empty file means "nothing was understood". Without the file LAB_VOICE_PHRASE or "what time is it" is used."""
 
 import os
 
@@ -35,4 +37,11 @@ class LabSTT(SpeechToTextEntity):
             total += len(chunk)
         if total == 0:
             return SpeechResult("", SpeechResultState.ERROR)
-        return SpeechResult(os.environ.get("LAB_VOICE_PHRASE", "what time is it"), SpeechResultState.SUCCESS)
+        path = os.environ.get("LAB_VOICE_PHRASE_FILE", "/tmp/lab_voice_phrase.txt")
+        if os.path.exists(path):
+            phrase = open(path).read().strip()
+            if not phrase:
+                return SpeechResult("", SpeechResultState.ERROR)
+        else:
+            phrase = os.environ.get("LAB_VOICE_PHRASE", "what time is it")
+        return SpeechResult(phrase, SpeechResultState.SUCCESS)

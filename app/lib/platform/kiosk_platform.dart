@@ -322,6 +322,9 @@ abstract class KioskPlatform {
   /// Plays [url] and completes when it ended: null if it played to the end, else an error code.
   Future<String?> voicePlay(String url);
   Future<void> voiceStopPlayback();
+
+  /// A short ping: `start` (listening begins) or `end` (the conversation is over). Completes when it has been played.
+  Future<void> voicePing(String kind);
   Future<void> requestMicPermission();
 
   /// Queues the download of the model for the wake word [id] (progress shows in the status).

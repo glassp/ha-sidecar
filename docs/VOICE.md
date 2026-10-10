@@ -11,7 +11,7 @@ TTS), the tablet shows and speaks the answer. Everything runs over the existing 
 | 3.1 | Integration: `assist_satellite` entity, voice messages, announcements. Tested against a real Home Assistant with a fake tablet | done, see [TESTING.md](TESTING.md) |
 | 3.2 | App: microphone capture, TTS playback, push-to-talk, answer page | done as v1 (full-screen page; the docked bubble over the dashboard is still to do) |
 | 3.3 | Wake word on the device (openWakeWord models on LiteRT) | done, see below |
-| 3.4 | Timers by voice, `start_conversation`, ask question, skins | not started |
+| 3.4 | Real conversations (listen again after an answer), timers by voice, `start_conversation` and `ask_question`, the redesigned screen | done, see below (skins and the docked bubble are not) |
 
 ## Design decisions
 
@@ -79,6 +79,40 @@ selects, the satellite entity reads them like it does for ESPHome or VoIP device
 - **Safety:** a turn with no event from Home Assistant for 20 s is cancelled (`timeout`); losing the connection cancels it; a new
   turn interrupts the old one.
 
+## Conversations (slice 3.4)
+
+- **The loop.** A turn starts by wake word, the talk button or `ha_sidecar.listen`. Home Assistant's voice detection ends it when you stop
+  talking, the answer is spoken, and then the tablet listens again by itself for a follow-up. The conversation ends when nothing is
+  said within the follow-up window (8 s by default, 3 to 30 s), when you press *End conversation* (or the X, or double-tap), when
+  Home Assistant or the microphone fails, or when the connection drops. The first listening after a wake word or tap waits 12 s for you
+  to start. A follow-up is only offered after a *spoken* answer (a question to Home Assistant such as `ask_question` ends after the
+  answer), and an answer that ends with a question (`continue_conversation`) always continues. Switch off with *Keep listening after an
+  answer*; every listening is a normal run, so an LLM agent keeps its context (the entity keeps the conversation id).
+- **Pings.** A rising ping (two quick notes) plays each time the tablet starts listening, a falling one when the conversation is over.
+  They are synthesized (no sound files), played with the *assistant* audio usage, and the microphone opens only after the start ping so
+  it is not recorded. Setting *Pings*, entity `switch.<prefix>_voice_pings`.
+- **Is anybody talking?** The no-speech clock stops when Home Assistant reports `stt-vad-start` (its own voice detection), or when three
+  microphone frames in a row are loud, for a pipeline that sends no such events. The screen shows the clock as a draining bar under
+  the waveform.
+- **Timers by voice.** "Set a timer for 3 minutes called pasta" is answered by Home Assistant's timer intents. The satellite registers as
+  a timer device, so HA's timer manager hands the timer to the tablet, which counts, shows and rings it by itself (also when Home
+  Assistant is away): started/updated become `start_timer` (an update restarts the timer with what is left and keeps its id, paused
+  ones are paused), cancelled becomes `cancel_timer`, and a timer that the tablet missed rings at its end. Pause, resume, add time,
+  cancel and "how long is left" by voice work the same way. A voice timer that is cancelled or dismissed on the tablet is cancelled in
+  Home Assistant too. Not mirrored: timers created on the tablet or by `ha_sidecar.start_timer` do not exist for the voice
+  intents ("how long is left on my timer" only knows voice timers).
+- **`start_conversation` and `ask_question`.** The entity now advertises *start conversation*: the tablet plays the (pre-announce
+  sound and the) question, then listens by itself (command `voice_conversation`); `assist_satellite.ask_question` returns the matched answer
+  (verified: `{id: yes, sentence: "yes please"}`). `start_conversation` itself needs an LLM conversation agent (HA refuses the built-in
+  one), so it was not run end to end.
+- **The screen** (`/voice`): a status chip (Listening, Listening for a follow-up, Thinking, Speaking, Problem), running timers as pills
+  (a ring that empties, the time, the label; paused ones dimmed with a pause icon, finished ones red with the time over), a live
+  waveform (the microphone level while listening, a ripple while thinking and speaking), and the conversation as chat bubbles: what you
+  said on the right (three pulsing dots until Home Assistant has understood it), the answer on the left (a red bubble with the failing
+  stage for errors), earlier turns of the same conversation dimmed above, the last three kept. Buttons: *Done talking*, *End
+  conversation*; after an error or the end *Talk again* and *Close*. Not built: cards (weather, images, media) from the conversation
+  log, and the draggable timer pills of the design notes.
+
 ## Wake word (slice 3.3)
 
 - **How it works:** the one microphone loop (`Voice.micLoop`) feeds 80 ms frames to the wake word engine while no turn is
@@ -122,6 +156,6 @@ selects, the satellite entity reads them like it does for ESPHome or VoIP device
 - The **docked bubble** over the dashboard (the page is full screen for now).
 - More phrases (own models can be trained with openWakeWord; a custom model slot is not built), several active wake words at once.
 - Wake word detection on the tablet while HA is unreachable still starts a turn that fails with *Not connected*; there is no local fallback.
-- `start_conversation` and `ask_question` (the entity advertises only *announce*), timers by voice (3.4).
+- Result cards, skins, the docked bubble, a microphone/speaker test, a volume setting.
 - Binary audio frames (base64 in JSON is used), a microphone/speaker test in the app, a volume setting, echo cancellation while
   the answer plays (the engine is paused instead).

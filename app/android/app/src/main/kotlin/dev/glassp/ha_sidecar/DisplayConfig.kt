@@ -40,6 +40,10 @@ object DisplayConfig {
         "watchdog_action" to "restart", // restart | notify
         "watchdog_probe_s" to 20,
         "watchdog_startup_s" to 90,
+        // voice conversation: after an answer the tablet listens again until nothing is said for this long
+        "conversation" to true,
+        "conversation_timeout_s" to 8,
+        "voice_sounds" to true, // the ping when listening starts and when the conversation ends
         // on-device wake word (off by default: it keeps the microphone open; the models are downloaded when it is switched on)
         "wake_word" to false,
         "wake_word_ids" to WakeWordModels.DEFAULT_ID, // comma separated catalogue ids
@@ -96,6 +100,7 @@ object DisplayConfig {
         key == "camera_sensitivity" -> v.coerceIn(0, 100)
         key == "camera_fps" -> v.coerceIn(1, 10)
         key == "wake_word_threshold" -> v.coerceIn(10, 99)
+        key == "conversation_timeout_s" -> v.coerceIn(3, 30)
         key == "watchdog_probe_s" -> v.coerceIn(5, 300)
         key == "watchdog_startup_s" -> v.coerceIn(20, 600)
         key.endsWith("_s") -> v.coerceIn(1, 24 * 3600)

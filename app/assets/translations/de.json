@@ -368,6 +368,21 @@
       "title": "Status des Aktivierungsworts",
       "desc": "Die Mikrofonberechtigung wird gebraucht.",
       "kw": "aktivierungswort, status, download, modelle"
+    },
+    "conversation": {
+      "title": "Nach einer Antwort weiter zuhören",
+      "desc": "Nach der Antwort des Assistenten erneut zuhören (ein richtiges Gespräch). Es endet, wenn eine Weile nichts gesagt wird oder du es beendest.",
+      "kw": "gespräch, rückfrage, weiter zuhören, assistent, sprache"
+    },
+    "conversation_timeout": {
+      "title": "Warten auf eine Rückfrage",
+      "desc": "Wie lange auf deine nächste Äußerung gewartet wird, bevor das Gespräch endet.",
+      "kw": "zeitlimit, stille, rückfrage, warten, gespräch"
+    },
+    "voice_sounds": {
+      "title": "Signaltöne",
+      "desc": "Ein kurzer Ton, wenn der Assistent zu hören beginnt, und ein anderer, wenn das Gespräch vorbei ist.",
+      "kw": "ton, signal, piep, klang, sprache, zuhören"
     }
   },
   "pin": {
@@ -822,7 +837,15 @@
     "err_stt_no_text_recognized": "Das habe ich nicht verstanden",
     "err_pipeline_failed": "Der Assistent ist fehlgeschlagen",
     "err_playback_error": "Die Antwort ließ sich nicht abspielen",
-    "err_playback_timeout": "Die Antwort ließ sich nicht laden"
+    "err_playback_timeout": "Die Antwort ließ sich nicht laden",
+    "error_chip": "Problem",
+    "talk_again": "Nochmal sprechen",
+    "err_stt_stream_failed": "Das habe ich nicht gehört",
+    "err_intent_failed": "Das konnte ich nicht verarbeiten",
+    "err_tts_failed": "Ich konnte die Antwort nicht sprechen",
+    "err_pipeline_not_found": "In Home Assistant ist kein Sprachassistent eingerichtet",
+    "listening_followup": "Hört auf eine Rückfrage …",
+    "end_conversation": "Gespräch beenden"
   },
   "wd": {
     "action_restart": "Neu starten",

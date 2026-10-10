@@ -40,6 +40,20 @@ class CommandRouter {
         } on StateError catch (e) {
           throw CommandException('playback_failed', e.message);
         }
+      case 'voice_conversation':
+        final v = voice;
+        if (v == null) {
+          throw CommandException('unsupported', 'voice is not available');
+        }
+        try {
+          await v.conversation(
+            url: d['url'] as String? ?? '',
+            message: d['message'] as String? ?? '',
+            preannounceUrl: d['preannounce_url'] as String?,
+          );
+        } on StateError catch (e) {
+          throw CommandException('playback_failed', e.message);
+        }
       case 'voice_listen':
         final err = await voice?.listen();
         if (err != null) {

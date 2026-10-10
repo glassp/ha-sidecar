@@ -523,6 +523,32 @@ List<SettingEntry> buildRegistry(AppController c) {
       divisions: 89,
       format: (v) => '${v.round()} %',
     ),
+    switchEntry(
+      'conversation',
+      Section.system,
+      _g('voice'),
+      Icons.forum_outlined,
+      'conversation',
+    ),
+    sliderEntry(
+      'conversation_timeout',
+      Section.system,
+      _g('voice'),
+      Icons.hourglass_bottom,
+      'conversation_timeout_s',
+      min: 3,
+      max: 30,
+      fallback: 8,
+      divisions: 27,
+      format: fmtSeconds,
+    ),
+    switchEntry(
+      'voice_sounds',
+      Section.system,
+      _g('voice'),
+      Icons.notifications_active_outlined,
+      'voice_sounds',
+    ),
     base('wake_word_status', Section.system, _g('voice'), (ctx) {
       final st = c.status;
       final chosenMissing = [

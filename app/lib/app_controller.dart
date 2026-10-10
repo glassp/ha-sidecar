@@ -24,6 +24,11 @@ class AppController extends ChangeNotifier {
     platform: platform,
     send: (m) => _client?.sendMessage(m) ?? false,
     baseUrl: () => route.url,
+    conversationEnabled: () => status.cfg['conversation'] != false,
+    followUpTimeout: () => Duration(
+      seconds: (status.cfg['conversation_timeout_s'] as num?)?.toInt() ?? 8,
+    ),
+    soundsEnabled: () => status.cfg['voice_sounds'] != false,
   );
 
   ConnectionSettings settings = const ConnectionSettings();

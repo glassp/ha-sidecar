@@ -198,6 +198,7 @@ object PlatformChannel {
                 result.success(null)
             }
             "voicePlay" -> Voice.play(ctx, call.argument<String>("url").orEmpty()) { err -> result.success(err) }
+            "voicePing" -> Voice.ping(call.argument<String>("kind").orEmpty()) { result.success(null) }
             "voiceStopPlayback" -> {
                 Voice.stopPlayback(ctx)
                 result.success(null)

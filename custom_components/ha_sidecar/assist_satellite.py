@@ -4,9 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from typing import Any
 
 from homeassistant.components.assist_pipeline import PipelineEvent, PipelineStage
+from homeassistant.components.intent.timers import (
+    TimerEventType,
+    TimerInfo,
+    async_register_timer_handler,
+)
 from homeassistant.components.assist_satellite import (
     AssistSatelliteAnnouncement,
     AssistSatelliteConfiguration,
@@ -17,6 +23,7 @@ from homeassistant.components.assist_satellite import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -44,12 +51,13 @@ class _Run:
 class SidecarSatellite(SidecarEntity, AssistSatelliteEntity):
     _attr_name = "Assist"
     _attr_icon = "mdi:microphone-message"
-    _attr_supported_features = AssistSatelliteEntityFeature.ANNOUNCE
+    _attr_supported_features = AssistSatelliteEntityFeature.ANNOUNCE | AssistSatelliteEntityFeature.START_CONVERSATION
 
     def __init__(self, device) -> None:
         super().__init__(device, "assist")
         self._incoming: _Run | None = None  # the newest requested run: it receives the tablet's audio
         self._active: _Run | None = None  # the run that is executing: its pipeline events are what we forward
+        self._unregister_timers: Callable[[], None] | None = None
 
     # --- settings that live in other entities --------------------------------------------------------
 
@@ -66,10 +74,16 @@ class SidecarSatellite(SidecarEntity, AssistSatelliteEntity):
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
         self._device.voice_handler = self._handle_voice
+        # "set a timer for 5 minutes" is answered by Home Assistant's timer intents; this is where it hands the timer over
+        if self.registry_entry and self.registry_entry.device_id:
+            self._unregister_timers = async_register_timer_handler(self.hass, self.registry_entry.device_id, self._on_timer)
 
     async def async_will_remove_from_hass(self) -> None:
         if self._device.voice_handler == self._handle_voice:
             self._device.voice_handler = None
+        if self._unregister_timers is not None:
+            self._unregister_timers()
+            self._unregister_timers = None
         self._end_session()
 
     @callback
@@ -168,6 +182,46 @@ class SidecarSatellite(SidecarEntity, AssistSatelliteEntity):
 
     def _send(self, session: str | None, event: str, data: dict[str, Any]) -> None:
         self._device.push({"type": "voice_event", "session": session, "event": event, "data": data})
+
+    # --- voice timers: Home Assistant's timer manager -> the tablet's own timers ---------------------
+
+    @callback
+    def _on_timer(self, event: TimerEventType, timer: TimerInfo) -> None:
+        self.hass.async_create_task(self._async_timer(event, timer))
+
+    async def _async_timer(self, event: TimerEventType, timer: TimerInfo) -> None:
+        """Mirror a voice timer on the tablet, which counts, shows and rings it by itself (also while Home Assistant is away)."""
+        try:
+            if event in (TimerEventType.STARTED, TimerEventType.UPDATED):
+                # an update (time added or removed, paused, resumed) is a restart with what is left: the tablet keeps the id
+                await self._device.send_command(
+                    "start_timer",
+                    {"id": timer.id, "label": timer.name or "", "kind": "countdown", "duration_s": max(1, timer.seconds_left)},
+                )
+                if not timer.is_active:
+                    await self._device.send_command("pause_timer", {"id": timer.id})
+            elif event == TimerEventType.CANCELLED:
+                await self._device.send_command("cancel_timer", {"id": timer.id})
+            elif event == TimerEventType.FINISHED:
+                known = {t.get("id") for t in self._device.state.get("timers") or []}
+                if timer.id not in known:  # the tablet missed it (offline, restarted): ring now
+                    await self._device.send_command(
+                        "start_timer", {"id": timer.id, "label": timer.name or "", "kind": "countdown", "duration_s": 1}
+                    )
+        except HomeAssistantError as err:
+            _LOGGER.debug("Could not mirror timer %s (%s) on %s: %s", timer.id, event, self._device.name, err)
+
+    async def async_start_conversation(self, start_announcement: AssistSatelliteAnnouncement) -> None:
+        """Play the announcement, then the tablet listens by itself (used by start_conversation and ask_question)."""
+        await self._device.send_command(
+            "voice_conversation",
+            {
+                "url": start_announcement.media_id,
+                "message": start_announcement.message,
+                "preannounce_url": start_announcement.preannounce_media_id,
+            },
+            timeout=ANNOUNCE_TIMEOUT,
+        )
 
     async def async_announce(self, announcement: AssistSatelliteAnnouncement) -> None:
         await self._device.send_command(

@@ -6,6 +6,13 @@ import '../platform/kiosk_platform.dart';
 
 enum VoiceState { idle, listening, thinking, speaking, error }
 
+/// One exchange on the voice screen: what the user said and what the assistant answered (either may still be empty).
+class VoiceTurn {
+  VoiceTurn({this.user = '', this.assistant = ''});
+  String user;
+  String assistant;
+}
+
 /// One push-to-talk turn at a time against Home Assistant's Assist pipeline (docs/VOICE.md).
 /// Audio frames come from the platform, answers go back to the platform for playback; everything in between
 /// is the wire protocol. Kept free of the widget tree and of the socket (both are injected) so it can be tested.
@@ -16,7 +23,14 @@ class VoiceController extends ChangeNotifier {
     required this.baseUrl,
     this.dismissAfter = const Duration(seconds: 4),
     this.silenceTimeout = const Duration(seconds: 20),
+    this.firstTimeout = const Duration(seconds: 12),
+    this.conversationEnabled = _yes,
+    this.followUpTimeout = _eight,
+    this.soundsEnabled = _yes,
   });
+
+  static bool _yes() => true;
+  static Duration _eight() => const Duration(seconds: 8);
 
   final KioskPlatform platform;
 
@@ -26,12 +40,46 @@ class VoiceController extends ChangeNotifier {
   /// The address Home Assistant is reached at right now (answers are fetched from there), or null.
   final String? Function() baseUrl;
   final Duration dismissAfter;
+
+  /// Safety net: a run that has not said anything for this long (Home Assistant stalled) is given up.
   final Duration silenceTimeout;
+
+  /// How long the first listening waits for the user to start speaking (wake word or tap).
+  final Duration firstTimeout;
+
+  /// Settings, read when needed: keep listening after an answer, how long to wait for a follow-up, play the pings.
+  final bool Function() conversationEnabled;
+  final Duration Function() followUpTimeout;
+  final bool Function() soundsEnabled;
 
   VoiceState state = VoiceState.idle;
   String? session;
-  String transcript = '';
-  String answer = '';
+
+  /// The conversation on screen; the last turn is the current one. A turn that Home Assistant wants continued
+  /// (it asked something) is followed by another one without clearing the list.
+  final List<VoiceTurn> turns = [];
+  String get transcript => turns.isEmpty ? '' : turns.last.user;
+  String get answer => turns.isEmpty ? '' : turns.last.assistant;
+
+  /// The newest microphone levels (0..1), oldest first, for the live waveform.
+  final List<double> levels = [];
+  static const levelHistory = 32;
+  bool _continue = false;
+
+  /// A conversation runs from the first listening until nothing is said for a while, the user ends it or something fails.
+  bool inConversation = false;
+
+  /// The current listening is the one after an answer (the screen says so).
+  bool followUp = false;
+
+  /// Listening and nobody has started to speak yet; [speechDeadline] is when the conversation ends if it stays so.
+  bool waitingForSpeech = false;
+  DateTime? speechDeadline;
+  Duration speechWindow = Duration.zero;
+  bool _heardSpeech = false;
+  bool _spokeAnswer = false;
+  int _loudFrames = 0;
+  Timer? _noSpeech;
 
   /// Error code (`mic_permission`, `not_connected`, `stt-no-text-recognized`, ...) while [state] is error.
   String? errorCode;
@@ -45,15 +93,30 @@ class VoiceController extends ChangeNotifier {
   int _counter = 0;
 
   /// Starts a turn. Returns null, or the error code (also shown in the UI).
-  /// [wakeWord] is the phrase that started it (Home Assistant gets it with the run).
-  Future<String?> listen({String? wakeWord}) async {
+  /// [wakeWord] is the phrase that started it (Home Assistant gets it with the run); [continuing] keeps the earlier turns on
+  /// screen, [followUp] is the listening after an answer (it waits for the follow-up window instead of the first one).
+  Future<String?> listen({
+    String? wakeWord,
+    bool continuing = false,
+    bool followUp = false,
+  }) async {
     if (active) await cancel(silent: true); // barge-in
     _dismiss?.cancel();
+    _noSpeech?.cancel();
     final id = 'v${DateTime.now().microsecondsSinceEpoch}-${_counter++}';
     session = id;
-    transcript = answer = '';
+    if (!continuing) turns.clear();
+    turns.add(VoiceTurn());
+    _continue = false;
+    _heardSpeech = false;
+    _spokeAnswer = false;
+    _loudFrames = 0;
+    inConversation = true;
+    this.followUp = followUp;
+    waitingForSpeech = false;
     errorCode = errorMessage = null;
     level = 0;
+    levels.clear();
     if (baseUrl() == null ||
         !send({
           'type': 'voice',
@@ -66,6 +129,9 @@ class VoiceController extends ChangeNotifier {
     state = VoiceState.listening;
     notifyListeners();
     unawaited(platform.showUi('/voice'));
+    // the ping comes first and the microphone opens after it, so the ping is not recorded
+    if (soundsEnabled()) await platform.voicePing('start');
+    if (session != id) return 'cancelled'; // ended while the ping played
     final err = await platform.voiceStart(id);
     if (err != null) {
       send({'type': 'voice', 'action': 'cancel', 'session': id});
@@ -73,6 +139,7 @@ class VoiceController extends ChangeNotifier {
     }
     _recording = true;
     _armWatchdog();
+    _armNoSpeech(id, followUp ? followUpTimeout() : firstTimeout);
     return null;
   }
 
@@ -84,18 +151,53 @@ class VoiceController extends ChangeNotifier {
     send({'type': 'voice', 'action': 'stop', 'session': id});
   }
 
-  /// Aborts the turn (also stops the answer if it is being spoken).
+  /// Aborts the turn (also stops the answer if it is being spoken). Does not end the conversation by itself.
   Future<void> cancel({bool silent = false}) async {
     final id = session;
     if (id != null) send({'type': 'voice', 'action': 'cancel', 'session': id});
     await _stopRecording();
     await platform.voiceStopPlayback();
     _watchdog?.cancel();
+    _noSpeech?.cancel();
+    waitingForSpeech = false;
     session = null;
     state = VoiceState.idle;
     level = 0;
+    levels.clear();
+    _continue = false;
     notifyListeners();
     if (!silent) _closeUi();
+  }
+
+  /// Ends the conversation: stops listening and speaking, plays the closing ping and closes the screen
+  /// ([afterMs] later, so "Done" can be seen after a silence).
+  Future<void> endConversation({
+    int afterMs = 0,
+    bool runIsOver = false,
+  }) async {
+    final was = inConversation;
+    inConversation = false;
+    followUp = false;
+    if (runIsOver) {
+      // Home Assistant finished the run itself: nothing to cancel there
+      _watchdog?.cancel();
+      _noSpeech?.cancel();
+      waitingForSpeech = false;
+      session = null;
+      state = VoiceState.idle;
+      level = 0;
+      levels.clear();
+      _continue = false;
+      notifyListeners();
+    } else {
+      await cancel(silent: true);
+    }
+    if (was && soundsEnabled()) await platform.voicePing('end');
+    if (afterMs > 0) {
+      _scheduleClose(Duration(milliseconds: afterMs));
+    } else {
+      _closeUi();
+    }
   }
 
   /// Announcement from Home Assistant: the pre-announce sound, then [url]; completes when it has been played.
@@ -103,12 +205,15 @@ class VoiceController extends ChangeNotifier {
     required String url,
     String message = '',
     String? preannounceUrl,
+    bool keepOpen = false,
   }) async {
     if (active) await cancel(silent: true);
     _dismiss?.cancel();
+    inConversation = false;
     session = null;
-    transcript = '';
-    answer = message;
+    turns
+      ..clear()
+      ..add(VoiceTurn(assistant: message));
     errorCode = errorMessage = null;
     state = VoiceState.speaking;
     notifyListeners();
@@ -123,13 +228,32 @@ class VoiceController extends ChangeNotifier {
     } finally {
       state = VoiceState.idle;
       notifyListeners();
-      _scheduleClose();
+      if (!keepOpen) _scheduleClose();
     }
+  }
+
+  /// Home Assistant starts a conversation (`start_conversation`, `ask_question`): the announcement is played, then the
+  /// tablet listens for the answer by itself. Completes when the announcement has been played.
+  Future<void> conversation({
+    required String url,
+    String message = '',
+    String? preannounceUrl,
+  }) async {
+    await announce(
+      url: url,
+      message: message,
+      preannounceUrl: preannounceUrl,
+      keepOpen: true,
+    );
+    unawaited(listen(continuing: true, followUp: true));
   }
 
   /// The tablet lost Home Assistant: nobody will answer this turn.
   void onDisconnected() {
-    if (active && session != null) unawaited(cancel());
+    if (active && session != null) {
+      inConversation = false;
+      unawaited(cancel());
+    }
   }
 
   // --- from the platform ---------------------------------------------------------------------------
@@ -146,6 +270,13 @@ class VoiceController extends ChangeNotifier {
           'data': e.data['data'],
         });
         level = (e.data['level'] as num?)?.toDouble() ?? 0;
+        levels.add(level);
+        if (levels.length > levelHistory) levels.removeAt(0);
+        // Home Assistant's own voice detection normally says when speech starts; this covers a pipeline that does not
+        if (!_heardSpeech) {
+          _loudFrames = level > 0.25 ? _loudFrames + 1 : 0;
+          if (_loudFrames >= 3) _speechStarted();
+        }
         notifyListeners();
       case 'voice_record_timeout':
         unawaited(stopListening());
@@ -164,14 +295,21 @@ class VoiceController extends ChangeNotifier {
     final data = Map<String, dynamic>.from((msg['data'] as Map?) ?? const {});
     _armWatchdog();
     switch (msg['event']) {
+      case 'stt-vad-start':
+        _speechStarted();
+        notifyListeners();
       case 'stt-end':
-        transcript = (data['text'] as String?) ?? '';
+        if (turns.isNotEmpty) turns.last.user = (data['text'] as String?) ?? '';
+        _speechStarted();
         state = VoiceState.thinking;
         unawaited(_stopRecording());
         send({'type': 'voice', 'action': 'stop', 'session': id});
         notifyListeners();
       case 'intent-end':
-        answer = (data['text'] as String?) ?? '';
+        if (turns.isNotEmpty) {
+          turns.last.assistant = (data['text'] as String?) ?? '';
+        }
+        _continue = data['continue_conversation'] == true;
         notifyListeners();
       case 'tts-end':
         unawaited(_speak(id, (data['url'] as String?) ?? ''));
@@ -202,6 +340,7 @@ class VoiceController extends ChangeNotifier {
     if (err != null && err != 'interrupted') {
       _fail(err);
     } else {
+      _spokeAnswer = true;
       _finish();
     }
   }
@@ -227,6 +366,9 @@ class VoiceController extends ChangeNotifier {
 
   String? _fail(String code, {String? message}) {
     _watchdog?.cancel();
+    _noSpeech?.cancel();
+    waitingForSpeech = false;
+    inConversation = false;
     state = VoiceState.error;
     errorCode = code;
     errorMessage = message;
@@ -241,8 +383,43 @@ class VoiceController extends ChangeNotifier {
     _watchdog?.cancel();
     state = VoiceState.idle;
     level = 0;
+    levels.clear();
     notifyListeners();
+    final again = _continue || (_spokeAnswer && conversationEnabled());
+    _continue = false;
+    if (inConversation && again) {
+      // keep the conversation going: listen for what comes next, the earlier turns stay on screen
+      unawaited(listen(continuing: true, followUp: true));
+      return;
+    }
+    if (inConversation && conversationEnabled()) {
+      // an answer that was not spoken (a question to Home Assistant, no text): that was the conversation
+      unawaited(endConversation(afterMs: 1200, runIsOver: true));
+      return;
+    }
+    inConversation = false; // follow-ups are off: one question, one answer
     _scheduleClose();
+  }
+
+  /// Someone started talking: stop waiting for them to begin.
+  void _speechStarted() {
+    _heardSpeech = true;
+    _noSpeech?.cancel();
+    waitingForSpeech = false;
+  }
+
+  /// Ends the conversation if nobody says anything within [window] of listening starting.
+  void _armNoSpeech(String id, Duration window) {
+    _noSpeech?.cancel();
+    waitingForSpeech = true;
+    speechWindow = window;
+    speechDeadline = DateTime.now().add(window);
+    notifyListeners();
+    _noSpeech = Timer(window, () {
+      if (session == id && !_heardSpeech && state == VoiceState.listening) {
+        unawaited(endConversation(afterMs: 1200));
+      }
+    });
   }
 
   void _armWatchdog() {
@@ -274,6 +451,7 @@ class VoiceController extends ChangeNotifier {
   void dispose() {
     _dismiss?.cancel();
     _watchdog?.cancel();
+    _noSpeech?.cancel();
     super.dispose();
   }
 }

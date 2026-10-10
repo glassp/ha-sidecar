@@ -30,6 +30,9 @@ class FakePlatform extends Fake implements KioskPlatform {
   Future<void> voiceStopPlayback() async => calls.add('stopPlayback');
 
   @override
+  Future<void> voicePing(String kind) async => calls.add('ping:$kind');
+
+  @override
   Future<bool> showUi(String route) async {
     calls.add('show:$route');
     return true;
@@ -40,6 +43,7 @@ class FakePlatform extends Fake implements KioskPlatform {
 }
 
 void main() {
+  voiceTurnTests();
   late FakePlatform platform;
   late List<Map<String, dynamic>> sent;
   late bool connected;
@@ -59,6 +63,9 @@ void main() {
       baseUrl: () => connected ? 'http://ha.local:8123' : null,
       dismissAfter: const Duration(milliseconds: 50),
       silenceTimeout: const Duration(milliseconds: 300),
+      conversationEnabled: () => false,
+      soundsEnabled: () => false,
+      firstTimeout: const Duration(seconds: 30),
     );
   });
   tearDown(() => v.dispose());
@@ -247,5 +254,267 @@ void main() {
     platform.playGate = Completer<String?>()..complete('playback_error:1/2');
     await expectLater(v.announce(url: '/a.mp3'), throwsStateError);
     expect(v.state, VoiceState.idle);
+  });
+}
+
+void voiceTurnTests() {
+  late FakePlatform platform;
+  late List<Map<String, dynamic>> sent;
+  late VoiceController v;
+
+  setUp(() {
+    platform = FakePlatform();
+    sent = [];
+    v = VoiceController(
+      platform: platform,
+      send: (m) {
+        sent.add(m);
+        return true;
+      },
+      baseUrl: () => 'http://ha.local:8123',
+      dismissAfter: const Duration(milliseconds: 50),
+      silenceTimeout: const Duration(seconds: 5),
+      firstTimeout: const Duration(milliseconds: 150),
+      followUpTimeout: () => const Duration(milliseconds: 150),
+    );
+  });
+  tearDown(() => v.dispose());
+
+  Map<String, dynamic> ev(
+    String event, [
+    Map<String, dynamic> data = const {},
+  ]) => {
+    'type': 'voice_event',
+    'session': v.session,
+    'event': event,
+    'data': data,
+  };
+
+  test(
+    'what was said and answered is kept as turns of one conversation',
+    () async {
+      await v.listen();
+      v.onVoiceEvent(ev('stt-end', {'text': 'what time is it'}));
+      v.onVoiceEvent(ev('intent-end', {'text': 'Noon.'}));
+      expect(v.turns.length, 1);
+      expect(v.turns.single.user, 'what time is it');
+      expect(v.turns.single.assistant, 'Noon.');
+    },
+  );
+
+  test(
+    'a new turn that is not a continuation starts a fresh conversation',
+    () async {
+      await v.listen();
+      v.onVoiceEvent(ev('stt-end', {'text': 'one'}));
+      await v.listen();
+      expect(v.turns.length, 1);
+      expect(v.transcript, '');
+    },
+  );
+
+  test(
+    'when the assistant asks something, the tablet listens again and the conversation stays',
+    () async {
+      await v.listen();
+      v.onVoiceEvent(ev('stt-end', {'text': 'order a pizza'}));
+      v.onVoiceEvent(
+        ev('intent-end', {
+          'text': 'Which size?',
+          'continue_conversation': true,
+        }),
+      );
+      v.onVoiceEvent(ev('tts-end', {'url': '/a.mp3'}));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(
+        sent.where((m) => m['action'] == 'start').length,
+        2,
+        reason: 'a second turn was started',
+      );
+      expect(v.turns.length, 2);
+      expect(v.turns.first.assistant, 'Which size?');
+      expect(v.state, VoiceState.listening);
+    },
+  );
+
+  test(
+    'a spoken answer is followed by listening again, with a ping before each listening',
+    () async {
+      await v.listen();
+      v.onVoiceEvent(ev('stt-end', {'text': 'hello'}));
+      v.onVoiceEvent(ev('intent-end', {'text': 'Hi.'}));
+      v.onVoiceEvent(ev('tts-end', {'url': '/a.mp3'}));
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(sent.where((m) => m['action'] == 'start').length, 2);
+      expect(v.state, VoiceState.listening);
+      expect(v.followUp, isTrue);
+      final starts = [
+        for (var i = 0; i < platform.calls.length; i++)
+          if (platform.calls[i].startsWith('start:')) i,
+      ];
+      for (final i in starts) {
+        expect(
+          platform.calls[i - 1],
+          'ping:start',
+          reason: 'the ping plays before the microphone opens',
+        );
+      }
+    },
+  );
+
+  test(
+    'nothing said in the follow-up window ends the conversation with the closing ping',
+    () async {
+      await v.listen();
+      v.onVoiceEvent(ev('stt-end', {'text': 'hello'}));
+      v.onVoiceEvent(ev('tts-end', {'url': '/a.mp3'}));
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      expect(v.inConversation, isFalse);
+      expect(v.state, VoiceState.idle);
+      expect(platform.calls, contains('ping:end'));
+      expect(
+        sent.where((m) => m['action'] == 'cancel'),
+        isNotEmpty,
+        reason: 'Home Assistant is told',
+      );
+    },
+  );
+
+  test(
+    'speech detected by Home Assistant stops the clock, so a long question is not cut off',
+    () async {
+      await v.listen();
+      v.onVoiceEvent(ev('stt-vad-start'));
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      expect(v.state, VoiceState.listening);
+      expect(v.inConversation, isTrue);
+      expect(v.waitingForSpeech, isFalse);
+    },
+  );
+
+  test(
+    'loud microphone frames stop the clock too, when the pipeline sends no voice events',
+    () async {
+      await v.listen();
+      for (var i = 0; i < 3; i++) {
+        v.onPlatformEvent(
+          PlatformEvent('voice_frame', {
+            'session': v.session,
+            'data': 'AAAA',
+            'level': 0.6,
+          }),
+        );
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      expect(v.state, VoiceState.listening);
+    },
+  );
+
+  test('the first listening gives up after its own timeout, quietly', () async {
+    await v.listen();
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    expect(v.inConversation, isFalse);
+    expect(v.state, VoiceState.idle);
+    expect(v.errorCode, isNull, reason: 'silence is not an error');
+    expect(platform.calls, contains('ping:end'));
+  });
+
+  test(
+    'ending the conversation stops everything, tells Home Assistant, pings and closes',
+    () async {
+      await v.listen();
+      v.onVoiceEvent(ev('stt-end', {'text': 'hello'}));
+      final id = v.session;
+      await v.endConversation();
+      expect(v.inConversation, isFalse);
+      expect(v.session, isNull);
+      expect(sent.last, {'type': 'voice', 'action': 'cancel', 'session': id});
+      expect(
+        platform.calls,
+        containsAllInOrder(['stopPlayback', 'ping:end', 'close:/voice']),
+      );
+    },
+  );
+
+  test(
+    'an answer that was not spoken (a question to Home Assistant) ends it after the answer',
+    () async {
+      await v.listen();
+      v.onVoiceEvent(ev('stt-end', {'text': 'yes'}));
+      v.onVoiceEvent(ev('run-end'));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(v.inConversation, isFalse);
+      expect(platform.calls, contains('ping:end'));
+    },
+  );
+
+  test(
+    'with follow-ups switched off a spoken answer ends the conversation',
+    () async {
+      final off = VoiceController(
+        platform: platform,
+        send: (m) {
+          sent.add(m);
+          return true;
+        },
+        baseUrl: () => 'http://ha.local:8123',
+        conversationEnabled: () => false,
+        soundsEnabled: () => false,
+      );
+      addTearDown(off.dispose);
+      await off.listen();
+      off.onVoiceEvent({
+        'type': 'voice_event',
+        'session': off.session,
+        'event': 'tts-end',
+        'data': {'url': '/a.mp3'},
+      });
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      expect(sent.where((m) => m['action'] == 'start').length, 1);
+      expect(off.inConversation, isFalse);
+    },
+  );
+
+  test('the pings can be switched off', () async {
+    final quiet = VoiceController(
+      platform: platform,
+      send: (m) => true,
+      baseUrl: () => 'http://ha.local:8123',
+      soundsEnabled: () => false,
+    );
+    addTearDown(quiet.dispose);
+    await quiet.listen();
+    await quiet.endConversation();
+    expect(platform.calls.where((c) => c.startsWith('ping')), isEmpty);
+  });
+
+  test(
+    'a conversation started by Home Assistant plays the question, then listens, and keeps the question on screen',
+    () async {
+      await v.conversation(
+        url: '/q.mp3',
+        message: 'Shall I turn the light off?',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(v.turns.length, 2);
+      expect(v.turns.first.assistant, 'Shall I turn the light off?');
+      expect(v.state, VoiceState.listening);
+      expect(sent.where((m) => m['action'] == 'start').length, 1);
+    },
+  );
+
+  test('the waveform keeps only the newest levels', () async {
+    await v.listen();
+    for (var i = 0; i < VoiceController.levelHistory + 10; i++) {
+      v.onPlatformEvent(
+        PlatformEvent('voice_frame', {
+          'session': v.session,
+          'data': 'AAAA',
+          'level': i / 100,
+        }),
+      );
+    }
+    expect(v.levels.length, VoiceController.levelHistory);
+    expect(v.levels.last, (VoiceController.levelHistory + 9) / 100);
   });
 }

@@ -184,6 +184,9 @@ class AndroidKioskPlatform implements KioskPlatform {
       _call<String>('voicePlay', {'url': url});
 
   @override
+  Future<void> voicePing(String kind) => _call('voicePing', {'kind': kind});
+
+  @override
   Future<void> voiceStopPlayback() => _call('voiceStopPlayback');
 
   @override

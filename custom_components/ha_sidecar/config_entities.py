@@ -69,6 +69,7 @@ NUMBERS = [
     ("camera_fps", "Camera frame rate", 1, 10, 1, "fps", "mdi:camera-timer"),
     ("glance_after_s", "Glance screen after", 30, 3600, 10, UnitOfTime.SECONDS, "mdi:timer-sand"),
     ("watchdog_probe_s", "Watchdog check interval", 5, 300, 5, UnitOfTime.SECONDS, "mdi:timer-outline"),
+    ("conversation_timeout_s", "Follow-up wait time", 3, 30, 1, UnitOfTime.SECONDS, "mdi:timer-sand"),
     ("wake_word_threshold", "Wake word threshold", 10, 99, 1, "%", "mdi:tune"),
     ("watchdog_startup_s", "Watchdog start-up timeout", 20, 600, 10, UnitOfTime.SECONDS, "mdi:timer-sand"),
 ]
@@ -82,6 +83,8 @@ SWITCHES = [
     ("glance", "At-a-glance screen", "mdi:clock-digital"),
     ("watchdog", "Companion app watchdog", "mdi:dog-service"),
     ("wake_word", "Wake word", "mdi:microphone-message"),
+    ("conversation", "Keep listening after an answer", "mdi:forum-outline"),
+    ("voice_sounds", "Voice pings", "mdi:bell-ring-outline"),
 ]
 
 # key, name, options, icon
