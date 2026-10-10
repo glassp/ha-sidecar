@@ -66,7 +66,10 @@ jobs:
         run: docker run --rm -v "${{ github.workspace }}":/github/workspace ghcr.io/home-assistant/hassfest@sha256:4b1adfb1e0a37710af0390708eb8000230b80b2193ccffbeed0a901fa9765181
       # HACS validation, image ghcr.io/hacs/action (tag main) as of 2026-10-10. A `docker://` step is what the action does
       # itself, so the runner provides the same environment, event file and workspace mount.
+      # HACS reads the repository through the GitHub API, which it cannot do for a private repository (it then reports
+      # an invalid hacs.json and manifest of `None`), and it wants repository topics. So it runs once the repository is public.
       - name: HACS validation
+        if: ${{ !github.event.repository.private }}
         uses: docker://ghcr.io/hacs/action@sha256:dc92fdad2f6ffbe74bffb7269d781ea8e064f52d9bb486cdf3925d74e7ab6ebf
         with:
           category: integration
