@@ -244,6 +244,32 @@ Not verified: real speech and a real microphone (the emulator's microphone deliv
 content), the permission dialog for a non-device-owner install, a physical tablet's speaker and echo, the docked bubble (not built),
 wake word (not built).
 
+### Wake word (slice 3.3, emulator)
+
+- **The engine against a reference.** `tests/lab/wakeword/reference.py` is a Python port of the openWakeWord pipeline (LiteRT for
+  Python); the app's debug-only broadcast `dev.glassp.ha_sidecar.WW_SCORE` runs the Kotlin engine over the same wavs (macOS `say`
+  speech with a second of silence around it) and logs a score per 80 ms chunk. Over 9 file/phrase pairs (the phrase, other phrases
+  and ordinary sentences, for all three phrases) the two agree to within 0.00005 on every chunk from the 16th on; the phrase scores
+  about 1.0 and everything else below 0.001. (A first comparison disagreed because the debug reader treated afconvert's padded wav
+  header as audio; the engine was right.)
+- **The model patch.** The melspectrogram model could not be loaded on Android at first (`CONV_2D failed to prepare`, its stored input
+  shape `[1, 1]`), which is what `TfliteShape` works around.
+- **Runtime download from the app, verified.** Switching the wake word on from Home Assistant (with no models on the tablet) downloaded the
+  three files (3.7 MB) from the GitHub release in about 4 s, checked their SHA-256 and sizes, and the listening sensor and the microphone
+  service came on. Choosing Alexa in Home Assistant's satellite configuration (`assist_satellite/set_wake_words`) fetched only that model
+  (0.86 MB) and switched the phrase. With the network off, choosing a phrase that is not on the tablet and switching the wake word on
+  shows *The wake word models are not on this tablet, 0.8 MB are downloaded from GitHub once* with a Download button, and no partial
+  file is left; with the network back the button downloads it and the phrase works.
+- **The whole chain on the real app.** `WW_INJECT` plays a wav into the microphone loop like speech: "Hey Jarvis" starts a turn
+  (answer page, HA turn with the phrase, spoken answer, back to idle) within about 1 s of the phrase; "Alexa", "Hey Mycroft", "turn on the
+  kitchen light please" and a long sentence mentioning Jarvis start nothing; after switching to Alexa, "Hey Jarvis" no longer reacts and
+  "Alexa" does; the wake word keeps listening after a turn; switching it off releases the microphone (service gone, no indicator).
+  Home Assistant's `assist_satellite/get_configuration` reports the three phrases and the active one.
+
+Not verified: a real microphone, a real speaker and distances/noise (all audio here is clean `say` speech injected in software),
+false activations over days (the first number to watch on a real tablet), CPU and battery of the always-open microphone, the
+foreground-service start after a reboot, 16 KB page-size devices (the LiteRT 1.4 libraries are used as published).
+
 ## Not verified
 
 - Update **detection** (`onSystemUpdatePending`) and the download/install/restart taps: need a real pending OTA.

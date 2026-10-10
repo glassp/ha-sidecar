@@ -19,7 +19,7 @@ companion app** for the dashboard and a small **sidecar app** for everything the
 | At a glance | Clock, next alarm and chosen HA values after idle; dismissed by touch or presence |
 | Extra sensors | last interaction, camera/mic in use, blocked apps, PIN failures (the companion app's own sensors are not duplicated) |
 | Theme | `App theme` select: system / light / dark / dark at night |
-| Voice assistant (push-to-talk) | Assist satellite entity: talk from the app or start a turn from Home Assistant (`ha_sidecar.listen`), the answer is shown and spoken; announcements play on the tablet. Wake word is next, see [docs/VOICE.md](docs/VOICE.md) |
+| Voice assistant (push-to-talk) | Assist satellite entity: talk from the app or start a turn from Home Assistant (`ha_sidecar.listen`), the answer is shown and spoken; announcements play on the tablet. Optional on-device wake word (Hey Jarvis, Alexa, Hey Mycroft; the models are downloaded on the tablet when you switch it on), see [docs/VOICE.md](docs/VOICE.md) |
 
 ## The app
 
@@ -137,4 +137,4 @@ app (device-owner lockdown, accessibility fallback, PIN, alarms, remote control,
 [docs/TESTING.md](docs/TESTING.md) for what was and was not verified. **Not yet tried on a physical tablet**, and
 OS-update *detection* and the automated update taps need a real pending OTA to verify.
 
-License: Apache-2.0.
+License: Apache-2.0. The optional wake word uses the openWakeWord models, which are licensed CC BY-NC-SA 4.0 (non-commercial) and are therefore not part of this repository or the app: they are downloaded from the openWakeWord release by the tablet, on request. See [docs/VOICE.md](docs/VOICE.md).

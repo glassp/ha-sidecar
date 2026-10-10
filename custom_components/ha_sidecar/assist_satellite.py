@@ -12,6 +12,7 @@ from homeassistant.components.assist_satellite import (
     AssistSatelliteConfiguration,
     AssistSatelliteEntity,
     AssistSatelliteEntityFeature,
+    AssistSatelliteWakeWord,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -81,10 +82,28 @@ class SidecarSatellite(SidecarEntity, AssistSatelliteEntity):
 
     @callback
     def async_get_configuration(self) -> AssistSatelliteConfiguration:
-        return AssistSatelliteConfiguration(available_wake_words=[], active_wake_words=[], max_active_wake_words=1)
+        """The phrases the tablet can listen for (the app knows its catalogue) and the one that is on."""
+        known = self._device.state.get("wake_words") or []
+        cfg = self._device.state.get("cfg") or {}
+        active = [cfg["wake_word_id"]] if cfg.get("wake_word") and cfg.get("wake_word_id") else []
+        return AssistSatelliteConfiguration(
+            available_wake_words=[
+                AssistSatelliteWakeWord(id=w["id"], wake_word=w.get("phrase") or w["id"], trained_languages=["en"])
+                for w in known
+                if isinstance(w, dict) and "id" in w
+            ],
+            active_wake_words=active,
+            max_active_wake_words=1,
+        )
 
     async def async_set_configuration(self, config: AssistSatelliteConfiguration) -> None:
-        return None
+        """Choosing a phrase in Home Assistant switches the wake word on (the tablet fetches the models it lacks by itself)."""
+        if not config.active_wake_words:
+            await self._device.send_command("set_config", {"config": {"wake_word": False}})
+            return
+        wanted = config.active_wake_words[0]
+        await self._device.send_command("set_config", {"config": {"wake_word_id": wanted, "wake_word": True}})
+
 
     # --- tablet -> Home Assistant --------------------------------------------------------------------
 

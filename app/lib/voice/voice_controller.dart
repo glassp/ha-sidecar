@@ -45,7 +45,8 @@ class VoiceController extends ChangeNotifier {
   int _counter = 0;
 
   /// Starts a turn. Returns null, or the error code (also shown in the UI).
-  Future<String?> listen() async {
+  /// [wakeWord] is the phrase that started it (Home Assistant gets it with the run).
+  Future<String?> listen({String? wakeWord}) async {
     if (active) await cancel(silent: true); // barge-in
     _dismiss?.cancel();
     final id = 'v${DateTime.now().microsecondsSinceEpoch}-${_counter++}';
@@ -54,7 +55,12 @@ class VoiceController extends ChangeNotifier {
     errorCode = errorMessage = null;
     level = 0;
     if (baseUrl() == null ||
-        !send({'type': 'voice', 'action': 'start', 'session': id})) {
+        !send({
+          'type': 'voice',
+          'action': 'start',
+          'session': id,
+          'wake_word': ?wakeWord,
+        })) {
       return _fail('not_connected');
     }
     state = VoiceState.listening;

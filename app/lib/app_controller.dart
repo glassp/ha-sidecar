@@ -247,6 +247,10 @@ class AppController extends ChangeNotifier {
       onUiRoute?.call(e.data['route'] as String);
       return;
     }
+    if (e.type == 'wake_word') {
+      unawaited(voice.listen(wakeWord: e.data['phrase'] as String?));
+      return;
+    }
     if (e.type.startsWith('voice_')) {
       voice.onPlatformEvent(e);
       return;

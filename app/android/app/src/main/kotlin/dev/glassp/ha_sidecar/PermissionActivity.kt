@@ -18,6 +18,7 @@ class PermissionActivity : Activity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         PresenceCamera.refresh(this)
+        WakeWord.refresh(this)
         EventBus.emit("network_changed", NetworkMonitor.snapshot())
         EventBus.emit("status_changed")
         finish()

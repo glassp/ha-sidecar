@@ -31,6 +31,20 @@ class DeviceStatus {
   bool get micInUse => _b('mic_in_use');
   bool get cameraPermission => _b('camera_permission');
   bool get micPermission => _b('mic_permission');
+  bool get wakeWordListening => _b('wake_word_listening');
+  String? get wakeWordError => raw['wake_word_error'] as String?;
+  String? get wakeWordDownloading => raw['wake_word_downloading'] as String?;
+  double get wakeWordDownloadFraction =>
+      (raw['wake_word_download_fraction'] as num?)?.toDouble() ?? 0;
+  String? get wakeWordDownloadError =>
+      raw['wake_word_download_error'] as String?;
+  double get wakeWordScore => (raw['wake_word_score'] as num?)?.toDouble() ?? 0;
+
+  /// The wake words the app knows: `{id, phrase, installed, missing_bytes}`.
+  List<Map<String, dynamic>> get wakeWords => [
+    for (final e in (raw['wake_words'] as List? ?? const []))
+      Map<String, dynamic>.from(e as Map),
+  ];
   bool get notificationsGranted => _b('notifications_granted');
   bool get batteryUnrestricted => _b('battery_unrestricted');
   bool get fullScreenIntentGranted => _b('full_screen_intent_granted');
@@ -303,6 +317,9 @@ abstract class KioskPlatform {
   Future<String?> voicePlay(String url);
   Future<void> voiceStopPlayback();
   Future<void> requestMicPermission();
+
+  /// Downloads the models for the wake word [id] (progress shows in the status).
+  Future<void> downloadWakeWord(String id);
 
   /// Brings the full-screen page [route] (for example `/voice`) to the front.
   Future<bool> showUi(String route);

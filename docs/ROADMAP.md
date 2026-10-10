@@ -37,7 +37,7 @@ Assistant (see [TESTING.md](TESTING.md)); nothing has run on a physical tablet y
 | 2.4 Naming, brightness units, night mode actions | done |
 | 2.5 Companion app watchdog | done: F1/F2 (UI probe, ANR dialog, start-up hang) and F3 (beacon card, opt-in remedy ladder); the optional signals (visual freeze, scheduled restart) open |
 | 2.7 Discovery, pairing and network-aware connection | done (discovery itself unverified on a real LAN) |
-| 3 Voice | 3.1 integration side and 3.2 app side (push-to-talk, answer page) done, see [VOICE.md](VOICE.md); wake word (3.3), docked bubble, timers by voice (3.4) not started |
+| 3 Voice | 3.1 integration side, 3.2 app side (push-to-talk, answer page) and 3.3 on-device wake word done, see [VOICE.md](VOICE.md); docked bubble, timers by voice (3.4) not started |
 | 4 Optional | not started |
 
 ### 1. Kiosk core (done)
@@ -164,8 +164,8 @@ Open: QR pairing, reconfigure/re-pair from Home Assistant, verification on a rea
 ### 3. Voice
 - Integration side (**built, slice 3.1, see [VOICE.md](VOICE.md)**): `assist_satellite` entity on `AssistSatelliteEntity` with
   `async_announce`, pipeline events and the pipeline / VAD selects; audio over the existing sidecar WebSocket as base64 PCM frames.
-- App side: push-to-talk first, then on-device wake word behind `WakeWordEngine` (openWakeWord via TFLite, in a
-  foreground service of type `microphone`; needs `RECORD_AUDIO`), TTS playback with audio focus + ducking, listening
+- App side (**push-to-talk and the on-device wake word are built**, see VOICE.md): the wake word runs openWakeWord on LiteRT in the
+  microphone foreground service (needs `RECORD_AUDIO`), TTS playback with audio focus + ducking, listening
   UI overlay on top of the companion app (accessibility overlay) showing Assist responses/cards.
 - **Answer UI** (modelled on what KS's docs describe, own design): a native overlay, *not* inside the dashboard WebView,
   so it stays smooth. Docked conversation bubble at the bottom with the dashboard still visible and usable underneath;

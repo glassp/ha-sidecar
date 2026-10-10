@@ -481,6 +481,118 @@ List<SettingEntry> buildRegistry(AppController c) {
       ),
     ),
 
+    // ---------------------------------------------------------------- System › Voice
+    base('wake_word', Section.system, _g('voice'), (ctx) {
+      return SwitchSetting(
+        icon: Icons.record_voice_over_outlined,
+        title: _t('wake_word', 'title'),
+        subtitle: _t('wake_word', 'desc'),
+        value: b('wake_word'),
+        onChanged: (v) async {
+          await set(ctx, 'wake_word', v);
+          if (v && !s().micPermission) await c.platform.requestMicPermission();
+          await c.refresh();
+        },
+      );
+    }),
+    base('wake_word_phrase', Section.system, _g('voice'), (ctx) {
+      final words = c.status.wakeWords;
+      return SegmentedSetting(
+        icon: Icons.chat_bubble_outline,
+        title: _t('wake_word_phrase', 'title'),
+        subtitle: _t('wake_word_phrase', 'desc'),
+        options: {
+          for (final w in words) w['id'] as String: w['phrase'] as String,
+        },
+        value: str('wake_word_id', 'hey_jarvis'),
+        onChanged: (id) async {
+          await set(ctx, 'wake_word_id', id);
+          await c.refresh();
+        },
+      );
+    }),
+    sliderEntry(
+      'wake_word_threshold',
+      Section.system,
+      _g('voice'),
+      Icons.tune,
+      'wake_word_threshold',
+      min: 10,
+      max: 99,
+      fallback: 50,
+      divisions: 89,
+      format: (v) => '${v.round()} %',
+    ),
+    base('wake_word_status', Section.system, _g('voice'), (ctx) {
+      final st = c.status;
+      final id = str('wake_word_id', 'hey_jarvis');
+      final missing =
+          st.wakeWords
+              .where((w) => w['id'] == id)
+              .map((w) => (w['missing_bytes'] as num?)?.toInt() ?? 0)
+              .firstOrNull ??
+          0;
+      if (st.wakeWordDownloading != null) {
+        return Tile(
+          icon: Icons.downloading,
+          title: _t('wake_word_status', 'title'),
+          subtitle: 'wakeword.downloading'.tr(
+            namedArgs: {
+              'pct': (st.wakeWordDownloadFraction * 100).round().toString(),
+            },
+          ),
+        );
+      }
+      final err = st.wakeWordError ?? st.wakeWordDownloadError;
+      if (b('wake_word') &&
+          (err == 'models_missing' || st.wakeWordDownloadError != null)) {
+        return ActionSetting(
+          icon: Icons.download_outlined,
+          color: Semantic.warn,
+          title: 'wakeword.models_title'.tr(),
+          subtitle: 'wakeword.models_desc'.tr(
+            namedArgs: {'mb': (missing / 1048576).toStringAsFixed(1)},
+          ),
+          trailing: FilledButton.tonal(
+            onPressed: () => c.platform.downloadWakeWord(id),
+            child: Text('wakeword.download'.tr()),
+          ),
+          onTap: () => c.platform.downloadWakeWord(id),
+        );
+      }
+      if (b('wake_word') && err == 'mic_permission') {
+        return ActionSetting(
+          icon: Icons.mic_off_outlined,
+          color: Semantic.warn,
+          title: 'voice.err_mic_permission'.tr(),
+          subtitle: _t('wake_word_status', 'desc'),
+          trailing: FilledButton.tonal(
+            onPressed: () => c.platform.requestMicPermission(),
+            child: Text('perm.grant'.tr()),
+          ),
+          onTap: () => c.platform.requestMicPermission(),
+        );
+      }
+      if (b('wake_word') && err != null) {
+        return Tile(
+          icon: Icons.error_outline,
+          color: Semantic.bad,
+          title: 'wakeword.problem'.tr(),
+          subtitle: 'wakeword.err_$err'.tr(),
+        );
+      }
+      return Tile(
+        icon: st.wakeWordListening ? Icons.hearing : Icons.hearing_disabled,
+        title: _t('wake_word_status', 'title'),
+        subtitle: st.wakeWordListening
+            ? 'wakeword.listening'.tr()
+            : 'wakeword.off'.tr(),
+        trailing: st.wakeWordListening
+            ? Pill('wakeword.on'.tr(), color: Semantic.ok, icon: Icons.hearing)
+            : null,
+      );
+    }),
+
     // ---------------------------------------------------------------- Display › Brightness
     base(
       'brightness_mode',

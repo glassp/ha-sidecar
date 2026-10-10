@@ -45,6 +45,8 @@ class CommandRouter {
         if (err != null) {
           throw CommandException(err, 'could not start listening');
         }
+      case 'download_wake_word':
+        await platform.downloadWakeWord(d['id'] as String? ?? '');
       case 'voice_cancel':
         await voice?.cancel();
       case 'set_lockdown':

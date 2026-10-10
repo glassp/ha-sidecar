@@ -45,5 +45,7 @@ flutter {
 }
 
 dependencies {
+    // runs the wake word models (openWakeWord, downloaded on the device at runtime, see docs/VOICE.md)
+    implementation("com.google.ai.edge.litert:litert:1.4.0")
     testImplementation("junit:junit:4.13.2")
 }

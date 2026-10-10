@@ -202,6 +202,10 @@ object PlatformChannel {
                 Voice.stopPlayback(ctx)
                 result.success(null)
             }
+            "downloadWakeWord" -> {
+                WakeWord.download(ctx, call.argument<String>("id").orEmpty())
+                result.success(null)
+            }
             "micPermission" -> result.success(Voice.hasPermission(ctx))
             "requestMicPermission" -> {
                 Voice.requestPermission(ctx)

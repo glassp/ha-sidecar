@@ -31,16 +31,21 @@ import kotlin.math.sqrt
  */
 object Voice {
     const val SAMPLE_RATE = 16_000
-    const val FRAME_SAMPLES = 1_600 // 100 ms
+    const val FRAME_SAMPLES = WakeWordEngine.CHUNK // 80 ms: one frame for the wake word model and for Home Assistant
     const val MAX_RECORD_MS = 30_000L // safety stop: Home Assistant normally ends the turn long before
+    private const val COOLDOWN_MS = 2_000L // after a turn or a detection the wake word stays quiet for a moment
 
     @Volatile var session: String? = null
         private set
-    @Volatile private var recorder: Thread? = null
+    @Volatile private var sessionStartedAt = 0L
+    @Volatile private var micThread: Thread? = null
     @Volatile var error: String? = null
         private set
 
     private val main = Handler(Looper.getMainLooper())
+
+    /** Debug builds only (see [WakeWordDebug]): frames played into the loop instead of the microphone, 80 ms apart. */
+    @Volatile var debugInject: java.util.concurrent.ConcurrentLinkedQueue<ShortArray>? = null
 
     fun hasPermission(ctx: Context) =
         ctx.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
@@ -74,89 +79,150 @@ object Voice {
             return "mic_permission"
         }
         if (session != null) return "mic_busy"
-        session = id
         error = null
-        return try {
-            ctx.startForegroundService(Intent(ctx, VoiceService::class.java))
-            null
-        } catch (e: Exception) {
+        sessionStartedAt = System.currentTimeMillis()
+        session = id
+        return if (ensureMic(ctx)) null else {
             session = null
-            error = "start_blocked: ${e.javaClass.simpleName}"
             "mic_failed"
         }
     }
 
+    /** Ends the turn's recording; the microphone stays open only if the wake word needs it. */
     @Synchronized
-    fun stop(ctx: Context) {
+    fun stop(@Suppress("UNUSED_PARAMETER") ctx: Context) {
         session = null
-        recorder = null // the loop notices and ends
-        ctx.stopService(Intent(ctx, VoiceService::class.java))
     }
 
-    /** Runs on the service's thread: reads the microphone until [stop] or the safety limit. */
+    /** Makes sure the microphone service runs (it ends by itself when neither a turn nor the wake word needs it). */
+    @Synchronized
+    fun ensureMic(ctx: Context): Boolean {
+        if (micThread?.isAlive == true) return true
+        return try {
+            ctx.startForegroundService(Intent(ctx, VoiceService::class.java))
+            true
+        } catch (e: Exception) {
+            error = "start_blocked: ${e.javaClass.simpleName}"
+            false
+        }
+    }
+
+    internal fun micRunning() = micThread?.isAlive == true
+
+    /**
+     * The one microphone loop (runs on the service's thread). While a turn is active every frame goes to Dart (and from there to
+     * Home Assistant); otherwise, if the wake word is on, frames go to the wake word engine.
+     */
     @Suppress("MissingPermission")
-    internal fun record(ctx: Context, id: String) {
+    internal fun micLoop(ctx: Context) {
+        val me = Thread.currentThread()
+        micThread = me
         val min = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         val rec = try {
             AudioRecord(
                 MediaRecorder.AudioSource.VOICE_RECOGNITION, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT, maxOf(min, FRAME_SAMPLES * 2 * 4),
+                AudioFormat.ENCODING_PCM_16BIT, maxOf(min, FRAME_SAMPLES * 2 * 6),
             )
         } catch (e: Exception) {
-            fail(ctx, id, "mic_failed")
+            micFailed(ctx, "mic_failed")
             return
         }
         if (rec.state != AudioRecord.STATE_INITIALIZED) {
             rec.release()
-            fail(ctx, id, "mic_failed")
+            micFailed(ctx, "mic_failed")
             return
         }
-        val me = Thread.currentThread()
-        recorder = me
+        var engine: WakeWordEngine? = null
+        var engineWord: String? = null
+        var quietUntil = 0L
+        var wasTurn = false
         val buf = ShortArray(FRAME_SAMPLES)
-        val started = System.currentTimeMillis()
         try {
             rec.startRecording()
-            while (session == id && recorder === me) {
-                if (System.currentTimeMillis() - started > MAX_RECORD_MS) {
-                    EventBus.emit("voice_record_timeout", mapOf("session" to id))
-                    break
-                }
+            while (micThread === me && (session != null || WakeWord.wanted)) {
                 var filled = 0
-                while (filled < FRAME_SAMPLES && session == id) {
+                val injected = debugInject?.poll()
+                if (injected != null) {
+                    System.arraycopy(injected, 0, buf, 0, FRAME_SAMPLES)
+                    filled = FRAME_SAMPLES
+                    Thread.sleep(80)
+                }
+                while (filled < FRAME_SAMPLES) {
                     val n = rec.read(buf, filled, FRAME_SAMPLES - filled)
                     if (n <= 0) {
-                        fail(ctx, id, "mic_failed")
+                        micFailed(ctx, "mic_failed")
                         return
                     }
                     filled += n
                 }
-                if (filled < FRAME_SAMPLES) break
-                val bytes = ByteArray(FRAME_SAMPLES * 2)
-                var sum = 0.0
-                for (i in 0 until FRAME_SAMPLES) {
-                    val s = buf[i].toInt()
-                    bytes[2 * i] = (s and 0xff).toByte()
-                    bytes[2 * i + 1] = ((s shr 8) and 0xff).toByte()
-                    sum += s.toDouble() * s
+                val id = session
+                val now = System.currentTimeMillis()
+                if (id != null) {
+                    wasTurn = true
+                    if (now - sessionStartedAt > MAX_RECORD_MS) {
+                        EventBus.emit("voice_record_timeout", mapOf("session" to id))
+                        session = null
+                        continue
+                    }
+                    emitFrame(id, buf)
+                } else if (WakeWord.wanted) {
+                    if (wasTurn) {
+                        wasTurn = false
+                        quietUntil = now + COOLDOWN_MS
+                        engine?.reset()
+                    }
+                    val word = WakeWord.activeId
+                    if (engine == null || engineWord != word) {
+                        engine?.close()
+                        engine = runCatching { WakeWordEngine(ctx, listOf(word)) }.getOrElse {
+                            WakeWord.engineFailed(it)
+                            null
+                        }
+                        engineWord = word
+                        WakeWord.listening = engine != null
+                    }
+                    val scores = engine?.feed(buf)
+                    val score = scores?.get(word) ?: 0f
+                    WakeWord.lastScore = score
+                    if (now >= quietUntil && score >= WakeWord.threshold) {
+                        quietUntil = now + COOLDOWN_MS
+                        engine?.reset()
+                        WakeWord.detected(word, score)
+                    }
                 }
-                val level = (sqrt(sum / FRAME_SAMPLES) / 8000.0).coerceIn(0.0, 1.0)
-                EventBus.emit(
-                    "voice_frame",
-                    mapOf("session" to id, "data" to Base64.encodeToString(bytes, Base64.NO_WRAP), "level" to level),
-                )
             }
         } finally {
             runCatching { rec.stop() }
             rec.release()
+            engine?.close()
+            WakeWord.listening = false
+            if (micThread === me) micThread = null
         }
     }
 
-    private fun fail(ctx: Context, id: String, code: String) {
+    private fun emitFrame(id: String, buf: ShortArray) {
+        val bytes = ByteArray(FRAME_SAMPLES * 2)
+        var sum = 0.0
+        for (i in 0 until FRAME_SAMPLES) {
+            val s = buf[i].toInt()
+            bytes[2 * i] = (s and 0xff).toByte()
+            bytes[2 * i + 1] = ((s shr 8) and 0xff).toByte()
+            sum += s.toDouble() * s
+        }
+        val level = (sqrt(sum / FRAME_SAMPLES) / 8000.0).coerceIn(0.0, 1.0)
+        EventBus.emit(
+            "voice_frame",
+            mapOf("session" to id, "data" to Base64.encodeToString(bytes, Base64.NO_WRAP), "level" to level),
+        )
+    }
+
+    private fun micFailed(ctx: Context, code: String) {
         error = code
-        if (session == id) session = null
-        EventBus.emit("voice_record_error", mapOf("session" to id, "code" to code))
-        ctx.stopService(Intent(ctx, VoiceService::class.java))
+        val id = session
+        session = null
+        micThread = null
+        if (id != null) EventBus.emit("voice_record_error", mapOf("session" to id, "code" to code))
+        if (WakeWord.wanted) WakeWord.micFailed(code)
     }
 
     // --- playback ------------------------------------------------------------------------------------
@@ -237,10 +303,14 @@ class VoiceService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel("voice", "Voice assistant", NotificationManager.IMPORTANCE_LOW))
+        val listeningForWord = WakeWord.wanted && Voice.session == null
         val n = Notification.Builder(this, "voice")
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
-            .setContentTitle("Listening")
-            .setContentText("The microphone is only used while the assistant listens")
+            .setContentTitle(if (listeningForWord) "Listening for the wake word" else "Listening")
+            .setContentText(
+                if (listeningForWord) "Audio is analysed on the device and never stored or sent until the wake word is heard"
+                else "The microphone is only used while the assistant listens",
+            )
             .setOngoing(true)
             .build()
         try {
@@ -249,16 +319,23 @@ class VoiceService : Service() {
             } else startForeground(4713, n)
         } catch (e: Exception) {
             val id = Voice.session
-            EventBus.emit("voice_record_error", mapOf("session" to id, "code" to "mic_blocked"))
+            if (id != null) EventBus.emit("voice_record_error", mapOf("session" to id, "code" to "mic_blocked"))
+            if (WakeWord.wanted) WakeWord.micFailed("start_blocked")
             stopSelf()
             return START_NOT_STICKY
         }
-        val id = Voice.session
-        if (id == null) {
+        if (Voice.micRunning()) return START_NOT_STICKY // already looping: it picks up the new need by itself
+        if (Voice.session == null && !WakeWord.wanted) {
             stopSelf()
             return START_NOT_STICKY
         }
-        Thread({ Voice.record(applicationContext, id) }, "voice-record").start()
+        Thread({
+            // a need that arrived while the loop was ending (a turn, the wake word switched on) starts it again
+            do {
+                Voice.micLoop(applicationContext)
+            } while (Voice.error == null && (Voice.session != null || WakeWord.wanted))
+            stopSelf()
+        }, "voice-mic").start()
         return START_NOT_STICKY
     }
 }

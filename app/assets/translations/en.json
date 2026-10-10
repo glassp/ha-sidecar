@@ -79,7 +79,8 @@
     "setup": "Setup",
     "developer": "Developer options",
     "network": "Network",
-    "watchdog": "Watchdog"
+    "watchdog": "Watchdog",
+    "voice": "Voice"
   },
   "settings": {
     "kiosk_dashboard": {
@@ -347,6 +348,26 @@
       "title": "Restart the Home Assistant app now",
       "desc": "Closes and starts it again.",
       "kw": "restart, relaunch, kill, force stop"
+    },
+    "wake_word": {
+      "title": "Wake word",
+      "desc": "Listen for a wake phrase to start the assistant hands-free. The microphone stays open; audio is analysed on the tablet and only leaves it after the phrase was heard.",
+      "kw": "wake word, hey jarvis, alexa, hands free, listen, microphone, assistant, voice"
+    },
+    "wake_word_phrase": {
+      "title": "Wake phrase",
+      "desc": "What to say. The models are downloaded from GitHub (openWakeWord, non-commercial licence) when you switch it on.",
+      "kw": "phrase, jarvis, alexa, mycroft, model"
+    },
+    "wake_word_threshold": {
+      "title": "Wake word threshold",
+      "desc": "How sure the tablet must be before it reacts. Lower reacts more often (and by mistake), higher needs a clearer phrase.",
+      "kw": "sensitivity, threshold, false alarms, wake word"
+    },
+    "wake_word_status": {
+      "title": "Wake word status",
+      "desc": "The microphone permission is needed.",
+      "kw": "wake word, status, download, models"
     }
   },
   "pin": {
@@ -819,5 +840,19 @@
     "reason_startup_hang": "stuck at start",
     "reason_manual": "manual",
     "reason_beacon": "dashboard not responding"
+  },
+  "wakeword": {
+    "downloading": "Downloading the wake word models… {pct} %",
+    "models_title": "The wake word models are not on this tablet",
+    "models_desc": "{mb} MB are downloaded from GitHub once.",
+    "download": "Download",
+    "problem": "The wake word does not work",
+    "err_models_missing": "The models are missing",
+    "err_start_blocked": "Android did not allow the microphone to start in the background",
+    "err_mic_failed": "The microphone could not be opened",
+    "err_engine_failed": "The wake word models could not be loaded",
+    "listening": "Listening for the wake phrase",
+    "off": "Off",
+    "on": "Listening"
   }
 }

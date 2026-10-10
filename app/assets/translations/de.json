@@ -79,7 +79,8 @@
     "setup": "Einrichtung",
     "developer": "Entwickleroptionen",
     "network": "Netzwerk",
-    "watchdog": "Überwachung"
+    "watchdog": "Überwachung",
+    "voice": "Sprache"
   },
   "settings": {
     "kiosk_dashboard": {
@@ -347,6 +348,26 @@
       "title": "Home-Assistant-App jetzt neu starten",
       "desc": "Beendet sie und startet sie erneut.",
       "kw": "neustart, beenden, erzwingen"
+    },
+    "wake_word": {
+      "title": "Aktivierungswort",
+      "desc": "Auf ein Aktivierungswort hören, um den Assistenten freihändig zu starten. Das Mikrofon bleibt offen; Audio wird auf dem Tablet ausgewertet und verlässt es erst, nachdem das Wort erkannt wurde.",
+      "kw": "aktivierungswort, hey jarvis, alexa, freihändig, zuhören, mikrofon, assistent, sprache"
+    },
+    "wake_word_phrase": {
+      "title": "Aktivierungsphrase",
+      "desc": "Was du sagst. Die Modelle werden beim Einschalten von GitHub geladen (openWakeWord, nicht-kommerzielle Lizenz).",
+      "kw": "phrase, jarvis, alexa, mycroft, modell"
+    },
+    "wake_word_threshold": {
+      "title": "Schwelle für das Aktivierungswort",
+      "desc": "Wie sicher sich das Tablet sein muss, bevor es reagiert. Niedriger reagiert öfter (und versehentlich), höher braucht eine deutlichere Phrase.",
+      "kw": "empfindlichkeit, schwelle, fehlalarm, aktivierungswort"
+    },
+    "wake_word_status": {
+      "title": "Status des Aktivierungsworts",
+      "desc": "Die Mikrofonberechtigung wird gebraucht.",
+      "kw": "aktivierungswort, status, download, modelle"
     }
   },
   "pin": {
@@ -819,5 +840,19 @@
     "reason_startup_hang": "beim Start hängengeblieben",
     "reason_manual": "manuell",
     "reason_beacon": "Dashboard reagiert nicht"
+  },
+  "wakeword": {
+    "downloading": "Aktivierungswort-Modelle werden geladen … {pct} %",
+    "models_title": "Die Modelle für das Aktivierungswort fehlen auf diesem Tablet",
+    "models_desc": "{mb} MB werden einmalig von GitHub geladen.",
+    "download": "Laden",
+    "problem": "Das Aktivierungswort funktioniert nicht",
+    "err_models_missing": "Die Modelle fehlen",
+    "err_start_blocked": "Android hat den Mikrofonstart im Hintergrund nicht erlaubt",
+    "err_mic_failed": "Das Mikrofon ließ sich nicht öffnen",
+    "err_engine_failed": "Die Modelle ließen sich nicht laden",
+    "listening": "Hört auf das Aktivierungswort",
+    "off": "Aus",
+    "on": "Hört zu"
   }
 }

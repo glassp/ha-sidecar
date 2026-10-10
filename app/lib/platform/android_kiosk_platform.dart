@@ -190,6 +190,10 @@ class AndroidKioskPlatform implements KioskPlatform {
   Future<void> requestMicPermission() => _call('requestMicPermission');
 
   @override
+  Future<void> downloadWakeWord(String id) =>
+      _call('downloadWakeWord', {'id': id});
+
+  @override
   Future<bool> showUi(String route) async =>
       await _call<bool>('showUi', {'route': route}) ?? false;
 

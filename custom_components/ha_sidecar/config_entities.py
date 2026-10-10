@@ -69,6 +69,7 @@ NUMBERS = [
     ("camera_fps", "Camera frame rate", 1, 10, 1, "fps", "mdi:camera-timer"),
     ("glance_after_s", "Glance screen after", 30, 3600, 10, UnitOfTime.SECONDS, "mdi:timer-sand"),
     ("watchdog_probe_s", "Watchdog check interval", 5, 300, 5, UnitOfTime.SECONDS, "mdi:timer-outline"),
+    ("wake_word_threshold", "Wake word threshold", 10, 99, 1, "%", "mdi:tune"),
     ("watchdog_startup_s", "Watchdog start-up timeout", 20, 600, 10, UnitOfTime.SECONDS, "mdi:timer-sand"),
 ]
 
@@ -80,6 +81,7 @@ SWITCHES = [
     ("camera_presence", "Camera presence detection", "mdi:camera-account"),
     ("glance", "At-a-glance screen", "mdi:clock-digital"),
     ("watchdog", "Companion app watchdog", "mdi:dog-service"),
+    ("wake_word", "Wake word", "mdi:microphone-message"),
 ]
 
 # key, name, options, icon
@@ -88,6 +90,7 @@ SELECTS = [
     ("camera_facing", "Presence camera", ["front", "back"], "mdi:camera-switch"),
     ("theme", "App theme", ["system", "light", "dark", "night"], "mdi:theme-light-dark"),
     ("watchdog_action", "Watchdog action", ["restart", "notify"], "mdi:wrench-clock"),
+    ("wake_word_id", "Wake word phrase", ["hey_jarvis", "alexa", "hey_mycroft"], "mdi:chat-processing-outline"),
 ]
 
 # key, name, icon

@@ -40,6 +40,10 @@ object DisplayConfig {
         "watchdog_action" to "restart", // restart | notify
         "watchdog_probe_s" to 20,
         "watchdog_startup_s" to 90,
+        // on-device wake word (off by default: it keeps the microphone open; the models are downloaded when it is switched on)
+        "wake_word" to false,
+        "wake_word_id" to "hey_jarvis",
+        "wake_word_threshold" to 50, // percent
         // at-a-glance screen
         "glance" to false,
         "glance_after_s" to 300,
@@ -70,6 +74,7 @@ object DisplayConfig {
         BrightnessController.poke()
         PresenceCamera.refresh(ctx)
         CompanionWatchdog.refresh(ctx)
+        WakeWord.refresh(ctx)
         EventBus.emit("status_changed")
         return Result(get(ctx), rejected)
     }
@@ -90,6 +95,7 @@ object DisplayConfig {
         key.startsWith("night_start") || key.startsWith("night_end") -> v.coerceIn(0, 24 * 60 - 1)
         key == "camera_sensitivity" -> v.coerceIn(0, 100)
         key == "camera_fps" -> v.coerceIn(1, 10)
+        key == "wake_word_threshold" -> v.coerceIn(10, 99)
         key == "watchdog_probe_s" -> v.coerceIn(5, 300)
         key == "watchdog_startup_s" -> v.coerceIn(20, 600)
         key.endsWith("_s") -> v.coerceIn(1, 24 * 3600)
@@ -101,6 +107,7 @@ object DisplayConfig {
         "camera_facing" -> v in FACINGS
         "theme" -> v in THEMES
         "watchdog_action" -> v == "restart" || v == "notify"
+        "wake_word_id" -> WakeWordModels.word(v) != null
         else -> true
     }
 }
