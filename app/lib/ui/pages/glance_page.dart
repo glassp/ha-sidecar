@@ -73,13 +73,22 @@ class _GlancePageState extends State<GlancePage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          time,
-                          style: const TextStyle(
-                            fontSize: 150,
-                            fontWeight: FontWeight.w200,
-                            color: Colors.white,
-                            height: 1,
+                        // one line at any width: full size on a tablet, scaled down on a phone
+                        SizedBox(
+                          width: double.infinity,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              time,
+                              maxLines: 1,
+                              softWrap: false,
+                              style: const TextStyle(
+                                fontSize: 150,
+                                fontWeight: FontWeight.w200,
+                                color: Colors.white,
+                                height: 1,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),

@@ -83,55 +83,82 @@ class _Weather extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
     final t = Theme.of(context).textTheme;
+    final info = Row(
+      children: [
+        Icon(cardIcon(card.icon), size: 52, color: s.primary),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                card.title,
+                style: t.labelLarge?.copyWith(color: s.onSurfaceVariant),
+              ),
+              if (card.value.isNotEmpty)
+                Text(card.value, style: t.headlineMedium),
+              Text(
+                card.subtitle,
+                style: t.bodyLarge?.copyWith(color: s.onSurfaceVariant),
+              ),
+              if (card.details.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    card.details.join('  ·  '),
+                    style: t.bodySmall?.copyWith(color: s.onSurfaceVariant),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+    final days = [
+      for (final f in card.forecast)
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              f.label,
+              style: t.labelMedium?.copyWith(color: s.onSurfaceVariant),
+            ),
+            const SizedBox(height: 4),
+            Icon(cardIcon(f.icon), size: 24, color: s.secondary),
+            const SizedBox(height: 4),
+            Text(f.value, style: t.labelMedium),
+          ],
+        ),
+    ];
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Icon(cardIcon(card.icon), size: 52, color: s.primary),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      // beside each other on a tablet, the forecast under the text on a phone (four days would leave the text no room)
+      child: LayoutBuilder(
+        builder: (context, box) {
+          if (days.isEmpty) return info;
+          if (box.maxWidth < 560) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  card.title,
-                  style: t.labelLarge?.copyWith(color: s.onSurfaceVariant),
+                info,
+                const SizedBox(height: 14),
+                Wrap(
+                  alignment: WrapAlignment.spaceAround,
+                  spacing: 14,
+                  runSpacing: 10,
+                  children: days,
                 ),
-                if (card.value.isNotEmpty)
-                  Text(card.value, style: t.headlineMedium),
-                Text(
-                  card.subtitle,
-                  style: t.bodyLarge?.copyWith(color: s.onSurfaceVariant),
-                ),
-                if (card.details.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      card.details.join('  ·  '),
-                      style: t.bodySmall?.copyWith(color: s.onSurfaceVariant),
-                    ),
-                  ),
               ],
-            ),
-          ),
-          for (final f in card.forecast)
-            Padding(
-              padding: const EdgeInsets.only(left: 14),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    f.label,
-                    style: t.labelMedium?.copyWith(color: s.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 4),
-                  Icon(cardIcon(f.icon), size: 24, color: s.secondary),
-                  const SizedBox(height: 4),
-                  Text(f.value, style: t.labelMedium),
-                ],
-              ),
-            ),
-        ],
+            );
+          }
+          return Row(
+            children: [
+              Expanded(child: info),
+              for (final d in days)
+                Padding(padding: const EdgeInsets.only(left: 14), child: d),
+            ],
+          );
+        },
       ),
     );
   }
