@@ -481,9 +481,8 @@ object WakeWordDebug {
                 } else Thread({ score(ctx, File(ctx.filesDir, path), word) }, "wwtest").start()
             }
         }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            ctx.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
-        } else ctx.registerReceiver(receiver, filter)
+        // debug builds only (see the guard above): exported on purpose, so that `adb shell am broadcast` reaches it
+        androidx.core.content.ContextCompat.registerReceiver(ctx, receiver, filter, androidx.core.content.ContextCompat.RECEIVER_EXPORTED)
     }
 
     /** The samples of a 16 kHz mono PCM16 wav. */

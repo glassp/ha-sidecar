@@ -7,6 +7,7 @@ import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.os.Bundle
+import androidx.core.content.ContextCompat
 import android.view.View
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
@@ -34,9 +35,7 @@ class MainActivity : FlutterActivity() {
         applyRoute(r)
         super.onCreate(savedInstanceState)
         UiHost.activity = this
-        val filter = IntentFilter(AlarmService.ACTION_ENDED)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) registerReceiver(alarmEnded, filter, Context.RECEIVER_NOT_EXPORTED)
-        else registerReceiver(alarmEnded, filter)
+        ContextCompat.registerReceiver(this, alarmEnded, IntentFilter(AlarmService.ACTION_ENDED), ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -78,8 +77,19 @@ class MainActivity : FlutterActivity() {
 
     private fun applyFlags(r: String) {
         val overlay = r != UiHost.MAIN
-        setShowWhenLocked(overlay)
-        setTurnScreenOn(r == UiHost.ALARM || r == UiHost.VOICE)
+        val wake = r == UiHost.ALARM || r == UiHost.VOICE
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(overlay)
+            setTurnScreenOn(wake)
+        } else {
+            // Android 8.0 (API 26) has no such methods: the window flags do the same
+            @Suppress("DEPRECATION")
+            fun flag(f: Int, on: Boolean) = if (on) window.addFlags(f) else window.clearFlags(f)
+            @Suppress("DEPRECATION")
+            flag(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED, overlay)
+            @Suppress("DEPRECATION")
+            flag(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON, wake)
+        }
         val keepOn = r == UiHost.ALARM || r == UiHost.VOICE
         if (keepOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         // Release builds only, so debug builds stay capturable for development.
