@@ -18,7 +18,7 @@
       },
       "details": {
         "title": "Add {name}",
-        "description": "Found at {host}. Choose how the tablet appears in Home Assistant.\n\nThe entity prefix makes every entity id `<domain>.<prefix>_<entity>`, for example `sensor.wallpanel_timers`, so several tablets never collide. It cannot be changed later.",
+        "description": "Found at {host}. Choose how the tablet appears in Home Assistant.\n\nThe entity prefix makes every entity id `domain.prefix_entity`, for example `sensor.wallpanel_timers`, so several tablets never collide. It cannot be changed later.",
         "data": {
           "name": "Name",
           "entity_prefix": "Entity prefix"
@@ -65,13 +65,17 @@
       "name": "Launch app",
       "description": "Launches an app on the tablet.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "package": {
           "name": "Package",
           "description": "Android package name."
         },
         "path": {
           "name": "Path",
-          "description": "Optional HA frontend path; only used for the HA companion app (homeassistant://navigate/<path>)."
+          "description": "Optional HA frontend path; only used for the HA companion app (the path after homeassistant://navigate/)."
         }
       }
     },
@@ -79,6 +83,10 @@
       "name": "Set allowed apps",
       "description": "Sets which apps may run during lockdown.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "packages": {
           "name": "Packages",
           "description": "List of package names."
@@ -89,6 +97,10 @@
       "name": "Set alarm",
       "description": "Creates or updates a native alarm on the tablet.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "time": {
           "name": "Time",
           "description": "Local time."
@@ -119,6 +131,10 @@
       "name": "Cancel alarm",
       "description": "Deletes an alarm.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "alarm_id": {
           "name": "Alarm ID",
           "description": "ID of the alarm."
@@ -127,16 +143,32 @@
     },
     "stop_alarm": {
       "name": "Stop alarm",
-      "description": "Dismisses the ringing alarm."
+      "description": "Dismisses the ringing alarm.",
+      "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        }
+      }
     },
     "snooze_alarm": {
       "name": "Snooze alarm",
-      "description": "Snoozes the ringing alarm."
+      "description": "Snoozes the ringing alarm.",
+      "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        }
+      }
     },
     "install_system_update": {
       "name": "Install system update",
       "description": "Device owner only: installs an A/B OTA package from a URI readable by the system.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "uri": {
           "name": "URI",
           "description": "OTA package location."
@@ -147,6 +179,10 @@
       "name": "Bring dashboard to front",
       "description": "Brings the HA companion app to the front without restarting it.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "path": {
           "name": "Path",
           "description": "Optional dashboard path to navigate to."
@@ -157,6 +193,10 @@
       "name": "Enable or disable alarm",
       "description": "Turns an existing alarm on or off without changing its time.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "alarm_id": {
           "name": "Alarm ID",
           "description": "ID of the alarm."
@@ -171,6 +211,10 @@
       "name": "Skip next alarm",
       "description": "A repeating alarm does not ring on its next occurrence (call again to undo); a one-time alarm is turned off. Without an ID the alarm that rings next is used.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "alarm_id": {
           "name": "Alarm ID",
           "description": "Alarm to skip. Optional."
@@ -181,6 +225,10 @@
       "name": "Mute alarms",
       "description": "Silences all alarms, for example while you are away. They keep their schedule and ring again when the mute ends.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "duration": {
           "name": "Duration",
           "description": "How long to mute. Leave empty to mute until Unmute alarms is called."
@@ -189,12 +237,22 @@
     },
     "unmute_alarms": {
       "name": "Unmute alarms",
-      "description": "Lets alarms ring again."
+      "description": "Lets alarms ring again.",
+      "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        }
+      }
     },
     "start_timer": {
       "name": "Start timer",
       "description": "Starts a labeled countdown on the tablet. It is shown on the idle screen and rings when it ends; Home Assistant gets a timer_finished event.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "duration": {
           "name": "Duration",
           "description": "Countdown length."
@@ -213,6 +271,10 @@
       "name": "Start stopwatch",
       "description": "Starts a labeled count-up that is shown on the idle screen until it is cancelled.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "label": {
           "name": "Label",
           "description": "Name of the timer, shown on the tablet. Instead of the ID it also finds an existing timer."
@@ -227,6 +289,10 @@
       "name": "Pause timer",
       "description": "Pauses a running timer or stopwatch.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "timer_id": {
           "name": "Timer ID",
           "description": "ID of the timer. Defaults to the label in lower case with underscores (Batch 1 becomes batch_1)."
@@ -241,6 +307,10 @@
       "name": "Resume timer",
       "description": "Continues a paused timer or stopwatch.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "timer_id": {
           "name": "Timer ID",
           "description": "ID of the timer. Defaults to the label in lower case with underscores (Batch 1 becomes batch_1)."
@@ -255,6 +325,10 @@
       "name": "Cancel timer",
       "description": "Removes a timer or stopwatch without ringing.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "timer_id": {
           "name": "Timer ID",
           "description": "ID of the timer. Defaults to the label in lower case with underscores (Batch 1 becomes batch_1)."
@@ -269,6 +343,10 @@
       "name": "Adjust timer",
       "description": "Adds or removes time on a countdown.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "timer_id": {
           "name": "Timer ID",
           "description": "ID of the timer. Defaults to the label in lower case with underscores (Batch 1 becomes batch_1)."
@@ -285,12 +363,22 @@
     },
     "enter_night_mode": {
       "name": "Enter night mode",
-      "description": "Switches the tablet to night brightness now, regardless of the Night starts / Night ends times, until exit_night_mode is called. Overrides a configured night entity. Applies while the Brightness mode is Auto."
+      "description": "Switches the tablet to night brightness now, regardless of the Night starts / Night ends times, until exit_night_mode is called. Overrides a configured night entity. Applies while the Brightness mode is Auto.",
+      "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        }
+      }
     },
     "exit_night_mode": {
       "name": "Exit night mode",
       "description": "Switches the tablet back to day brightness now, until enter_night_mode is called. Applies while the Brightness mode is Auto.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "follow_schedule": {
           "name": "Follow schedule",
           "description": "Instead of forcing day, hand control back to the Night starts / Night ends times."
@@ -299,20 +387,42 @@
     },
     "restart_companion": {
       "name": "Restart companion app",
-      "description": "Closes and starts the Home Assistant companion app on the tablet again (device owner: hide and unhide; otherwise a relaunch)."
+      "description": "Closes and starts the Home Assistant companion app on the tablet again (device owner: hide and unhide; otherwise a relaunch).",
+      "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        }
+      }
     },
     "listen": {
       "name": "Start listening",
-      "description": "Opens the assistant on the tablet and listens, as if the talk button was pressed (for a physical button or an automation). The tablet needs the microphone permission."
+      "description": "Opens the assistant on the tablet and listens, as if the talk button was pressed (for a physical button or an automation). The tablet needs the microphone permission.",
+      "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        }
+      }
     },
     "cancel_listening": {
       "name": "Cancel listening",
-      "description": "Ends the assistant turn that is running on the tablet and closes its screen."
+      "description": "Ends the assistant turn that is running on the tablet and closes its screen.",
+      "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        }
+      }
     },
     "show_card": {
       "name": "Show card",
       "description": "Shows a card on the tablet's voice screen: the weather, what is playing, a camera picture or any entity (give an entity), or one made by hand with a title, value and picture. During a conversation it is added to the answer; otherwise it appears on its own for a while. For an LLM, put this action in a script it can call as a tool.",
       "fields": {
+        "device_id": {
+          "name": "Tablet",
+          "description": "The tablet or tablets to send this to."
+        },
         "entity_id": {
           "name": "Entity",
           "description": "A weather, media player, camera/image or any other entity to show."

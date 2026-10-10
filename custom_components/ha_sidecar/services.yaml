@@ -1,8 +1,11 @@
 launch_app:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     package:
       required: true
       example: io.homeassistant.companion.android
@@ -14,20 +17,26 @@ launch_app:
         text:
 
 bring_to_front:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     path:
       example: lovelace/kitchen
       selector:
         text:
 
 set_allowlist:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     packages:
       required: true
       example: '["com.spotify.music"]'
@@ -35,10 +44,13 @@ set_allowlist:
         object:
 
 set_alarm:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     time:
       required: true
       selector:
@@ -66,30 +78,44 @@ set_alarm:
           max: 60
 
 cancel_alarm:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     alarm_id:
       required: true
       selector:
         text:
 
 stop_alarm:
-  target:
-    device:
-      integration: ha_sidecar
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
 
 snooze_alarm:
-  target:
-    device:
-      integration: ha_sidecar
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
 
 install_system_update:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     uri:
       required: true
       example: file:///sdcard/Download/ota.zip
@@ -97,10 +123,13 @@ install_system_update:
         text:
 
 set_alarm_enabled:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     alarm_id:
       required: true
       selector:
@@ -111,33 +140,46 @@ set_alarm_enabled:
         boolean:
 
 skip_next_alarm:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     alarm_id:
       selector:
         text:
 
 mute_alarms:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     duration:
       selector:
         duration:
 
 unmute_alarms:
-  target:
-    device:
-      integration: ha_sidecar
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
 
 start_timer:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     duration:
       required: true
       selector:
@@ -151,10 +193,13 @@ start_timer:
         text:
 
 start_stopwatch:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     label:
       example: Treadmill
       selector:
@@ -164,10 +209,13 @@ start_stopwatch:
         text:
 
 pause_timer:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     timer_id:
       selector:
         text:
@@ -176,10 +224,13 @@ pause_timer:
         text:
 
 resume_timer:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     timer_id:
       selector:
         text:
@@ -188,10 +239,13 @@ resume_timer:
         text:
 
 cancel_timer:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     timer_id:
       selector:
         text:
@@ -200,10 +254,13 @@ cancel_timer:
         text:
 
 adjust_timer:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     timer_id:
       selector:
         text:
@@ -219,40 +276,62 @@ adjust_timer:
           unit_of_measurement: s
 
 enter_night_mode:
-  target:
-    device:
-      integration: ha_sidecar
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
 
 exit_night_mode:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     follow_schedule:
       default: false
       selector:
         boolean:
 
 restart_companion:
-  target:
-    device:
-      integration: ha_sidecar
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
 
 listen:
-  target:
-    device:
-      integration: ha_sidecar
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
 
 cancel_listening:
-  target:
-    device:
-      integration: ha_sidecar
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
 
 show_card:
-  target:
-    device:
-      integration: ha_sidecar
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: ha_sidecar
+          multiple: true
     entity_id:
       example: weather.home
       selector:
