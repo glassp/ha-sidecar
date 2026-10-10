@@ -112,7 +112,7 @@
     },
     "pin": {
       "title": "PIN",
-      "desc": "Tippe auf dem gesperrten Bildschirm 5-mal auf die obere linke Ecke und gib dann deine PIN ein.",
+      "desc": "Tippe auf dem gesperrten Bildschirm 5-mal auf die PIN-Ecke (unten links, wenn du sie nicht verschoben hast) und gib dann deine PIN ein.",
       "kw": "passwort, code, entsperren, verlassen, geheim"
     },
     "allowed_apps": {
@@ -398,6 +398,11 @@
       "title": "Sprach-Skin",
       "desc": "Das Aussehen des Sprachbildschirms und der angedockten Karte.",
       "kw": "skin, thema, farben, aussehen, sprache, karte"
+    },
+    "hot_corner": {
+      "title": "PIN-Ecke",
+      "desc": "Die versteckte Ecke, auf die du auf dem gesperrten Bildschirm 5-mal tippst, um zur PIN-Eingabe zu kommen. Verschiebe sie, wenn sie etwas verdeckt, das du brauchst.",
+      "kw": "pin, ecke, hot corner, verlassen, entsperren, menü"
     }
   },
   "pin": {
@@ -405,7 +410,7 @@
     "change": "PIN ändern",
     "new": "Neue PIN",
     "repeat": "PIN wiederholen",
-    "dialog_intro": "Mindestens 4 Ziffern. Du gibst sie ein, indem du 5-mal auf die obere linke Ecke des gesperrten Bildschirms tippst.",
+    "dialog_intro": "Mindestens 4 Ziffern. Du gibst sie ein, indem du 5-mal auf die versteckte PIN-Ecke des gesperrten Bildschirms tippst (unten links, wenn du sie nicht verschoben hast).",
     "too_short": "Mindestens 4 Ziffern verwenden",
     "mismatch": "Die PINs stimmen nicht überein",
     "required_desc": "Erforderlich, bevor der Kiosk gesperrt werden kann.",
@@ -745,7 +750,7 @@
       "not_set": "Noch keine PIN",
       "change": "Ändern",
       "b1_title": "So entsperrst du",
-      "b1_text": "Tippe auf dem gesperrten Bildschirm 5-mal auf die obere linke Ecke und gib dann die PIN ein. Nach 5 falschen Versuchen gibt es eine kurze Wartezeit.",
+      "b1_text": "Tippe auf dem gesperrten Bildschirm 5-mal auf die versteckte PIN-Ecke (unten links, wenn du sie nicht verschoben hast) und gib dann die PIN ein. Nach 5 falschen Versuchen gibt es eine kurze Wartezeit.",
       "b2_title": "Aus Home Assistant",
       "b2_text": "Du kannst auch aus der Ferne über Home Assistant entsperren. Das Sperren aus der Ferne braucht eine vorhandene PIN."
     },
@@ -913,5 +918,11 @@
     "err_hash_mismatch": "Die geladene Datei passte nicht zur Prüfsumme und wurde verworfen.",
     "err_unknown_word": "Unbekanntes Aktivierungswort.",
     "err_no_space": "Nicht genug Speicher auf dem Tablet."
+  },
+  "corner": {
+    "bottom_left": "Unten links",
+    "bottom_right": "Unten rechts",
+    "top_left": "Oben links",
+    "top_right": "Oben rechts"
   }
 }

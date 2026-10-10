@@ -8,7 +8,7 @@ companion app** for the dashboard and a small **sidecar app** for everything the
 |---|---|
 | Kiosk lockdown (no shade, no recents, no home) | **Device owner / lock-task mode** if provisioned, otherwise an **accessibility service** fallback |
 | App allowlist | Anything not allowlisted is blocked (lock task) or bounced back to the HA app (accessibility) |
-| On-device PIN exit | Tap the top-left corner 5x, enter PIN. Works without the Flutter engine running |
+| On-device PIN exit | Tap the hidden PIN corner (bottom left by default, movable) 5x, enter PIN. Works without the Flutter engine running |
 | Foreground the HA app | Intent-based (`bring_to_front`, optional `homeassistant://navigate/` deep link), never restarts the app |
 | Remote enable/disable | HA switch `Kiosk lockdown` (remote *enable* needs a PIN to exist on the device) |
 | Native alarms | `AlarmManager.setAlarmClock` - shows up as the system "next alarm", rings over lock screen/kiosk, snooze/dismiss, HA services + entities |

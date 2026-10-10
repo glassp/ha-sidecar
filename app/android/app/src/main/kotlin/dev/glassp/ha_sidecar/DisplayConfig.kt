@@ -46,6 +46,7 @@ object DisplayConfig {
         "voice_sounds" to true, // the ping when listening starts and when the conversation ends
         "voice_volume" to 50, // media volume (%) during a voice session; the previous level comes back afterwards
         "voice_skin" to "midnight", // the look of the voice screen and the card
+        "hot_corner" to "bottom_left", // where the hidden PIN corner is (the top-left one sits on the Home Assistant menu button)
         "voice_docked" to true, // voice shows as a small card over whatever is on screen instead of a full-screen page
         // on-device wake word (off by default: it keeps the microphone open; the models are downloaded when it is switched on)
         "wake_word" to false,
@@ -59,6 +60,7 @@ object DisplayConfig {
     private val MODES = setOf("auto", "day", "night", "manual")
     private val FACINGS = setOf("front", "back")
     private val THEMES = setOf("system", "light", "dark", "night")
+    private val CORNERS = setOf("bottom_left", "bottom_right", "top_left", "top_right")
     private val VOICE_SKINS = setOf("midnight", "aurora", "sunrise", "paper", "contrast")
 
     fun get(ctx: Context): Map<String, Any> {
@@ -83,6 +85,7 @@ object DisplayConfig {
         PresenceCamera.refresh(ctx)
         CompanionWatchdog.refresh(ctx)
         WakeWord.refresh(ctx)
+        KioskController.refreshOverlay(ctx) // the hot corner may have moved
         EventBus.emit("status_changed")
         return Result(get(ctx), rejected)
     }
@@ -117,6 +120,7 @@ object DisplayConfig {
         "camera_facing" -> v in FACINGS
         "theme" -> v in THEMES
         "voice_skin" -> v in VOICE_SKINS
+        "hot_corner" -> v in CORNERS
         "watchdog_action" -> v == "restart" || v == "notify"
         "wake_word_ids" -> v.split(',').map { it.trim() }.filter { it.isNotEmpty() }.all { WakeWordModels.word(it) != null }
         else -> true

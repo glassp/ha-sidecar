@@ -277,6 +277,27 @@ List<SettingEntry> buildRegistry(AppController c) {
       title: s().hasPin ? 'pin.change'.tr() : 'pin.set'.tr(),
     ),
     base(
+      'hot_corner',
+      Section.kiosk,
+      lock,
+      (ctx) => SegmentedSetting(
+        icon: Icons.touch_app_outlined,
+        title: _t('hot_corner', 'title'),
+        subtitle: _t('hot_corner', 'desc'),
+        options: {
+          for (final c in const [
+            'bottom_left',
+            'bottom_right',
+            'top_left',
+            'top_right',
+          ])
+            c: 'corner.$c'.tr(),
+        },
+        value: str('hot_corner', 'bottom_left'),
+        onChanged: (v) => set(ctx, 'hot_corner', v),
+      ),
+    ),
+    base(
       'allowed_apps',
       Section.kiosk,
       lock,

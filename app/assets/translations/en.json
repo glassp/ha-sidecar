@@ -112,7 +112,7 @@
     },
     "pin": {
       "title": "PIN",
-      "desc": "Tap the top-left corner 5 times on the locked screen, then enter your PIN.",
+      "desc": "Tap the PIN corner (bottom left unless you moved it) 5 times on the locked screen, then enter your PIN.",
       "kw": "password, code, unlock, exit, secret"
     },
     "allowed_apps": {
@@ -398,6 +398,11 @@
       "title": "Voice skin",
       "desc": "The look of the voice screen and the docked card.",
       "kw": "skin, theme, colors, look, voice, card"
+    },
+    "hot_corner": {
+      "title": "PIN corner",
+      "desc": "The hidden corner you tap 5 times on the locked screen to reach the PIN pad. Move it if it covers something you need.",
+      "kw": "pin, corner, hot corner, exit, unlock, menu"
     }
   },
   "pin": {
@@ -405,7 +410,7 @@
     "change": "Change PIN",
     "new": "New PIN",
     "repeat": "Repeat PIN",
-    "dialog_intro": "At least 4 digits. You will enter it by tapping the top-left corner of the locked screen 5 times.",
+    "dialog_intro": "At least 4 digits. You will enter it by tapping the hidden PIN corner of the locked screen 5 times (bottom left unless you moved it).",
     "too_short": "Use at least 4 digits",
     "mismatch": "The PINs do not match",
     "required_desc": "Required before the kiosk can be locked.",
@@ -745,7 +750,7 @@
       "not_set": "No PIN yet",
       "change": "Change",
       "b1_title": "How to unlock",
-      "b1_text": "On the locked screen tap the top-left corner 5 times, then enter the PIN. After 5 wrong tries there is a short waiting time.",
+      "b1_text": "On the locked screen tap the hidden PIN corner (bottom left unless you moved it) 5 times, then enter the PIN. After 5 wrong tries there is a short waiting time.",
       "b2_title": "From Home Assistant",
       "b2_text": "You can also unlock remotely from Home Assistant. Remote locking needs a PIN to exist."
     },
@@ -913,5 +918,11 @@
     "err_hash_mismatch": "The downloaded file did not match its checksum and was discarded.",
     "err_unknown_word": "Unknown wake word.",
     "err_no_space": "Not enough storage on the tablet."
+  },
+  "corner": {
+    "bottom_left": "Bottom left",
+    "bottom_right": "Bottom right",
+    "top_left": "Top left",
+    "top_right": "Top right"
   }
 }

@@ -18,12 +18,18 @@ object HotCorner {
     private const val TAPS = 5
     private const val WINDOW_MS = 5_000L
     private const val SIZE_DP = 72
+    private const val GESTURE_BAR_DP = 32
 
     private var view: View? = null
+    private var corner = ""
     private var windowManager: WindowManager? = null
 
+    /** Shows the corner where the settings put it, moving it if the setting changed. */
     fun show(ctx: Context, accessibility: Boolean) {
-        if (view != null) return
+        val wanted = DisplayConfig.get(ctx)["hot_corner"] as String
+        if (view != null && corner == wanted) return
+        hide()
+        corner = wanted
         if (!accessibility && !android.provider.Settings.canDrawOverlays(ctx)) return
 
         val wm = ctx.getSystemService(WindowManager::class.java)
@@ -53,7 +59,13 @@ object HotCorner {
             size, size, type,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT,
-        ).apply { gravity = Gravity.TOP or Gravity.START }
+        ).apply {
+            val horizontal = if (corner.endsWith("right")) Gravity.END else Gravity.START
+            val vertical = if (corner.startsWith("top")) Gravity.TOP else Gravity.BOTTOM
+            gravity = vertical or horizontal
+            // bottom corners sit above the system's gesture bar, which would take the taps
+            if (vertical == Gravity.BOTTOM) y = (GESTURE_BAR_DP * ctx.resources.displayMetrics.density).toInt()
+        }
 
         runCatching {
             wm.addView(v, lp)
