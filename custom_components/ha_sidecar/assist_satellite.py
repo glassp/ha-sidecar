@@ -103,7 +103,19 @@ class SidecarSatellite(SidecarEntity, AssistSatelliteEntity):
         if self._unregister_timers is not None:
             self._unregister_timers()
             self._unregister_timers = None
+        self._drop_twins()
         self._end_session()
+
+    def _drop_twins(self) -> None:
+        """Take the mirrored tablet timers out of the timer manager: after a reload this entity starts empty and would mirror them again."""
+        manager = self.hass.data.get(TIMER_DATA)
+        for mirror in self._mirror.values():
+            if manager is not None and mirror.ha_id in manager.timers:
+                try:
+                    self._quietly(manager.cancel_timer, mirror.ha_id)
+                except Exception as err:  # noqa: BLE001 - already gone is fine
+                    _LOGGER.debug("Could not drop timer twin %s: %s", mirror.ha_id, err)
+        self._mirror.clear()
 
     @callback
     def _handle_update(self) -> None:

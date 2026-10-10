@@ -46,7 +46,7 @@ class SidecarWebSocketView(HomeAssistantView):
         device: SidecarDevice | None = None
         try:
             hello = await ws.receive_json(timeout=HELLO_TIMEOUT)
-            if hello.get("type") != "hello" or hello.get("protocol") != PROTOCOL_VERSION:
+            if not isinstance(hello, dict) or hello.get("type") != "hello" or hello.get("protocol") != PROTOCOL_VERSION:
                 await ws.send_json({"type": "error", "error": "unsupported_protocol"})
                 await ws.close()
                 return ws
@@ -58,7 +58,8 @@ class SidecarWebSocketView(HomeAssistantView):
                 await ws.close()
                 return ws
 
-            device.attach(ws, hello.get("device") or {})
+            info = hello.get("device")
+            device.attach(ws, info if isinstance(info, dict) else {})
             await ws.send_json({"type": "hello_ok", "device_id": device.device_id, "protocol": PROTOCOL_VERSION})
             hass.async_create_task(device.async_sync_inputs())
 
@@ -71,7 +72,8 @@ class SidecarWebSocketView(HomeAssistantView):
                     msg = raw.json()
                 except ValueError:
                     continue
-                self._dispatch(device, msg)
+                if isinstance(msg, dict):
+                    self._dispatch(device, msg)
         except (asyncio.TimeoutError, TypeError, ValueError):
             pass
         finally:

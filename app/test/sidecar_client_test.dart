@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -62,4 +64,46 @@ void main() {
     expect(hits, seen);
     await counting.close(force: true);
   });
+  test(
+    'a broken or binary frame is ignored and the next command is still answered',
+    () async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final answers = Completer<Map<String, dynamic>>();
+      server.listen((request) async {
+        final ws = await WebSocketTransformer.upgrade(request);
+        ws.listen((raw) {
+          final msg = jsonDecode(raw as String) as Map<String, dynamic>;
+          if (msg['type'] == 'hello') {
+            ws.add(jsonEncode({'type': 'hello_ok'}));
+            ws.add('this is {not json'); // broken JSON
+            ws.add([1, 2, 3]); // a binary frame
+            ws.add(jsonEncode([1, 2, 3])); // valid JSON, but not an object
+            ws.add(
+              jsonEncode({
+                'type': 'command',
+                'id': 7,
+                'command': 'ping',
+                'data': {},
+              }),
+            );
+          } else if (msg['type'] == 'result' && !answers.isCompleted) {
+            answers.complete(msg);
+          }
+        });
+      });
+      final c = SidecarClient(
+        uri: Uri.parse('ws://127.0.0.1:${server.port}/ws'),
+        token: 't',
+        deviceInfo: () => const {},
+        onCommand: (command, _) async => {'echo': command},
+        onConnected: () async {},
+      )..start();
+      final result = await answers.future.timeout(const Duration(seconds: 5));
+      expect(result['id'], 7);
+      expect(result['success'], true);
+      expect(c.link.value, LinkState.connected);
+      await c.stop();
+      await server.close(force: true);
+    },
+  );
 }

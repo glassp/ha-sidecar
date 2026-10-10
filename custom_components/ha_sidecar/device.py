@@ -8,7 +8,7 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
-from aiohttp import web
+from aiohttp import ClientError, web
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -117,13 +117,14 @@ class SidecarDevice:
 
     @callback
     def handle_event(self, event: str, data: dict[str, Any]) -> None:
+        if not isinstance(data, dict):
+            data = {}
         if event == "companion_restarted":
             self.beacon.disarm()
         elif event == "timer_cancelled" and data.get("id"):
             self._forget_voice_timer(str(data["id"]))
-        self.hass.bus.async_fire(
-            EVENT_SIDECAR, {"device_id": self.device_id, "name": self.name, "event": event, **data}
-        )
+        # what the tablet reports may add fields but never replace the ones that say which tablet and event this is
+        self.hass.bus.async_fire(EVENT_SIDECAR, {**data, "device_id": self.device_id, "name": self.name, "event": event})
 
     @callback
     def _forget_voice_timer(self, timer_id: str) -> None:
@@ -157,7 +158,14 @@ class SidecarDevice:
         """Send a message that needs no answer (voice events); dropped while the tablet is away."""
         ws = self._ws
         if ws is not None and not ws.closed:
-            self.hass.async_create_task(ws.send_json(msg))
+            self.hass.async_create_task(self._async_push(ws, msg))
+
+    @staticmethod
+    async def _async_push(ws: web.WebSocketResponse, msg: dict[str, Any]) -> None:
+        try:
+            await ws.send_json(msg)
+        except (ConnectionError, RuntimeError, ClientError):
+            pass  # the socket closed between the check and the write: the tablet is away, the message has no audience
 
     async def send_command(
         self, command: str, data: dict[str, Any] | None = None, timeout: float = COMMAND_TIMEOUT
@@ -170,7 +178,11 @@ class SidecarDevice:
         fut: asyncio.Future[dict[str, Any]] = self.hass.loop.create_future()
         self._pending[cmd_id] = fut
         assert self._ws is not None
-        await self._ws.send_json({"type": "command", "id": cmd_id, "command": command, "data": data or {}})
+        try:
+            await self._ws.send_json({"type": "command", "id": cmd_id, "command": command, "data": data or {}})
+        except (ConnectionError, RuntimeError, ClientError) as err:  # the socket closed while we were writing
+            self._pending.pop(cmd_id, None)
+            raise HomeAssistantError(f"{self.name} is not connected") from err
         try:
             async with asyncio.timeout(timeout):
                 msg = await fut

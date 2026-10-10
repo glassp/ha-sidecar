@@ -120,7 +120,12 @@ class SidecarClient {
 
       ch.stream.listen(
         (raw) async {
-          final msg = jsonDecode(raw as String) as Map<String, dynamic>;
+          final Map<String, dynamic> msg;
+          try {
+            msg = jsonDecode(raw as String) as Map<String, dynamic>;
+          } catch (_) {
+            return; // not one of ours (binary frame, broken JSON): ignore it rather than raise
+          }
           switch (msg['type']) {
             case 'hello_ok':
               authenticated = true;
