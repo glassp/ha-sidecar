@@ -59,6 +59,20 @@ object Prefs {
     fun addTempAllowed(ctx: Context, pkg: String, durationMs: Long) =
         sp(ctx).edit().putLong("temp:$pkg", System.currentTimeMillis() + durationMs).apply()
 
+    /** The system brightness setup (mode, level) from before the brightness controller took over, to give back on "manual". */
+    fun brightnessBackup(ctx: Context): Pair<Int, Int>? {
+        val prefs = sp(ctx)
+        return if (prefs.contains("bright_mode")) prefs.getInt("bright_mode", 0) to prefs.getInt("bright_level", 128) else null
+    }
+
+    fun setBrightnessBackup(ctx: Context, v: Pair<Int, Int>?) = sp(ctx).edit().apply {
+        if (v == null) {
+            remove("bright_mode"); remove("bright_level")
+        } else {
+            putInt("bright_mode", v.first); putInt("bright_level", v.second)
+        }
+    }.apply()
+
     fun alarmsJson(ctx: Context): String = sp(ctx).getString("alarms", "[]")!!
     fun setAlarmsJson(ctx: Context, v: String) = sp(ctx).edit().putString("alarms", v).apply()
 

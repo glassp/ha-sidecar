@@ -119,6 +119,7 @@ object BrightnessController {
         } else {
             target = -1
             error = null
+            restoreUserBrightness(c)
         }
         glance(c, cfg, now)
         emitIfChanged(c)
@@ -231,11 +232,31 @@ object BrightnessController {
         error = null
         val cr = c.contentResolver
         if (!manualModeApplied) {
+            // first time we take over: remember what the user had (adaptive or manual, and the level), unless already remembered
+            if (Prefs.brightnessBackup(c) == null) {
+                Prefs.setBrightnessBackup(
+                    c,
+                    Settings.System.getInt(cr, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL) to
+                        Settings.System.getInt(cr, Settings.System.SCREEN_BRIGHTNESS, 128),
+                )
+            }
             Settings.System.putInt(cr, Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL)
             manualModeApplied = true
         }
         lastApplied = level.toInt().coerceIn(0, 255)
         Settings.System.putInt(cr, Settings.System.SCREEN_BRIGHTNESS, lastApplied)
+    }
+
+    /** Mode `manual` means hands off: give back the adaptive/manual mode and level the user had before we took over. */
+    private fun restoreUserBrightness(c: Context) {
+        val (mode, level) = Prefs.brightnessBackup(c) ?: return
+        if (!Settings.System.canWrite(c)) return
+        val cr = c.contentResolver
+        Settings.System.putInt(cr, Settings.System.SCREEN_BRIGHTNESS, level)
+        Settings.System.putInt(cr, Settings.System.SCREEN_BRIGHTNESS_MODE, mode)
+        Prefs.setBrightnessBackup(c, null)
+        current = -1f
+        lastApplied = -1
     }
 
     private fun readSystem(): Float {
