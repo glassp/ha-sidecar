@@ -157,7 +157,10 @@ companion app as the launcher.
 
 Phase 1 works end to end on an **Android 15 tablet emulator against Home Assistant 2026.10.0** with the real companion
 app (device-owner lockdown, accessibility fallback, PIN, alarms, remote control, reboot recovery); see
-[docs/TESTING.md](docs/TESTING.md) for what was and was not verified. **Not yet tried on a physical tablet**, and
-OS-update *detection* and the automated update taps need a real pending OTA to verify.
+[docs/TESTING.md](docs/TESTING.md) for what was and was not verified. It has also been run on a **Pixel 6** (Android 17, accessibility
+guard without device owner: lock, exit, alarms, voice, chaos tests). **Not yet tried on a physical tablet**: what to check there is
+in [docs/TABLET_TRIAL.md](docs/TABLET_TRIAL.md). OS-update *detection* and the automated update taps need a real pending OTA to
+verify. CI (pinned to commit SHAs and image digests, see [docs/CI.md](docs/CI.md)) runs the analyzer, Android lint, all unit tests,
+hassfest and, for a public repository, the HACS validation.
 
 License: Apache-2.0. The optional wake word uses the openWakeWord models, which are licensed CC BY-NC-SA 4.0 (non-commercial) and are therefore not part of this repository or the app: they are downloaded from the openWakeWord release by the tablet, on request. See [docs/VOICE.md](docs/VOICE.md).
