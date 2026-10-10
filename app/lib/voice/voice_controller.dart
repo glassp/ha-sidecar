@@ -29,11 +29,15 @@ class VoiceController extends ChangeNotifier {
     this.followUpTimeout = _eight,
     this.soundsEnabled = _yes,
     this.dockedEnabled = _no,
+    this.volumeLevel = _noVolume,
+    this.saveVolume = _noSave,
     this.bubbleText = _identity,
   });
 
   static bool _yes() => true;
   static bool _no() => false;
+  static int? _noVolume() => null;
+  static Future<void> _noSave(int percent) async {}
   static String _identity(String key) => key;
   static Duration _eight() => const Duration(seconds: 8);
 
@@ -48,6 +52,12 @@ class VoiceController extends ChangeNotifier {
 
   /// Whether the voice screen may be shown as a small card over whatever is in front (it still needs the permission).
   final bool Function() dockedEnabled;
+
+  /// The media volume (%) during a voice session, or null to leave the volume alone. The level from before comes back afterwards.
+  final int? Function() volumeLevel;
+
+  /// Persists the preferred voice volume (a volume command outside a conversation).
+  final Future<void> Function(int percent) saveVolume;
 
   /// Localized text for the docked card (a key of the `voice.*` translations).
   final String Function(String key) bubbleText;
@@ -108,6 +118,9 @@ class VoiceController extends ChangeNotifier {
   bool docked = false;
   bool expanded = false;
   String _lastBubbleSignature = '';
+  bool _volumeRaised = false;
+  Timer? _volumeTimer;
+  int? _volumeOverride;
   final Stopwatch _sinceBubble = Stopwatch()..start();
 
   Timer? _dismiss;
@@ -152,6 +165,7 @@ class VoiceController extends ChangeNotifier {
     state = VoiceState.listening;
     notifyListeners();
     await _open();
+    await _raiseVolume();
     // the ping comes first and the microphone opens after it, so the ping is not recorded
     if (soundsEnabled()) await platform.voicePing('start');
     if (session != id) return 'cancelled'; // ended while the ping played
@@ -241,6 +255,7 @@ class VoiceController extends ChangeNotifier {
     state = VoiceState.speaking;
     notifyListeners();
     await _open();
+    await _raiseVolume();
     try {
       for (final u in [?preannounceUrl, url]) {
         final abs = _absolute(u);
@@ -422,6 +437,7 @@ class VoiceController extends ChangeNotifier {
       return;
     }
     inConversation = false; // follow-ups are off: one question, one answer
+    _restoreVolumeWhenDone();
     _scheduleClose();
   }
 
@@ -469,8 +485,8 @@ class VoiceController extends ChangeNotifier {
   /// Opens the voice screen: the docked card when it is on and possible, otherwise the full page.
   Future<void> _open() async {
     shown = true;
-    if (docked)
-      return; // the card is already up from an earlier turn of this conversation
+    // the card is already up from an earlier turn of this conversation
+    if (docked) return;
     if (!expanded && dockedEnabled() && await platform.bubbleAvailable()) {
       docked = true;
       _pushBubble(force: true);
@@ -500,6 +516,8 @@ class VoiceController extends ChangeNotifier {
         await listen();
       case 'expand':
         await expand();
+      case String a when a.startsWith('volume:'):
+        await changeVolume(int.tryParse(a.substring(7)) ?? 50);
     }
   }
 
@@ -507,6 +525,51 @@ class VoiceController extends ChangeNotifier {
   void notifyListeners() {
     super.notifyListeners();
     if (docked) _pushBubble();
+    _restoreVolumeWhenDone();
+  }
+
+  /// Voice answers are played at the voice volume; the level from before is restored a moment after the session is over
+  /// (not between two turns of a conversation: the volume does not jump up and down).
+  /// The voice volume (%) shown next to the answer, or null if the volume is not managed.
+  int? get volume => _volumeOverride ?? volumeLevel();
+
+  /// The slider on the screen / card: applies at once, also while an answer is playing, and only for this session. The voice
+  /// volume setting is not changed: the next conversation starts at the configured level again.
+  Future<void> changeVolume(int percent) async {
+    _volumeOverride = percent.clamp(0, 100);
+    notifyListeners();
+    if (_volumeRaised) await platform.voiceVolumeRaise(_volumeOverride!);
+  }
+
+  /// "Set the volume to 30 percent" / "louder" (from Home Assistant): during a conversation it applies to that conversation
+  /// only; otherwise it sets the preferred voice volume. Returns which of the two it was.
+  Future<String> setVolumeCommand({int? percent, int? delta}) async {
+    final p = (percent ?? (volume ?? 50) + (delta ?? 0)).clamp(0, 100);
+    if (active || inConversation || _volumeRaised) {
+      await changeVolume(p);
+      return 'conversation';
+    }
+    await saveVolume(p);
+    return 'preferred';
+  }
+
+  Future<void> _raiseVolume() async {
+    _volumeTimer?.cancel();
+    final level = volume;
+    if (level == null) return;
+    _volumeRaised = true;
+    await platform.voiceVolumeRaise(level);
+  }
+
+  void _restoreVolumeWhenDone() {
+    if (!_volumeRaised || active || inConversation) return;
+    _volumeTimer?.cancel();
+    _volumeTimer = Timer(const Duration(milliseconds: 800), () {
+      if (active || inConversation || !_volumeRaised) return;
+      _volumeRaised = false;
+      _volumeOverride = null; // the slider was for this conversation only
+      unawaited(platform.voiceVolumeRestore());
+    });
   }
 
   String _bubbleError() {
@@ -526,6 +589,7 @@ class VoiceController extends ChangeNotifier {
       'assistant': answer,
       'error': state == VoiceState.error ? _bubbleError() : '',
       'in_conversation': inConversation,
+      'volume': volume ?? -1,
       'wait_deadline_ms': deadline,
       'wait_total_ms': speechWindow.inMilliseconds,
       'labels': {
@@ -544,8 +608,9 @@ class VoiceController extends ChangeNotifier {
     // microphone levels arrive about ten times a second: send them, but not faster than the card can use
     if (!force &&
         signature == _lastBubbleSignature &&
-        _sinceBubble.elapsedMilliseconds < 90)
+        _sinceBubble.elapsedMilliseconds < 90) {
       return;
+    }
     _lastBubbleSignature = signature;
     _sinceBubble.reset();
     unawaited(platform.bubbleUpdate({...fixed, 'level': level}));
@@ -560,6 +625,7 @@ class VoiceController extends ChangeNotifier {
     docked = false;
     expanded = false;
     shown = false;
+    _restoreVolumeWhenDone();
     if (state == VoiceState.error) {
       state = VoiceState.idle;
       notifyListeners();
@@ -568,6 +634,7 @@ class VoiceController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _volumeTimer?.cancel();
     _dismiss?.cancel();
     _watchdog?.cancel();
     _noSpeech?.cancel();

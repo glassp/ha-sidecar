@@ -41,6 +41,13 @@ class FakePlatform extends Fake implements KioskPlatform {
   @override
   Future<void> closeUi(String route) async => calls.add('close:$route');
 
+  @override
+  Future<void> voiceVolumeRaise(int percent) async =>
+      calls.add('volume:$percent');
+
+  @override
+  Future<void> voiceVolumeRestore() async => calls.add('volume:restore');
+
   bool bubbleOk = true;
   final bubbles = <Map<String, Object?>>[];
 
@@ -60,6 +67,7 @@ class FakePlatform extends Fake implements KioskPlatform {
 void main() {
   voiceTurnTests();
   dockedTests();
+  volumeTests();
   late FakePlatform platform;
   late List<Map<String, dynamic>> sent;
   late bool connected;
@@ -710,6 +718,175 @@ void dockedTests() {
           );
         }
         expect(platform.bubbles.length - n, lessThan(20));
+      },
+    );
+  });
+}
+
+void volumeTests() {
+  late FakePlatform platform;
+  late VoiceController v;
+  int? level;
+  final saved = <int>[];
+
+  setUp(() {
+    platform = FakePlatform();
+    level = 50;
+    v = VoiceController(
+      platform: platform,
+      send: (m) => true,
+      baseUrl: () => 'http://ha.local:8123',
+      dismissAfter: const Duration(milliseconds: 50),
+      silenceTimeout: const Duration(seconds: 5),
+      conversationEnabled: () => false,
+      soundsEnabled: () => true,
+      volumeLevel: () => level,
+      saveVolume: (p) async => saved.add(p),
+    );
+    saved.clear();
+  });
+  tearDown(() => v.dispose());
+
+  Map<String, dynamic> ev(
+    String event, [
+    Map<String, dynamic> data = const {},
+  ]) => {
+    'type': 'voice_event',
+    'session': v.session,
+    'event': event,
+    'data': data,
+  };
+
+  group('voice volume', () {
+    test(
+      'is raised before the first sound and restored a moment after the session',
+      () async {
+        await v.listen();
+        final calls = platform.calls;
+        expect(
+          calls.indexOf('volume:50'),
+          lessThan(calls.indexOf('ping:start')),
+          reason: 'before the ping, so the ping is at the voice volume',
+        );
+        v.onVoiceEvent(ev('stt-end', {'text': 'hi'}));
+        v.onVoiceEvent(ev('tts-end', {'url': '/a.mp3'}));
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        expect(
+          calls,
+          isNot(contains('volume:restore')),
+          reason: 'not while the answer is playing',
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 1200));
+        expect(calls, contains('volume:restore'));
+      },
+    );
+
+    test('an announcement is played at the voice volume too', () async {
+      await v.announce(url: '/a.mp3', message: 'Dinner');
+      expect(
+        platform.calls.indexOf('volume:50'),
+        lessThan(platform.played.isEmpty ? 1 << 30 : 1 << 29),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      expect(platform.calls, contains('volume:restore'));
+    });
+
+    test(
+      'the slider changes the volume for this conversation only; the next one starts at the setting again',
+      () async {
+        await v.listen();
+        await v.changeVolume(80);
+        expect(platform.calls, contains('volume:80'));
+        expect(v.volume, 80);
+        await v.endConversation();
+        await Future<void>.delayed(const Duration(milliseconds: 1200));
+        expect(platform.calls, contains('volume:restore'));
+        expect(v.volume, 50, reason: 'back to the configured voice volume');
+        platform.calls.clear();
+        await v.listen();
+        expect(
+          platform.calls.where(
+            (c) => c.startsWith('volume:') && c != 'volume:restore',
+          ),
+          ['volume:50'],
+        );
+      },
+    );
+
+    test(
+      '"set the volume to 30 percent" during a conversation is for the conversation, not the setting',
+      () async {
+        await v.listen();
+        expect(await v.setVolumeCommand(percent: 30), 'conversation');
+        expect(platform.calls, contains('volume:30'));
+        expect(saved, isEmpty);
+      },
+    );
+
+    test('"louder" / "quieter" step from the current level', () async {
+      await v.listen();
+      await v.setVolumeCommand(delta: 10);
+      expect(v.volume, 60);
+      await v.setVolumeCommand(delta: -30);
+      expect(v.volume, 30);
+      await v.setVolumeCommand(delta: -50);
+      expect(v.volume, 0, reason: 'not below silent');
+    });
+
+    test(
+      'a volume command outside a conversation sets the preferred volume',
+      () async {
+        expect(await v.setVolumeCommand(percent: 20), 'preferred');
+        expect(saved, [20]);
+        expect(platform.calls.where((c) => c.startsWith('volume:')), isEmpty);
+      },
+    );
+
+    test('0 means silent: the volume is set to 0 for the session', () async {
+      level = 0;
+      await v.listen();
+      expect(platform.calls, contains('volume:0'));
+    });
+
+    test('without a level the volume is not touched', () async {
+      level = null;
+      await v.listen();
+      v.onVoiceEvent(ev('tts-end', {'url': '/a.mp3'}));
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      expect(platform.calls.where((c) => c.startsWith('volume')), isEmpty);
+    });
+
+    test(
+      'a conversation keeps the volume between its turns and restores it once at the end',
+      () async {
+        final c = VoiceController(
+          platform: platform,
+          send: (m) => true,
+          baseUrl: () => 'http://ha.local:8123',
+          dismissAfter: const Duration(milliseconds: 50),
+          silenceTimeout: const Duration(seconds: 5),
+          followUpTimeout: () => const Duration(milliseconds: 1500),
+          soundsEnabled: () => false,
+          volumeLevel: () => 50,
+        );
+        addTearDown(c.dispose);
+        await c.listen();
+        c.onVoiceEvent({
+          'type': 'voice_event',
+          'session': c.session,
+          'event': 'tts-end',
+          'data': {'url': '/a.mp3'},
+        });
+        await Future<void>.delayed(const Duration(milliseconds: 1000));
+        expect(c.inConversation, isTrue);
+        expect(
+          platform.calls.where((x) => x == 'volume:restore'),
+          isEmpty,
+          reason: 'still in the conversation',
+        );
+        await c.endConversation();
+        await Future<void>.delayed(const Duration(milliseconds: 1200));
+        expect(platform.calls.where((x) => x == 'volume:restore').length, 1);
       },
     );
   });

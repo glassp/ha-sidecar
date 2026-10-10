@@ -102,6 +102,14 @@ object PlatformChannel {
             }
 
             "closeUi" -> result.success(UiHost.close(call.argument<String>("route").orEmpty()))
+            "voiceVolumeRaise" -> {
+                VoiceVolume.raise(ctx, call.argument<Int>("percent") ?: 50)
+                result.success(null)
+            }
+            "voiceVolumeRestore" -> {
+                VoiceVolume.restore(ctx)
+                result.success(null)
+            }
             "bubbleAvailable" -> result.success(VoiceBubble.available(ctx))
             "bubbleUpdate" -> {
                 @Suppress("UNCHECKED_CAST")

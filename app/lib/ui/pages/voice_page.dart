@@ -57,6 +57,7 @@ class VoicePage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  _VolumeRow(v),
                   _Actions(v),
                 ],
               ),
@@ -633,6 +634,51 @@ class _Actions extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// --- volume: the voice volume, next to the answer -----------------------------------------------
+
+class _VolumeRow extends StatelessWidget {
+  const _VolumeRow(this.v);
+  final VoiceController v;
+
+  @override
+  Widget build(BuildContext context) {
+    final volume = v.volume;
+    if (volume == null || v.state == VoiceState.error) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+          child: Row(
+            children: [
+              Icon(
+                volume == 0 ? Icons.volume_off : (volume < 40 ? Icons.volume_down : Icons.volume_up),
+                color: scheme.onSurfaceVariant,
+                size: 22,
+              ),
+              Expanded(
+                child: Slider(
+                  key: const Key('voice-volume'),
+                  value: volume.toDouble(),
+                  min: 0,
+                  max: 100,
+                  divisions: 20,
+                  onChanged: (x) => v.changeVolume(x.round()),
+                ),
+              ),
+              SizedBox(
+                width: 48,
+                child: Text('$volume %', textAlign: TextAlign.end, style: TextStyle(color: scheme.onSurfaceVariant)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -384,6 +384,11 @@
       "desc": "Ein kurzer Ton, wenn der Assistent zu hören beginnt, und ein anderer, wenn das Gespräch vorbei ist.",
       "kw": "ton, signal, piep, klang, sprache, zuhören"
     },
+    "voice_volume": {
+      "title": "Bevorzugte Sprachlautstärke",
+      "desc": "Die Medienlautstärke, solange der Assistent antwortet oder etwas durchsagt (0 = stumm); danach kommt die vorherige Lautstärke zurück, das Tablet kann sonst leise bleiben. Der Regler auf dem Sprachbildschirm und Befehle wie „stell die Lautstärke ein“ gelten nur für das aktuelle Gespräch.",
+      "kw": "lautstärke, laut, leise, stumm, antwort, sprache, ton"
+    },
     "voice_docked": {
       "title": "Angedockte Sprachkarte",
       "desc": "Zeigt, was du sagst, und die Antwort als kleine Karte am unteren Bildrand über dem Dashboard statt als Vollbildseite. Ein Tipp auf die Karte öffnet die volle Seite.",

@@ -275,6 +275,20 @@ sidecar app's own overlay window, so it does not matter what is behind it.
 Not verified: the card on a real tablet with the HA companion app in front, the overlay with only an accessibility service (no "draw over other apps"),
 a microphone started from a docked card on Android 14+ when the app is not a device owner, the timers card in the companion app's WebView.
 
+### Voice volume (slice 3.6, emulator, lab Home Assistant)
+
+Media volume read with `cmd media_session volume --stream 3 --get` (range 0..15):
+
+- A voice turn with the preferred volume at 50 %: 3 before, **8 during**, **3 after** (the previous level restored).
+- `media_player.volume_set` / `volume_up` outside a conversation set the preferred volume (30, then 40) and left the device volume at 3.
+- The same call during a conversation: 6 (the preferred 40 %) -> **12 (80 %)**, the preferred volume stayed 40, and after the conversation the volume was 3 again.
+- A spoken command ("set the volume to 80 percent", the lab STT hearing the phrase, the tablet assigned to an area): the volume went to 12 during the conversation,
+  the card's slider showed 80 %, and afterwards 3 / preferred 40.
+- 4 more controller tests (raised before the first sound, kept between turns, restored once, 0 = silent, slider and commands for the conversation only,
+  relative steps, preferred outside a conversation).
+
+Not verified: the sound itself (the emulator has no speaker to listen to), devices whose media stream is fixed or whose volume the system locks.
+
 ### Wake word (slice 3.3, emulator)
 
 - **The engine against a reference.** `tests/lab/wakeword/reference.py` is a Python port of the openWakeWord pipeline (LiteRT for

@@ -63,6 +63,11 @@ class CommandRouter {
         await platform.downloadWakeWord(d['id'] as String? ?? '');
       case 'voice_cancel':
         await voice?.cancel();
+      case 'voice_volume':
+        await voice?.setVolumeCommand(
+          percent: (d['percent'] as num?)?.toInt(),
+          delta: (d['delta'] as num?)?.toInt(),
+        );
       case 'set_lockdown':
         await platform.setLockdown(d['enabled'] == true);
       case 'set_allowlist':

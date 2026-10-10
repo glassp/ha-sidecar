@@ -31,6 +31,10 @@ class AppController extends ChangeNotifier {
     ),
     soundsEnabled: () => status.cfg['voice_sounds'] != false,
     dockedEnabled: () => status.cfg['voice_docked'] != false,
+    volumeLevel: () => (status.cfg['voice_volume'] as num?)?.toInt() ?? 50,
+    saveVolume: (p) async {
+      await setConfig('voice_volume', p);
+    },
     bubbleText: (key) => 'voice.$key'.tr(),
   );
 
@@ -260,7 +264,10 @@ class AppController extends ChangeNotifier {
       return;
     }
     if (e.type == 'bubble_action') {
-      await voice.onBubbleAction('${e.data['action']}');
+      final a = '${e.data['action']}';
+      await voice.onBubbleAction(
+        a == 'volume' ? 'volume:${e.data['percent']}' : a,
+      );
       return;
     }
     if (e.type.startsWith('voice_')) {

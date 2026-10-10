@@ -198,6 +198,13 @@ class AndroidKioskPlatform implements KioskPlatform {
   Future<void> voicePing(String kind) => _call('voicePing', {'kind': kind});
 
   @override
+  Future<void> voiceVolumeRaise(int percent) =>
+      _call('voiceVolumeRaise', {'percent': percent});
+
+  @override
+  Future<void> voiceVolumeRestore() => _call('voiceVolumeRestore');
+
+  @override
   Future<void> voiceStopPlayback() => _call('voiceStopPlayback');
 
   @override

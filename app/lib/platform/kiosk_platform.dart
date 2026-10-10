@@ -31,6 +31,7 @@ class DeviceStatus {
   bool get micInUse => _b('mic_in_use');
   bool get cameraPermission => _b('camera_permission');
   bool get micPermission => _b('mic_permission');
+  int get mediaVolume => (raw['media_volume'] as num?)?.toInt() ?? -1;
   bool get wakeWordListening => _b('wake_word_listening');
   String? get wakeWordError => raw['wake_word_error'] as String?;
   String? get wakeWordDownloading => raw['wake_word_downloading'] as String?;
@@ -332,6 +333,10 @@ abstract class KioskPlatform {
 
   /// A short ping: `start` (listening begins) or `end` (the conversation is over). Completes when it has been played.
   Future<void> voicePing(String kind);
+
+  /// Sets the media volume to [percent] for a voice session (the level from before is kept), and puts it back afterwards.
+  Future<void> voiceVolumeRaise(int percent);
+  Future<void> voiceVolumeRestore();
   Future<void> requestMicPermission();
 
   /// Queues the download of the model for the wake word [id] (progress shows in the status).

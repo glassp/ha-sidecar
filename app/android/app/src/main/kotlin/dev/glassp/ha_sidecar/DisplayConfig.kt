@@ -44,6 +44,7 @@ object DisplayConfig {
         "conversation" to true,
         "conversation_timeout_s" to 8,
         "voice_sounds" to true, // the ping when listening starts and when the conversation ends
+        "voice_volume" to 50, // media volume (%) during a voice session; the previous level comes back afterwards
         "voice_docked" to true, // voice shows as a small card over whatever is on screen instead of a full-screen page
         // on-device wake word (off by default: it keeps the microphone open; the models are downloaded when it is switched on)
         "wake_word" to false,
@@ -102,6 +103,7 @@ object DisplayConfig {
         key == "camera_fps" -> v.coerceIn(1, 10)
         key == "wake_word_threshold" -> v.coerceIn(10, 99)
         key == "conversation_timeout_s" -> v.coerceIn(3, 30)
+        key == "voice_volume" -> v.coerceIn(0, 100)
         key == "watchdog_probe_s" -> v.coerceIn(5, 300)
         key == "watchdog_startup_s" -> v.coerceIn(20, 600)
         key.endsWith("_s") -> v.coerceIn(1, 24 * 3600)

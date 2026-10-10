@@ -523,6 +523,18 @@ List<SettingEntry> buildRegistry(AppController c) {
       divisions: 89,
       format: (v) => '${v.round()} %',
     ),
+    sliderEntry(
+      'voice_volume',
+      Section.system,
+      _g('voice'),
+      Icons.volume_up_outlined,
+      'voice_volume',
+      min: 0,
+      max: 100,
+      fallback: 50,
+      divisions: 20,
+      format: (v) => '${v.round()} %',
+    ),
     switchEntry(
       'conversation',
       Section.system,

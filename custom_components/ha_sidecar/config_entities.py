@@ -71,6 +71,7 @@ NUMBERS = [
     ("watchdog_probe_s", "Watchdog check interval", 5, 300, 5, UnitOfTime.SECONDS, "mdi:timer-outline"),
     ("conversation_timeout_s", "Follow-up wait time", 3, 30, 1, UnitOfTime.SECONDS, "mdi:timer-sand"),
     ("wake_word_threshold", "Wake word threshold", 10, 99, 1, "%", "mdi:tune"),
+    ("voice_volume", "Preferred voice volume", 0, 100, 1, "%", "mdi:volume-high"),
     ("watchdog_startup_s", "Watchdog start-up timeout", 20, 600, 10, UnitOfTime.SECONDS, "mdi:timer-sand"),
 ]
 

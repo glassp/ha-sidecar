@@ -46,6 +46,7 @@ class KeepAliveService : Service() {
         BrightnessController.start(this)
         PrivacyMonitor.start(this)
         PresenceCamera.refresh(this)
+        VoiceVolume.restoreStale(this)
         WakeWord.refresh(this)
         WakeWordDebug.register(applicationContext)
         NetworkMonitor.start(this)

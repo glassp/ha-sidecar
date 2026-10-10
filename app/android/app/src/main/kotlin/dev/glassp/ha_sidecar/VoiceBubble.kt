@@ -61,6 +61,12 @@ object VoiceBubble {
     ) {
         var anim: ValueAnimator? = null
         var waitKey: Long = -1
+        lateinit var volRow: LinearLayout
+        lateinit var volBar: android.widget.SeekBar
+        lateinit var volIcon: TextView
+        lateinit var volText: TextView
+        var dragging = false
+        var lastVolumeSent = 0L
     }
 
     fun available(ctx: Context): Boolean {
@@ -135,6 +141,15 @@ object VoiceBubble {
             h.waitTrack.visibility = View.GONE
         }
 
+        // the voice volume: shown while the voice volume is managed; not fought over while it is being dragged
+        val volume = (s["volume"] as? Number)?.toInt() ?: -1
+        h.volRow.visibility = if (volume >= 0 && state != "error") View.VISIBLE else View.GONE
+        if (volume >= 0 && !h.dragging) {
+            h.volBar.progress = volume
+            h.volText.text = "$volume %"
+            h.volIcon.text = volumeGlyph(volume)
+        }
+
         // buttons: created once (a press must not land on a view that is replaced a moment later), only shown or hidden here
         fun show(b: TextView, label: String, visible: Boolean) {
             b.text = label
@@ -201,6 +216,25 @@ object VoiceBubble {
         }
         card.addView(answer, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(owner, 10) })
 
+        val volRow = LinearLayout(owner).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val volIcon = TextView(owner).apply { setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f); gravity = Gravity.CENTER }
+        val tint = android.content.res.ColorStateList.valueOf(Color.parseColor("#CFBCFF"))
+        val volBar = android.widget.SeekBar(owner).apply {
+            max = 100
+            progressTintList = tint
+            thumbTintList = tint
+            progressBackgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#4A4458"))
+        }
+        val volText = TextView(owner).apply {
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            setTextColor(Color.parseColor("#CAC4D0"))
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+        }
+        volRow.addView(volIcon, LinearLayout.LayoutParams(dp(owner, 28), ViewGroup.LayoutParams.WRAP_CONTENT))
+        volRow.addView(volBar, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        volRow.addView(volText, LinearLayout.LayoutParams(dp(owner, 52), ViewGroup.LayoutParams.WRAP_CONTENT))
+        card.addView(volRow, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(owner, 36)).apply { topMargin = dp(owner, 8) })
+
         val track = android.widget.FrameLayout(owner).apply {
             background = GradientDrawable().apply { cornerRadius = dp(owner, 2).toFloat(); setColor(Color.parseColor("#33CFBCFF")) }
         }
@@ -238,7 +272,33 @@ object VoiceBubble {
         card.animate().alpha(1f).translationY(0f).setDuration(180).start()
         root = card
         windowManager = wm
-        holder = Holder(status, close, wave, user, answer, waitBar, track, buttons, doneButton, endButton, againButton)
+        val h = Holder(status, close, wave, user, answer, waitBar, track, buttons, doneButton, endButton, againButton)
+        h.volRow = volRow
+        h.volBar = volBar
+        h.volIcon = volIcon
+        h.volText = volText
+        volBar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: android.widget.SeekBar, progress: Int, fromUser: Boolean) {
+                if (!fromUser) return
+                volText.text = "$progress %"
+                volIcon.text = volumeGlyph(progress)
+                val now = System.currentTimeMillis()
+                if (now - h.lastVolumeSent > 120) {
+                    h.lastVolumeSent = now
+                    EventBus.emit("bubble_action", mapOf("action" to "volume", "percent" to progress))
+                }
+            }
+
+            override fun onStartTrackingTouch(bar: android.widget.SeekBar) {
+                h.dragging = true
+            }
+
+            override fun onStopTrackingTouch(bar: android.widget.SeekBar) {
+                h.dragging = false
+                EventBus.emit("bubble_action", mapOf("action" to "volume", "percent" to bar.progress))
+            }
+        })
+        holder = h
         return true
     }
 
@@ -264,6 +324,13 @@ object VoiceBubble {
             if (filled) setColor(Color.parseColor("#CFBCFF")) else setStroke(dp(ctx, 1), Color.parseColor("#938F99"))
         }
         setOnClickListener { onClick() }
+    }
+
+    private fun volumeGlyph(percent: Int) = when {
+        percent <= 0 -> "🔇"
+        percent < 40 -> "🔈"
+        percent < 75 -> "🔉"
+        else -> "🔊"
     }
 
     private fun dp(ctx: Context, v: Int) = (v * ctx.resources.displayMetrics.density).toInt()

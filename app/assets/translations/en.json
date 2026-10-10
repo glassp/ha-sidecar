@@ -384,6 +384,11 @@
       "desc": "A short ping when the assistant starts listening and another when the conversation is over.",
       "kw": "sound, ping, beep, chime, voice, listening"
     },
+    "voice_volume": {
+      "title": "Preferred voice volume",
+      "desc": "The media volume while the assistant answers or announces something (0 = silent); the volume you had before comes back afterwards, so the tablet can stay quiet the rest of the time. The slider on the voice screen and \"set the volume\" commands change it for the current conversation only.",
+      "kw": "volume, loud, quiet, silent, answer, voice, sound"
+    },
     "voice_docked": {
       "title": "Docked voice card",
       "desc": "Show what you say and the answer as a small card at the bottom of the screen, over the dashboard, instead of a full-screen page. Tap the card to open the full page.",

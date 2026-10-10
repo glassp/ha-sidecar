@@ -13,6 +13,7 @@ TTS), the tablet shows and speaks the answer. Everything runs over the existing 
 | 3.3 | Wake word on the device (openWakeWord models on LiteRT) | done, see below |
 | 3.4 | Real conversations (listen again after an answer), timers by voice, `start_conversation` and `ask_question`, the redesigned screen | done, see below (skins are not) |
 | 3.5 | The docked card over the dashboard, and the timers card for the dashboard | done, see below |
+| 3.6 | Voice volume: preferred level, restored afterwards, per conversation by slider and voice | done, see below |
 
 ## Design decisions
 
@@ -153,6 +154,22 @@ Screenshots from the lab run (tablet 2560x1800; the speech is synthetic, see [TE
   and calls the timer services, so voice timers, tablet timers and `ha_sidecar.start_timer` timers all show up. `hide_when_empty`
   (default on) shows nothing while there is no timer. The numbers tick in the browser from the end time the tablet reported (so the
   tablet's and the viewer's clocks should agree to a second or so); the tiles are updated in place, not rebuilt every second.
+
+## Volume (slice 3.6)
+
+- **Preferred voice volume** (app setting, `number.<prefix>_preferred_voice_volume`, 0-100 %, default 50): the media volume while the assistant
+  talks. When a voice session starts (before the first ping) the tablet sets the media volume to it, and when the session is over
+  (a moment after the last sound, not between two turns of a conversation) the **previous level comes back**. So the tablet can
+  stay silent otherwise, an automation can make the assistant louder by day and quieter at night (set the number), and 0 means
+  "answer on screen only". Pings, answers, announcements and `ask_question` all play on that volume; alarms and timers have their
+  own and are not affected. Restoring never overwrites a level someone changed during the answer, and the previous level is kept on
+  disk, so a crash during an answer cannot leave the tablet loud (it is restored at the next start).
+- **In the conversation:** the voice screen and the docked card have a volume slider. It applies at once (also while an answer is playing)
+  and **only for this conversation**: the next one starts at the preferred volume again.
+- **By voice:** "set the volume to 30 percent", "louder", "quieter" work with Home Assistant's own volume commands through a small
+  `media_player.<prefix>_voice` entity (it plays nothing; it is the handle for the voice volume; it needs the tablet to be in an
+  area, like any satellite, so that "the volume" means this tablet). During a conversation such a command is for the conversation
+  only; outside one (a dashboard, an automation, `media_player.volume_set`) it sets the preferred volume.
 
 ## Wake word (slice 3.3)
 
