@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from collections.abc import Callable
 from typing import Any
 
 from homeassistant.components.assist_pipeline import PipelineEvent, PipelineStage
+from homeassistant.components.intent.const import TIMER_DATA
 from homeassistant.components.intent.timers import (
     TimerEventType,
     TimerInfo,
@@ -39,6 +41,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     add_entities(device, "assist_satellite", async_add_entities, [SidecarSatellite(device)])
 
 
+class _Mirror:
+    """A timer made on the tablet (or by a service) that Home Assistant's timer manager knows too, so voice can ask about it."""
+
+    def __init__(self, ha_id: str, ends_at: float | None, remaining_ms: float, paused: bool) -> None:
+        self.ha_id = ha_id
+        self.ends_at = ends_at  # the tablet's own clock, only compared with itself
+        self.remaining_ms = remaining_ms
+        self.paused = paused
+        self.hold_until = 0.0  # while a voice command is on its way to the tablet its state is not judged
+
+
 class _Run:
     """One push-to-talk turn: the tablet's id for it, its audio and the task running the pipeline."""
 
@@ -58,6 +71,9 @@ class SidecarSatellite(SidecarEntity, AssistSatelliteEntity):
         self._incoming: _Run | None = None  # the newest requested run: it receives the tablet's audio
         self._active: _Run | None = None  # the run that is executing: its pipeline events are what we forward
         self._unregister_timers: Callable[[], None] | None = None
+        self._mirror: dict[str, _Mirror] = {}  # tablet timer id -> its twin in the timer manager
+        self._ended_by_ha: set[str] = set()  # tablet ids HA ended; not mirrored again while the tablet still lists them
+        self._quiet = 0  # >0 while we change the manager ourselves: its events are not sent back to the tablet
 
     # --- settings that live in other entities --------------------------------------------------------
 
@@ -90,6 +106,8 @@ class SidecarSatellite(SidecarEntity, AssistSatelliteEntity):
     def _handle_update(self) -> None:
         if not self._device.connected:
             self._end_session()  # nobody is listening to the answer any more
+        else:
+            self._sync_tablet_timers()
         super()._handle_update()
 
     # --- configuration (wake words arrive with the on-device engine, slice 3.3) ----------------------
@@ -187,29 +205,120 @@ class SidecarSatellite(SidecarEntity, AssistSatelliteEntity):
 
     @callback
     def _on_timer(self, event: TimerEventType, timer: TimerInfo) -> None:
+        if self._quiet:
+            return  # our own change to the manager (mirroring a tablet timer): the tablet already has it
         self.hass.async_create_task(self._async_timer(event, timer))
+
+    def _tablet_id(self, ha_id: str) -> str:
+        return next((tid for tid, m in self._mirror.items() if m.ha_id == ha_id), ha_id)
 
     async def _async_timer(self, event: TimerEventType, timer: TimerInfo) -> None:
         """Mirror a voice timer on the tablet, which counts, shows and rings it by itself (also while Home Assistant is away)."""
+        tid = self._tablet_id(timer.id)  # a timer made on the tablet keeps the tablet's id there
+        mirror = self._mirror.get(tid)
         try:
             if event in (TimerEventType.STARTED, TimerEventType.UPDATED):
+                if mirror:
+                    mirror.hold_until = time.monotonic() + 4
                 # an update (time added or removed, paused, resumed) is a restart with what is left: the tablet keeps the id
                 await self._device.send_command(
                     "start_timer",
-                    {"id": timer.id, "label": timer.name or "", "kind": "countdown", "duration_s": max(1, timer.seconds_left)},
+                    {"id": tid, "label": timer.name or "", "kind": "countdown", "duration_s": max(1, timer.seconds_left)},
                 )
                 if not timer.is_active:
-                    await self._device.send_command("pause_timer", {"id": timer.id})
+                    await self._device.send_command("pause_timer", {"id": tid})
             elif event == TimerEventType.CANCELLED:
-                await self._device.send_command("cancel_timer", {"id": timer.id})
+                if mirror:
+                    self._mirror.pop(tid, None)
+                    self._ended_by_ha.add(tid)
+                await self._device.send_command("cancel_timer", {"id": tid})
             elif event == TimerEventType.FINISHED:
+                if mirror:
+                    self._mirror.pop(tid, None)
+                    self._ended_by_ha.add(tid)
                 known = {t.get("id") for t in self._device.state.get("timers") or []}
-                if timer.id not in known:  # the tablet missed it (offline, restarted): ring now
+                if tid not in known:  # the tablet missed it (offline, restarted): ring now
                     await self._device.send_command(
-                        "start_timer", {"id": timer.id, "label": timer.name or "", "kind": "countdown", "duration_s": 1}
+                        "start_timer", {"id": tid, "label": timer.name or "", "kind": "countdown", "duration_s": 1}
                     )
         except HomeAssistantError as err:
             _LOGGER.debug("Could not mirror timer %s (%s) on %s: %s", timer.id, event, self._device.name, err)
+
+    # --- tablet timers -> Home Assistant's timer manager, so "how long is left on my timer" knows them ------
+
+    @callback
+    def _sync_tablet_timers(self) -> None:
+        """Keep a twin of every running or paused countdown on the tablet in the timer manager (stopwatches have none)."""
+        manager = self.hass.data.get(TIMER_DATA)
+        device_id = self.registry_entry.device_id if self.registry_entry else None
+        if manager is None or not device_id:
+            return
+        tablet = {
+            str(t["id"]): t
+            for t in self._device.state.get("timers") or []
+            if isinstance(t, dict) and t.get("id") and t.get("kind") == "countdown" and t.get("state") in ("running", "paused")
+        }
+        now = time.monotonic()
+        self._ended_by_ha &= set(tablet)  # forget ids the tablet no longer lists
+
+        for tid, mirror in list(self._mirror.items()):
+            twin = manager.timers.get(mirror.ha_id)
+            t = tablet.get(tid)
+            if twin is None:  # finished or cancelled in Home Assistant
+                self._mirror.pop(tid, None)
+                continue
+            if t is None:  # finished, cancelled or dismissed on the tablet
+                self._mirror.pop(tid, None)
+                self._quietly(manager.cancel_timer, mirror.ha_id)
+                continue
+            paused = t["state"] == "paused"
+            ends_at = t.get("ends_at")
+            if now < mirror.hold_until:  # a voice command is on its way: adopt what the tablet shows
+                mirror.paused, mirror.ends_at, mirror.remaining_ms = paused, ends_at, t.get("remaining_ms") or 0
+                continue
+            moved = (
+                abs((ends_at or 0) - (mirror.ends_at or 0)) > 2000 if not paused and not mirror.paused else
+                abs((t.get("remaining_ms") or 0) - mirror.remaining_ms) > 2000
+            )
+            if paused != mirror.paused or moved:
+                self._mirror.pop(tid, None)  # simplest faithful way to follow a change on the tablet: a fresh twin
+                self._quietly(manager.cancel_timer, mirror.ha_id)
+                continue  # re-created below
+
+        for tid, t in tablet.items():
+            if tid in self._mirror or tid in self._ended_by_ha or tid in manager.timers:
+                continue  # known (a voice timer has the same id on both sides)
+            seconds = max(1, round(self._remaining_s(t)))
+            hours, rest = divmod(seconds, 3600)
+            minutes, secs = divmod(rest, 60)  # "10 minutes", not "600 seconds", when Home Assistant says it aloud
+            try:
+                ha_id = self._quietly(
+                    manager.start_timer, device_id, hours or None, minutes or None, secs or None, self.hass.config.language, t.get("label") or None
+                )
+                if t["state"] == "paused":
+                    self._quietly(manager.pause_timer, ha_id)
+            except Exception as err:  # noqa: BLE001 - a missing twin only costs the voice answer
+                _LOGGER.debug("Could not mirror tablet timer %s: %s", tid, err)
+                continue
+            self._mirror[tid] = _Mirror(ha_id, t.get("ends_at"), t.get("remaining_ms") or 0, t["state"] == "paused")
+
+    @staticmethod
+    def _remaining_s(t: dict[str, Any]) -> float:
+        """What is left on a tablet timer now: the pushed snapshot may be old, so a running timer's end time wins when the clocks agree."""
+        snapshot = (t.get("remaining_ms") or 0) / 1000
+        ends_at = t.get("ends_at")
+        if t.get("state") == "running" and ends_at:
+            by_clock = ends_at / 1000 - time.time()
+            if 0 <= by_clock <= snapshot + 1 and snapshot - by_clock < 120:
+                return by_clock
+        return snapshot
+
+    def _quietly(self, fn, *args):
+        self._quiet += 1
+        try:
+            return fn(*args)
+        finally:
+            self._quiet -= 1
 
     async def async_start_conversation(self, start_announcement: AssistSatelliteAnnouncement) -> None:
         """Play the announcement, then the tablet listens by itself (used by start_conversation and ask_question)."""

@@ -307,7 +307,7 @@ the microphone loop, so the waveform moves; frames were captured every ~1.2 s (`
 
 Not verified: real speech (the lab STT ignores the audio), the HA voice detection on noisy rooms (the silence length is HA's *VAD sensitivity*), how the
 pings sound on a real speaker (they were only seen in the log), `start_conversation` with an LLM agent, voice timers when the tablet is offline when
-they finish (code only), and timers created on the tablet being unknown to the voice intents (by design).
+they finish (code only), and the mirror of tablet timers (`ha_sidecar.start_timer` timers, also ones that existed before HA restarted, were answered by "how long is left on my timer" with the right time and the paused one counted) was checked only for those two cases, not for every voice command on a mirrored timer.
 
 ## Not verified
 

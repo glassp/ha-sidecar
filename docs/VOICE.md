@@ -99,8 +99,11 @@ selects, the satellite entity reads them like it does for ESPHome or VoIP device
   Assistant is away): started/updated become `start_timer` (an update restarts the timer with what is left and keeps its id, paused
   ones are paused), cancelled becomes `cancel_timer`, and a timer that the tablet missed rings at its end. Pause, resume, add time,
   cancel and "how long is left" by voice work the same way. A voice timer that is cancelled or dismissed on the tablet is cancelled in
-  Home Assistant too. Not mirrored: timers created on the tablet or by `ha_sidecar.start_timer` do not exist for the voice
-  intents ("how long is left on my timer" only knows voice timers).
+  Home Assistant too. Timers made on the tablet or by
+  `ha_sidecar.start_timer` are mirrored the other way: every running or paused countdown gets a twin in HA's timer manager (same label and
+  time left, spoken as "8 minutes", not "480 seconds"), so "how long is left on my timer", pause, add time and cancel by voice work on them
+  too and are carried out on the tablet. Changes on the tablet (paused, time added, finished, dismissed) are followed by re-creating the
+  twin; HA's own events for a twin are not sent back. Stopwatches have no twin.
 - **`start_conversation` and `ask_question`.** The entity now advertises *start conversation*: the tablet plays the (pre-announce
   sound and the) question, then listens by itself (command `voice_conversation`); `assist_satellite.ask_question` returns the matched answer
   (verified: `{id: yes, sentence: "yes please"}`). `start_conversation` itself needs an LLM conversation agent (HA refuses the built-in
