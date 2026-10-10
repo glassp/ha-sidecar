@@ -51,7 +51,7 @@ jobs:
       # standard library only: the pure-Python parts of the integration (cards, beacon, voice audio); tests that need
       # Home Assistant itself skip themselves here and run in the lab (docs/TESTING.md)
       - run: python -m unittest discover -s tests -v
-      - run: node --test tests/js
+      - run: node --test tests/js/*.test.mjs
 
   integration:
     runs-on: ubuntu-latest

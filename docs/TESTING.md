@@ -472,3 +472,29 @@ the shade by screenshots; the lab's `internal_url` must be the address the phone
 not the emulator's `10.0.2.2`. Not verified: wake word CPU and battery over time, the docked card over other apps (needs the
 "draw over other apps" permission, which stayed off), Settings staying blocked after the 30 minute system-update exception, and
 anything with real speech (the lab speech-to-text is a fixed phrase).
+
+### Pixel 6: hardening and chaos run (no device owner, accessibility guard only)
+
+Attacks on the locked kiosk, each checked by foreground activity and screenshots over time:
+
+| Attempt | Result |
+|---|---|
+| Notification shade / quick settings: slow pull (3 s, 6 s), fast pull, from the quick-settings side, `cmd statusbar expand-notifications` / `expand-settings` | ✅ never visible in the captured frames |
+| Recents key | ✅ the overview flashes for about a second, then the companion is back; it cannot stay |
+| Long-press Home, assistant key | ✅ nothing / assistant pushed back to the companion |
+| Back pressed 10× at 0.1–0.8 s intervals (the way someone back-swipes out of the app) | ✅ companion in front every time |
+| Force-stop the companion app | ✅ relaunched by the guard within seconds |
+| Settings (intent) | ✅ refused |
+| Long press on power: power menu (Emergency, Lockdown, Power off, Restart) | ❌ **stayed open** → fixed: a System UI dialog is now closed with Back, checked three times |
+| Lock screen with the kiosk lock on | ✅ not touched by the guard |
+
+Not preventable without device owner, and written down for the tablet trial: a hardware power-off (hold power + volume), safe mode on
+boot, and the first seconds of a reboot before the app starts. The lock-task mode of a device owner is the answer to all three.
+
+Chaos: a 50 s timer started from HA, **Home Assistant stopped** → the timer ran and rang on the phone by itself ("Time's up"), was
+dismissed on the phone, and after HA came back the sidecar was connected with correct state 23 s after the start of Home Assistant's own boot
+(timers 0, no ringing flags). The lab's REST token (1 day) had expired meanwhile: a 401 from the lab is not a sidecar problem.
+
+CI (found and fixed on 2026-10-11): `hassfest` and the HACS validation had been failing since the integration was added
+(device filter in `services.yaml`, `<...>` in strings, missing `assist_pipeline` / `intent` dependencies); Android lint found a crash on
+Android 8.0 (API 27 calls with minSdk 26) and a missing coarse-location permission. See docs/CI.md.
