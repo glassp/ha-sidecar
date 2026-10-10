@@ -10,6 +10,7 @@ import '../ui/design.dart';
 import '../ui/dialogs.dart';
 import '../ui/setting_widgets.dart';
 import '../ui/pairing.dart';
+import '../ui/wake_words_dialog.dart';
 import 'connection_route.dart';
 import 'connection_settings.dart';
 
@@ -496,19 +497,18 @@ List<SettingEntry> buildRegistry(AppController c) {
       );
     }),
     base('wake_word_phrase', Section.system, _g('voice'), (ctx) {
-      final words = c.status.wakeWords;
-      return SegmentedSetting(
+      final active = s().activeWakeWords;
+      return ActionSetting(
         icon: Icons.chat_bubble_outline,
         title: _t('wake_word_phrase', 'title'),
-        subtitle: _t('wake_word_phrase', 'desc'),
-        options: {
-          for (final w in words) w['id'] as String: w['phrase'] as String,
-        },
-        value: str('wake_word_id', 'hey_jarvis'),
-        onChanged: (id) async {
-          await set(ctx, 'wake_word_id', id);
-          await c.refresh();
-        },
+        subtitle: active.isEmpty
+            ? 'wakeword.none_chosen'.tr()
+            : active.map((w) => w['phrase']).join(', '),
+        trailing: FilledButton.tonal(
+          onPressed: () => showWakeWordsDialog(ctx, c),
+          child: Text('wakeword.manage'.tr()),
+        ),
+        onTap: () => showWakeWordsDialog(ctx, c),
       );
     }),
     sliderEntry(
@@ -525,39 +525,51 @@ List<SettingEntry> buildRegistry(AppController c) {
     ),
     base('wake_word_status', Section.system, _g('voice'), (ctx) {
       final st = c.status;
-      final id = str('wake_word_id', 'hey_jarvis');
-      final missing =
-          st.wakeWords
-              .where((w) => w['id'] == id)
-              .map((w) => (w['missing_bytes'] as num?)?.toInt() ?? 0)
-              .firstOrNull ??
-          0;
+      final chosenMissing = [
+        for (final w in st.activeWakeWords)
+          if (w['installed'] != true) w,
+      ];
       if (st.wakeWordDownloading != null) {
+        final name = st.wakeWords
+            .where((w) => w['id'] == st.wakeWordDownloading)
+            .map((w) => w['phrase'])
+            .firstOrNull;
         return Tile(
           icon: Icons.downloading,
           title: _t('wake_word_status', 'title'),
           subtitle: 'wakeword.downloading'.tr(
             namedArgs: {
+              'name': '$name',
               'pct': (st.wakeWordDownloadFraction * 100).round().toString(),
             },
           ),
         );
       }
-      final err = st.wakeWordError ?? st.wakeWordDownloadError;
-      if (b('wake_word') &&
-          (err == 'models_missing' || st.wakeWordDownloadError != null)) {
+      final err = st.wakeWordError;
+      if (b('wake_word') && st.wakeWordDownloadError != null) {
         return ActionSetting(
           icon: Icons.download_outlined,
           color: Semantic.warn,
-          title: 'wakeword.models_title'.tr(),
-          subtitle: 'wakeword.models_desc'.tr(
-            namedArgs: {'mb': (missing / 1048576).toStringAsFixed(1)},
-          ),
+          title: 'wakeword.download_failed'.tr(),
+          subtitle: 'wakeword.err_${st.wakeWordDownloadError}'.tr(),
           trailing: FilledButton.tonal(
-            onPressed: () => c.platform.downloadWakeWord(id),
-            child: Text('wakeword.download'.tr()),
+            onPressed: () async {
+              for (final w in chosenMissing) {
+                await c.platform.downloadWakeWord(w['id'] as String);
+              }
+            },
+            child: Text('wakeword.retry'.tr()),
           ),
-          onTap: () => c.platform.downloadWakeWord(id),
+          onTap: () => showWakeWordsDialog(ctx, c),
+        );
+      }
+      if (b('wake_word') && st.activeWakeWords.isEmpty) {
+        return ActionSetting(
+          icon: Icons.chat_bubble_outline,
+          color: Semantic.warn,
+          title: 'wakeword.none_chosen'.tr(),
+          subtitle: 'wakeword.choose_one'.tr(),
+          onTap: () => showWakeWordsDialog(ctx, c),
         );
       }
       if (b('wake_word') && err == 'mic_permission') {
@@ -573,7 +585,7 @@ List<SettingEntry> buildRegistry(AppController c) {
           onTap: () => c.platform.requestMicPermission(),
         );
       }
-      if (b('wake_word') && err != null) {
+      if (b('wake_word') && err != null && err != 'models_missing') {
         return Tile(
           icon: Icons.error_outline,
           color: Semantic.bad,

@@ -86,17 +86,28 @@ selects, the satellite entity reads them like it does for ESPHome or VoIP device
   model and one small classifier per phrase, run with LiteRT 1.4 (`org.tensorflow.lite.Interpreter`). A score above the *Wake word
   threshold* (50 % by default) starts a turn exactly like the talk button, with the phrase passed to Home Assistant (`wake_word` in
   `start`); then the engine pauses, and for 2 s after the turn, so the answer is not heard as a new wake word.
-- **Phrases:** Hey Jarvis, Alexa, Hey Mycroft (the three single-phrase openWakeWord models). The *timer* and *weather* models
-  are command classifiers with other inputs and outputs and are not used.
-- **Models are downloaded on the device, not shipped.** The openWakeWord code is Apache-2.0, but its pre-trained models are
-  CC BY-NC-SA 4.0 (non-commercial), which does not fit this repository's Apache-2.0 licence, so the app fetches them from the
-  openWakeWord GitHub release (`v0.5.1`) when the wake word is switched on: about 3.7 MB for the first phrase (the two shared
-  models and the phrase), 0.9 to 1.3 MB for each further one. Every file is checked against a SHA-256 pinned in
-  `WakeWord.kt` and written under `files/wakeword/` only if it matches; a failed download waits for the user's retry
-  (*Download* in the status row, or the HA command `download_wake_word`). The runtime (LiteRT) is Apache-2.0 and part of the app.
-- **Switching on:** *System → Voice → Wake word* in the app, the switch `switch.<prefix>_wake_word`, or choosing a wake word
-  for the satellite in Home Assistant (*Settings → Voice assistants → Satellites*; the entity reports the three phrases and the
-  active one, and setting it switches the wake word on). Entities: the switch, `select.<prefix>_wake_word_phrase`,
+- **Phrases (21):** Alexa, Hey Jarvis, Jarvis, OK Jarvis, Computer, OK Computer, Hey Mycroft, Hey Rhasspy, Hey Nabu, OK Nabu,
+  Home Assistant, OK Home, Hey Friday, Marvin, Hey KITT, Hey Spock, Alfred, GLaDOS, Terminator, Mr. Anderson, Hey House. Several
+  can be active at the same time (one classifier each, sharing the mel and embedding models, so each extra phrase costs one small
+  model run per 80 ms). Alexa, Hey Jarvis, Hey Mycroft and Hey Rhasspy are the openWakeWord release models; the others come from the
+  community collection `fwartner/home-assistant-wakewords-collection` (MIT, trained with openWakeWord), pinned to one commit.
+- **Not offered:** "Hey Siri" and "OK Google" (no public model exists; they would have to be trained), "Sebastian" or any other
+  name that nobody trained, and "Hal" and "Skynet" (the models did not react to synthetic speech in the lab, see TESTING.md).
+  A model for any other phrase can be trained with openWakeWord (the classifier is a ~0.2 MB file that takes 16 embeddings and
+  returns one score); a slot for your own model file is not built yet. Overlapping phrases (Jarvis and OK Jarvis, Computer and
+  OK Computer, Hey Nabu and OK Nabu) react to each other, which is expected.
+- **Managing the models:** *System > Voice > Wake words > Choose* opens a dialog with every phrase: a tick chooses it, the row
+  shows whether its model is on the tablet and its size, and a button downloads or removes it (several downloads queue up and
+  run one after the other; removing a model also unchooses it, and the two shared models go with the last one). Ticking a phrase
+  while the wake word is on downloads its model; with the wake word off it only records the choice.
+- **Models are downloaded on the device, not shipped.** The openWakeWord release models are CC BY-NC-SA 4.0 (non-commercial),
+  which does not fit this repository's Apache-2.0 licence, so nothing is bundled: the app fetches each file from its pinned URL
+  (the first phrase costs about 2.5 MB for the two shared models plus its own 0.2 to 1.3 MB). Every file is checked against a
+  SHA-256 pinned in `WakeWord.kt` and kept only if it matches; a failed download stops the queue and waits for the user's retry (the
+  status row, or the HA command `download_wake_word`). The runtime (LiteRT) is Apache-2.0 and part of the app.
+- **Switching on:** *System > Voice > Wake word*, the switch `switch.<prefix>_wake_word`, or choosing wake words for the satellite
+  in Home Assistant (*Settings > Voice assistants > Satellites*; several can be chosen, the entity reports all 21 phrases and the
+  active ones, and setting them switches the wake word on and makes the tablet fetch what it lacks). Entities: the switch,
   `number.<prefix>_wake_word_threshold`, `binary_sensor.<prefix>_wake_word_listening` (diagnostic). Off by default: it keeps the
   microphone open; the persistent notification says so, and Android shows the microphone indicator.
 - **The melspectrogram model needs a patched copy:** it is stored with the input shape `[1, 1]`, which its convolutions cannot be

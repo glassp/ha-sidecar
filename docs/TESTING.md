@@ -266,6 +266,20 @@ wake word (not built).
   "Alexa" does; the wake word keeps listening after a turn; switching it off releases the microphone (service gone, no indicator).
   Home Assistant's `assist_satellite/get_configuration` reports the three phrases and the active one.
 
+**Several phrases and the model manager (emulator).** The catalogue grew from 3 to 21 phrases. Every candidate was fetched at its pinned
+revision and vetted with `tests/lab/wakeword/check_models.py` (all take `[1,16,96]` and return one score; macOS speech in two voices):
+Computer, GLaDOS, Hey KITT, Hey Nabu, Hey Rhasspy, Jarvis, Marvin scored 0.99 to 1.0; Alfred, Hey Friday, Hey House, Hey Spock, Home
+Assistant, Mr. Anderson, OK Computer, OK Home, OK Jarvis, OK Nabu, Terminator 0.8 to 0.93; *Hal* and *Skynet* stayed below 0.01 and were left
+out. Overlapping phrases react to each other (Jarvis and OK Jarvis, Computer and OK Computer, Hey Nabu and OK Nabu). On the real app:
+the dialog lists all phrases with size and status; ticking Alexa and Jarvis and Computer queued the downloads (each file verified); HA's
+satellite configuration reports 21 phrases and the active ones, and choosing three at once from HA (`set_wake_words`: GLaDOS, Hey KITT,
+Marvin) downloaded them and each fired with its own id (0.995 to 0.997) while an installed but unchosen phrase (Jarvis) and an unchosen one (OK
+Nabu) did not; Alexa, Jarvis, Hey Jarvis and Computer fired when chosen; removing Computer in the dialog deleted its file, took it out of the
+selection (HA sees it) and it stopped reacting. The first run of the dialog lost choices when three phrases were ticked in quick succession
+(each tap computed the new list from a status that had not refreshed yet); the dialog now keeps its own selection and writes in order (widget
+test `quick successive ticks do not undo each other`). Tests: 5 dialog widget tests, 4 Kotlin tests for the catalogue (unique ids and files, every
+download pinned by hash, community files by commit).
+
 Not verified: a real microphone, a real speaker and distances/noise (all audio here is clean `say` speech injected in software),
 false activations over days (the first number to watch on a real tablet), CPU and battery of the always-open microphone, the
 foreground-service start after a reboot, 16 KB page-size devices (the LiteRT 1.4 libraries are used as published).

@@ -19,7 +19,7 @@ companion app** for the dashboard and a small **sidecar app** for everything the
 | At a glance | Clock, next alarm and chosen HA values after idle; dismissed by touch or presence |
 | Extra sensors | last interaction, camera/mic in use, blocked apps, PIN failures (the companion app's own sensors are not duplicated) |
 | Theme | `App theme` select: system / light / dark / dark at night |
-| Voice assistant (push-to-talk) | Assist satellite entity: talk from the app or start a turn from Home Assistant (`ha_sidecar.listen`), the answer is shown and spoken; announcements play on the tablet. Optional on-device wake word (Hey Jarvis, Alexa, Hey Mycroft; the models are downloaded on the tablet when you switch it on), see [docs/VOICE.md](docs/VOICE.md) |
+| Voice assistant (push-to-talk) | Assist satellite entity: talk from the app or start a turn from Home Assistant (`ha_sidecar.listen`), the answer is shown and spoken; announcements play on the tablet. Optional on-device wake word with 21 phrases to choose from, several at once (Alexa, Hey Jarvis, Jarvis, Computer, OK Nabu, ...; the models are downloaded on the tablet, which you manage in a dialog), see [docs/VOICE.md](docs/VOICE.md) |
 
 ## The app
 

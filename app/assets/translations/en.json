@@ -355,9 +355,9 @@
       "kw": "wake word, hey jarvis, alexa, hands free, listen, microphone, assistant, voice"
     },
     "wake_word_phrase": {
-      "title": "Wake phrase",
-      "desc": "What to say. The models are downloaded from GitHub (openWakeWord, non-commercial licence) when you switch it on.",
-      "kw": "phrase, jarvis, alexa, mycroft, model"
+      "title": "Wake words",
+      "desc": "Which phrases to listen for, and which models are on this tablet. Several can be active at once.",
+      "kw": "phrase, wake words, jarvis, alexa, computer, nabu, models, download, remove"
     },
     "wake_word_threshold": {
       "title": "Wake word threshold",
@@ -842,9 +842,7 @@
     "reason_beacon": "dashboard not responding"
   },
   "wakeword": {
-    "downloading": "Downloading the wake word models… {pct} %",
-    "models_title": "The wake word models are not on this tablet",
-    "models_desc": "{mb} MB are downloaded from GitHub once.",
+    "downloading": "Downloading {name}… {pct} %",
     "download": "Download",
     "problem": "The wake word does not work",
     "err_models_missing": "The models are missing",
@@ -853,6 +851,24 @@
     "err_engine_failed": "The wake word models could not be loaded",
     "listening": "Listening for the wake phrase",
     "off": "Off",
-    "on": "Listening"
+    "on": "Listening",
+    "manage": "Choose",
+    "none_chosen": "No wake word chosen",
+    "choose_one": "Choose at least one phrase to listen for.",
+    "download_failed": "A wake word model could not be downloaded",
+    "retry": "Retry",
+    "remove": "Remove from this tablet",
+    "done": "Done",
+    "dialog_title": "Wake words",
+    "dialog_hint": "Tick the phrases to listen for (several at once). A phrase works once its model is on the tablet; ticking one downloads it.",
+    "dialog_sources": "Models come from openWakeWord (CC BY-NC-SA 4.0, non-commercial) and a community collection trained with it (MIT). They are downloaded from GitHub, checked against a fixed hash and never leave this tablet. There is no model for “Hey Siri” or “OK Google”.",
+    "downloading_row": "Downloading… {pct} %",
+    "queued": "Waiting to download",
+    "on_tablet": "On this tablet · {mb} MB",
+    "not_on_tablet": "Not downloaded · {mb} MB",
+    "err_download_failed": "The download failed. Check the connection and retry.",
+    "err_hash_mismatch": "The downloaded file did not match its checksum and was discarded.",
+    "err_unknown_word": "Unknown wake word.",
+    "err_no_space": "Not enough storage on the tablet."
   }
 }

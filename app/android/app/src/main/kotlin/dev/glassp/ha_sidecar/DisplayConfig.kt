@@ -42,7 +42,7 @@ object DisplayConfig {
         "watchdog_startup_s" to 90,
         // on-device wake word (off by default: it keeps the microphone open; the models are downloaded when it is switched on)
         "wake_word" to false,
-        "wake_word_id" to "hey_jarvis",
+        "wake_word_ids" to WakeWordModels.DEFAULT_ID, // comma separated catalogue ids
         "wake_word_threshold" to 50, // percent
         // at-a-glance screen
         "glance" to false,
@@ -107,7 +107,7 @@ object DisplayConfig {
         "camera_facing" -> v in FACINGS
         "theme" -> v in THEMES
         "watchdog_action" -> v == "restart" || v == "notify"
-        "wake_word_id" -> WakeWordModels.word(v) != null
+        "wake_word_ids" -> v.split(',').map { it.trim() }.filter { it.isNotEmpty() }.all { WakeWordModels.word(it) != null }
         else -> true
     }
 }

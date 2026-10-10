@@ -133,7 +133,7 @@ object Voice {
             return
         }
         var engine: WakeWordEngine? = null
-        var engineWord: String? = null
+        var engineWords: List<String> = emptyList()
         var quietUntil = 0L
         var wasTurn = false
         val buf = ShortArray(FRAME_SAMPLES)
@@ -171,23 +171,27 @@ object Voice {
                         quietUntil = now + COOLDOWN_MS
                         engine?.reset()
                     }
-                    val word = WakeWord.activeId
-                    if (engine == null || engineWord != word) {
+                    val words = WakeWord.activeIds
+                    if (words.isEmpty()) {
+                        Thread.sleep(80) // the chosen models are still downloading: nothing to listen for yet
+                        continue
+                    }
+                    if (engine == null || engineWords != words) {
                         engine?.close()
-                        engine = runCatching { WakeWordEngine(ctx, listOf(word)) }.getOrElse {
+                        engine = runCatching { WakeWordEngine(ctx, words) }.getOrElse {
+                            android.util.Log.e("WakeWord", "engine failed", it)
                             WakeWord.engineFailed(it)
                             null
                         }
-                        engineWord = word
+                        engineWords = words
                         WakeWord.listening = engine != null
                     }
-                    val scores = engine?.feed(buf)
-                    val score = scores?.get(word) ?: 0f
-                    WakeWord.lastScore = score
-                    if (now >= quietUntil && score >= WakeWord.threshold) {
+                    val best = engine?.feed(buf)?.maxByOrNull { it.value }
+                    WakeWord.lastScore = best?.value ?: 0f
+                    if (best != null && now >= quietUntil && best.value >= WakeWord.threshold) {
                         quietUntil = now + COOLDOWN_MS
                         engine?.reset()
-                        WakeWord.detected(word, score)
+                        WakeWord.detected(best.key, best.value)
                     }
                 }
             }

@@ -82,28 +82,26 @@ class SidecarSatellite(SidecarEntity, AssistSatelliteEntity):
 
     @callback
     def async_get_configuration(self) -> AssistSatelliteConfiguration:
-        """The phrases the tablet can listen for (the app knows its catalogue) and the one that is on."""
-        known = self._device.state.get("wake_words") or []
+        """The phrases the tablet can listen for (its app knows the catalogue) and the ones that are on."""
+        known = [w for w in self._device.state.get("wake_words") or [] if isinstance(w, dict) and "id" in w]
         cfg = self._device.state.get("cfg") or {}
-        active = [cfg["wake_word_id"]] if cfg.get("wake_word") and cfg.get("wake_word_id") else []
+        chosen = [i.strip() for i in str(cfg.get("wake_word_ids") or "").split(",") if i.strip()]
+        known_ids = {w["id"] for w in known}
         return AssistSatelliteConfiguration(
             available_wake_words=[
-                AssistSatelliteWakeWord(id=w["id"], wake_word=w.get("phrase") or w["id"], trained_languages=["en"])
-                for w in known
-                if isinstance(w, dict) and "id" in w
+                AssistSatelliteWakeWord(id=w["id"], wake_word=w.get("phrase") or w["id"], trained_languages=["en"]) for w in known
             ],
-            active_wake_words=active,
-            max_active_wake_words=1,
+            active_wake_words=[i for i in chosen if i in known_ids] if cfg.get("wake_word") else [],
+            max_active_wake_words=max(len(known), 1),
         )
 
     async def async_set_configuration(self, config: AssistSatelliteConfiguration) -> None:
-        """Choosing a phrase in Home Assistant switches the wake word on (the tablet fetches the models it lacks by itself)."""
-        if not config.active_wake_words:
+        """Choosing phrases in Home Assistant switches the wake word on (the tablet fetches the models it lacks by itself)."""
+        ids = list(dict.fromkeys(config.active_wake_words))
+        if not ids:
             await self._device.send_command("set_config", {"config": {"wake_word": False}})
             return
-        wanted = config.active_wake_words[0]
-        await self._device.send_command("set_config", {"config": {"wake_word_id": wanted, "wake_word": True}})
-
+        await self._device.send_command("set_config", {"config": {"wake_word_ids": ",".join(ids), "wake_word": True}})
 
     # --- tablet -> Home Assistant --------------------------------------------------------------------
 

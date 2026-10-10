@@ -206,6 +206,10 @@ object PlatformChannel {
                 WakeWord.download(ctx, call.argument<String>("id").orEmpty())
                 result.success(null)
             }
+            "removeWakeWord" -> {
+                WakeWord.remove(ctx, call.argument<String>("id").orEmpty())
+                result.success(null)
+            }
             "micPermission" -> result.success(Voice.hasPermission(ctx))
             "requestMicPermission" -> {
                 Voice.requestPermission(ctx)

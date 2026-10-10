@@ -194,6 +194,9 @@ class AndroidKioskPlatform implements KioskPlatform {
       _call('downloadWakeWord', {'id': id});
 
   @override
+  Future<void> removeWakeWord(String id) => _call('removeWakeWord', {'id': id});
+
+  @override
   Future<bool> showUi(String route) async =>
       await _call<bool>('showUi', {'route': route}) ?? false;
 

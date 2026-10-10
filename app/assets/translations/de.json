@@ -355,9 +355,9 @@
       "kw": "aktivierungswort, hey jarvis, alexa, freihändig, zuhören, mikrofon, assistent, sprache"
     },
     "wake_word_phrase": {
-      "title": "Aktivierungsphrase",
-      "desc": "Was du sagst. Die Modelle werden beim Einschalten von GitHub geladen (openWakeWord, nicht-kommerzielle Lizenz).",
-      "kw": "phrase, jarvis, alexa, mycroft, modell"
+      "title": "Aktivierungswörter",
+      "desc": "Auf welche Phrasen gehört wird und welche Modelle auf diesem Tablet liegen. Mehrere können gleichzeitig aktiv sein.",
+      "kw": "phrase, aktivierungswörter, jarvis, alexa, computer, nabu, modelle, laden, entfernen"
     },
     "wake_word_threshold": {
       "title": "Schwelle für das Aktivierungswort",
@@ -842,9 +842,7 @@
     "reason_beacon": "Dashboard reagiert nicht"
   },
   "wakeword": {
-    "downloading": "Aktivierungswort-Modelle werden geladen … {pct} %",
-    "models_title": "Die Modelle für das Aktivierungswort fehlen auf diesem Tablet",
-    "models_desc": "{mb} MB werden einmalig von GitHub geladen.",
+    "downloading": "{name} wird geladen … {pct} %",
     "download": "Laden",
     "problem": "Das Aktivierungswort funktioniert nicht",
     "err_models_missing": "Die Modelle fehlen",
@@ -853,6 +851,24 @@
     "err_engine_failed": "Die Modelle ließen sich nicht laden",
     "listening": "Hört auf das Aktivierungswort",
     "off": "Aus",
-    "on": "Hört zu"
+    "on": "Hört zu",
+    "manage": "Auswählen",
+    "none_chosen": "Kein Aktivierungswort gewählt",
+    "choose_one": "Wähle mindestens eine Phrase.",
+    "download_failed": "Ein Modell ließ sich nicht laden",
+    "retry": "Erneut versuchen",
+    "remove": "Von diesem Tablet entfernen",
+    "done": "Fertig",
+    "dialog_title": "Aktivierungswörter",
+    "dialog_hint": "Hake die Phrasen an, auf die gehört werden soll (mehrere gleichzeitig). Eine Phrase funktioniert, sobald ihr Modell auf dem Tablet ist; Anhaken lädt es.",
+    "dialog_sources": "Die Modelle stammen von openWakeWord (CC BY-NC-SA 4.0, nicht-kommerziell) und einer damit trainierten Community-Sammlung (MIT). Sie werden von GitHub geladen, gegen einen festen Hash geprüft und verlassen das Tablet nicht. Für „Hey Siri“ oder „OK Google“ gibt es kein Modell.",
+    "downloading_row": "Wird geladen … {pct} %",
+    "queued": "Wartet auf den Download",
+    "on_tablet": "Auf diesem Tablet · {mb} MB",
+    "not_on_tablet": "Nicht geladen · {mb} MB",
+    "err_download_failed": "Der Download ist fehlgeschlagen. Verbindung prüfen und erneut versuchen.",
+    "err_hash_mismatch": "Die geladene Datei passte nicht zur Prüfsumme und wurde verworfen.",
+    "err_unknown_word": "Unbekanntes Aktivierungswort.",
+    "err_no_space": "Nicht genug Speicher auf dem Tablet."
   }
 }

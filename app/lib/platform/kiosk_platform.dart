@@ -40,6 +40,12 @@ class DeviceStatus {
       raw['wake_word_download_error'] as String?;
   double get wakeWordScore => (raw['wake_word_score'] as num?)?.toDouble() ?? 0;
 
+  /// The phrases chosen to listen for (installed or not).
+  List<Map<String, dynamic>> get activeWakeWords => [
+    for (final w in wakeWords)
+      if (w['active'] == true) w,
+  ];
+
   /// The wake words the app knows: `{id, phrase, installed, missing_bytes}`.
   List<Map<String, dynamic>> get wakeWords => [
     for (final e in (raw['wake_words'] as List? ?? const []))
@@ -318,8 +324,11 @@ abstract class KioskPlatform {
   Future<void> voiceStopPlayback();
   Future<void> requestMicPermission();
 
-  /// Downloads the models for the wake word [id] (progress shows in the status).
+  /// Queues the download of the model for the wake word [id] (progress shows in the status).
   Future<void> downloadWakeWord(String id);
+
+  /// Deletes the model of [id] and takes it out of the chosen wake words.
+  Future<void> removeWakeWord(String id);
 
   /// Brings the full-screen page [route] (for example `/voice`) to the front.
   Future<bool> showUi(String route);

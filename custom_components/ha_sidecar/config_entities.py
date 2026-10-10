@@ -90,7 +90,6 @@ SELECTS = [
     ("camera_facing", "Presence camera", ["front", "back"], "mdi:camera-switch"),
     ("theme", "App theme", ["system", "light", "dark", "night"], "mdi:theme-light-dark"),
     ("watchdog_action", "Watchdog action", ["restart", "notify"], "mdi:wrench-clock"),
-    ("wake_word_id", "Wake word phrase", ["hey_jarvis", "alexa", "hey_mycroft"], "mdi:chat-processing-outline"),
 ]
 
 # key, name, icon

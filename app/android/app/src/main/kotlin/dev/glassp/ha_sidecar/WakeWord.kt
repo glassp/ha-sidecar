@@ -15,30 +15,71 @@ import java.security.MessageDigest
  * word on (their licence does not allow shipping them), and verified against the hashes below.
  */
 object WakeWordModels {
-    const val BASE = "https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/"
+    enum class Source(val label: String) {
+        OPENWAKEWORD("openWakeWord (CC BY-NC-SA 4.0)"),
+        COMMUNITY("community collection, trained with openWakeWord (MIT)"),
+    }
 
-    class Model(val id: String, val phrase: String, val file: String, val sha256: String, val size: Long)
+    class Model(
+        val id: String,
+        val phrase: String,
+        val file: String,
+        val url: String,
+        val sha256: String,
+        val size: Long,
+        val source: Source = Source.OPENWAKEWORD,
+    )
 
+    private const val UP = "https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/"
+
+    /** The two models every phrase needs (mel spectrogram, embedding). */
     val shared = listOf(
-        Model("melspectrogram", "", "melspectrogram.tflite", "96fa0adccb6e8cf95cb14465409a1a2898ee4a96a85bb9ed3c7eb0e68bf163e8", 1_092_516),
-        Model("embedding", "", "embedding_model.tflite", "c0aea21eb84a4ce90a08c870da41b7a7173b45269e6a3207c71d67c40f3a59d8", 1_330_312),
+        Model("melspectrogram", "", "melspectrogram.tflite", UP + "melspectrogram.tflite", "96fa0adccb6e8cf95cb14465409a1a2898ee4a96a85bb9ed3c7eb0e68bf163e8", 1_092_516),
+        Model("embedding", "", "embedding_model.tflite", UP + "embedding_model.tflite", "c0aea21eb84a4ce90a08c870da41b7a7173b45269e6a3207c71d67c40f3a59d8", 1_330_312),
     )
+
+    /**
+     * The phrases on offer. Every classifier takes 16 embeddings and returns one score. The community ones come from a collection
+     * pinned to one commit; each file is pinned by hash too. (No model for "Hey Siri" or "OK Google" exists publicly; "Hal" and "Skynet"
+     * were left out because they did not react to speech in the lab.)
+     */
     val words = listOf(
-        Model("hey_jarvis", "Hey Jarvis", "hey_jarvis_v0.1.tflite", "14bff778604985e1b5c19f0f7bbe477a69cf281d8db34b232b3b972411f710e2", 1_278_912),
-        Model("alexa", "Alexa", "alexa_v0.1.tflite", "7333a317a790070a7f3432b81d9439c779481cc4ebd67c73da7174ea3cf48397", 855_312),
-        Model("hey_mycroft", "Hey Mycroft", "hey_mycroft_v0.1.tflite", "bf9e43136afd3ca323698820a6e32a47f885ef4c30a3b8b577ec71688a9d64d8", 860_300),
+        Model("hey_jarvis", "Hey Jarvis", "hey_jarvis_v0.1.tflite", "https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/hey_jarvis_v0.1.tflite", "14bff778604985e1b5c19f0f7bbe477a69cf281d8db34b232b3b972411f710e2", 1278912, Source.OPENWAKEWORD),
+        Model("alexa", "Alexa", "alexa_v0.1.tflite", "https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/alexa_v0.1.tflite", "7333a317a790070a7f3432b81d9439c779481cc4ebd67c73da7174ea3cf48397", 855312, Source.OPENWAKEWORD),
+        Model("hey_mycroft", "Hey Mycroft", "hey_mycroft_v0.1.tflite", "https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/hey_mycroft_v0.1.tflite", "bf9e43136afd3ca323698820a6e32a47f885ef4c30a3b8b577ec71688a9d64d8", 860300, Source.OPENWAKEWORD),
+        Model("hey_rhasspy", "Hey Rhasspy", "hey_rhasspy_v0.1.tflite", "https://github.com/dscripka/openWakeWord/releases/download/v0.5.1/hey_rhasspy_v0.1.tflite", "01d2526b45068f565aa3849d6ec2b7abae099154fc1b496f9ef20de9ef241fe9", 416140, Source.OPENWAKEWORD),
+        Model("jarvis", "Jarvis", "jarvis.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/jarvis/jarvis_v2.tflite", "cb2102fc9a76d4e02a740760d5ba2060978d766869489000b3565c8c4f8493a5", 207512, Source.COMMUNITY),
+        Model("ok_jarvis", "OK Jarvis", "ok_jarvis.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/ok_jarvis/ok_jarvis.tflite", "e38bf1970b4954f3a63e3cec53d866dd068d37d132f20ffc74bc620901cd81c2", 206380, Source.COMMUNITY),
+        Model("computer", "Computer", "computer.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/computer/computer_v2.tflite", "411db364955bf7b7a13a50d732a8b59c129e2fbe130a54f9eb3c20ca183bc4d0", 207512, Source.COMMUNITY),
+        Model("ok_computer", "OK Computer", "ok_computer.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/ok_computer/ok_computer.tflite", "b22dadba0f1c6ac2549a1336e8938f3e2366b3f43a3e95a622ca897aa5a3477a", 206380, Source.COMMUNITY),
+        Model("hey_nabu", "Hey Nabu", "hey_nabu.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/hey_nabu/hey_nabu_v2.tflite", "ce18b69e1bddfb56e70fe739d6ca0f423f70a6e710f05b376baf6a3625689234", 207512, Source.COMMUNITY),
+        Model("ok_nabu", "OK Nabu", "ok_nabu.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/ok_nabu/ok_nabu.tflite", "3961c87ba68996ad904f22597e432a136f726cb6441960c5e535eb073299ee25", 206380, Source.COMMUNITY),
+        Model("home_assistant", "Home Assistant", "home_assistant.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/home_assistant/Home_assistant.tflite", "9f54305884abde30d484f18dbff582ed6e2f1a141b93d6fa5f7feb505a0c94aa", 206380, Source.COMMUNITY),
+        Model("ok_home", "OK Home", "ok_home.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/ok_home/ok_home.tflite", "6b314b3935d37b6f0b4319527ad3664b76672bbd6b1d870d56a0b5dda4c543e1", 206380, Source.COMMUNITY),
+        Model("hey_friday", "Hey Friday", "hey_friday.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/hey_friday/hey_Friday%21.tflite", "eb127d82d884a1ef4167b455ec67682bf362b9de3e232c3f8d544a5e6ab4cb8b", 206748, Source.COMMUNITY),
+        Model("marvin", "Marvin", "marvin.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/marvin/marvin_v2.tflite", "ed91c4d83e28bcc0af1cdebe3ab4f2a4f2d4c9908101ad8476d2e1b9b77f4e0c", 207512, Source.COMMUNITY),
+        Model("hey_kitt", "Hey KITT", "hey_kitt.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/hey_kitt/hey_kitt.tflite", "c698353e6ade9633eab0e478f67d84e80a0b27674c86d738e0c8874a5f37d4f9", 207512, Source.COMMUNITY),
+        Model("hey_spock", "Hey Spock", "hey_spock.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/hey_spock/hey_spock.tflite", "f39eb339c0c2b18315e085a0cc4debcc7d74dd2d0b35585d3d4c49a0acec89d3", 206748, Source.COMMUNITY),
+        Model("alfred", "Alfred", "alfred.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/alfred/alfred.tflite", "ee50efc6898d065eaf6a5a993d10be0d6a1bb6737ba577d623fa3d1327e2310e", 206380, Source.COMMUNITY),
+        Model("glados", "GLaDOS", "glados.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/glados/glados.tflite", "7564b95e5deed29cecfd55fd34cac70da5307c0d86108a7f87bfc610c9724dec", 207512, Source.COMMUNITY),
+        Model("terminator", "Terminator", "terminator.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/terminator/Terminator.tflite", "7feb69397a56a6933d3248ecca3ca6aaca7b6bf2c36f5beb9b63bb3d17647686", 206380, Source.COMMUNITY),
+        Model("mr_anderson", "Mr. Anderson", "mr_anderson.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/mr_anderson/Mr._Anderson.tflite", "e7ffc82ef0de12bba5c51aa5326af8339bc4f95a43dd15246893408643aa978b", 206380, Source.COMMUNITY),
+        Model("hey_house", "Hey House", "hey_house.tflite", "https://raw.githubusercontent.com/fwartner/home-assistant-wakewords-collection/8bcd2f20bb7b76c351b2eff871fa1ce873fe9be2/en/hey_house/hey_house.tflite", "924833a5fe62e57db229798452051fe9ee76b723619f5dd2c86bf12e58318098", 206748, Source.COMMUNITY),
     )
+
+    const val DEFAULT_ID = "hey_jarvis"
 
     fun dir(ctx: Context) = File(ctx.filesDir, "wakeword").also { it.mkdirs() }
     fun word(id: String) = words.firstOrNull { it.id == id }
 
     private fun present(ctx: Context, m: Model) = File(dir(ctx), m.file).let { it.isFile && it.length() == m.size }
+    private fun sharedPresent(ctx: Context) = shared.all { present(ctx, it) }
 
-    /** The phrases whose models (and the two shared ones) are on the device. */
+    /** The phrases whose classifier (and the two shared models) are on the device. */
     fun installedWords(ctx: Context): List<String> =
-        if (shared.all { present(ctx, it) }) words.filter { present(ctx, it) }.map { it.id } else emptyList()
+        if (sharedPresent(ctx)) words.filter { present(ctx, it) }.map { it.id } else emptyList()
 
-    /** Bytes still to download for [wordId] (0 = ready). */
+    /** Bytes still to download for [wordId] (0 = ready): its classifier and, if missing, the shared models. */
     fun missingBytes(ctx: Context, wordId: String): Long {
         val w = word(wordId) ?: return 0
         return (shared + w).filter { !present(ctx, it) }.sumOf { it.size }
@@ -46,7 +87,7 @@ object WakeWordModels {
 
     /**
      * Downloads what [wordId] needs, verifying every file; blocking, call from a worker thread.
-     * @return null on success or an error code (`download_failed`, `hash_mismatch`, `unknown_word`, `no_space`).
+     * @return null on success or an error code (download_failed, hash_mismatch, unknown_word, no_space).
      */
     fun download(ctx: Context, wordId: String, progress: (done: Long, total: Long) -> Unit): String? {
         val w = word(wordId) ?: return "unknown_word"
@@ -57,7 +98,7 @@ object WakeWordModels {
         for (m in todo) {
             val tmp = File(dir(ctx), m.file + ".part")
             try {
-                val conn = (URL(BASE + m.file).openConnection() as HttpURLConnection).apply {
+                val conn = (URL(m.url).openConnection() as HttpURLConnection).apply {
                     connectTimeout = 15_000
                     readTimeout = 30_000
                     instanceFollowRedirects = true
@@ -89,6 +130,14 @@ object WakeWordModels {
             }
         }
         return null
+    }
+
+    /** Deletes the classifier of [wordId]; the shared models go with the last one. */
+    fun remove(ctx: Context, wordId: String) {
+        val w = word(wordId) ?: return
+        File(dir(ctx), w.file).delete()
+        File(dir(ctx), w.file + ".part").delete()
+        if (words.none { present(ctx, it) }) shared.forEach { File(dir(ctx), it.file).delete() }
     }
 }
 
@@ -156,7 +205,11 @@ class WakeWordEngine(ctx: Context, private val wordIds: List<String>) : AutoClos
     )
     private val emb = Interpreter(File(dir, "embedding_model.tflite"))
     private val classifiers = wordIds.associateWith { id ->
-        Interpreter(File(dir, WakeWordModels.word(id)!!.file))
+        Interpreter(File(dir, WakeWordModels.word(id)!!.file)).also {
+            check(it.getInputTensor(0).shape().contentEquals(intArrayOf(1, CLS_FRAMES, EMB_DIM)) && it.getOutputTensor(0).numElements() == 1) {
+                "wake word model $id does not take 16 embeddings and return one score"
+            }
+        }
     }
 
     private val raw = FloatArray(CHUNK + CONTEXT)
@@ -249,10 +302,10 @@ class WakeWordEngine(ctx: Context, private val wordIds: List<String>) : AutoClos
     }
 }
 
-/** The wake word as a feature: configuration, readiness (models, permission), the download and the detection event. */
+/** The wake word as a feature: configuration, readiness (models, permission), the downloads and the detection event. */
 object WakeWord {
-    @Volatile var wanted = false // enabled and ready: the microphone loop feeds the engine
-    @Volatile var activeId = "hey_jarvis"
+    @Volatile var wanted = false // enabled and at least one chosen phrase is ready: the microphone loop feeds the engine
+    @Volatile var activeIds: List<String> = emptyList() // the chosen phrases that are on the device (what the engine listens for)
     @Volatile var threshold = 0.5f
     @Volatile var listening = false // the engine is loaded and fed
     @Volatile var error: String? = null // models_missing | mic_permission | start_blocked | mic_failed | engine_failed
@@ -260,22 +313,31 @@ object WakeWord {
     @Volatile var downloading: String? = null // the phrase being downloaded
     @Volatile var downloadFraction = 0.0
     @Volatile var downloadError: String? = null
+    private val queue = java.util.concurrent.LinkedBlockingDeque<String>()
+
+    /** The chosen phrases from the settings (a comma separated list of catalogue ids). */
+    fun chosen(cfg: Map<String, Any>): List<String> =
+        (cfg["wake_word_ids"] as String).split(',').map { it.trim() }.filter { WakeWordModels.word(it) != null }.distinct()
 
     /** Re-reads the settings and starts or ends the listening. Safe to call often. */
     fun refresh(ctx: Context) {
         val cfg = DisplayConfig.get(ctx)
-        activeId = cfg["wake_word_id"] as String
         threshold = (cfg["wake_word_threshold"] as Int) / 100f
         val enabled = cfg["wake_word"] == true
+        val chosen = chosen(cfg)
+        val installed = WakeWordModels.installedWords(ctx)
+        activeIds = chosen.filter { it in installed }
         wanted = false
         error = null
         if (!enabled) downloadError = null
-        if (enabled) {
-            if (activeId !in WakeWordModels.installedWords(ctx)) {
-                error = "models_missing"
-                // switching the wake word on is the consent to fetch its models; a failed attempt waits for the user's retry
-                if (downloading == null && downloadError == null) download(ctx, activeId)
-            } else {
+        if (enabled && chosen.isNotEmpty()) {
+            val missing = chosen.filter { it !in installed }
+            if (missing.isNotEmpty()) {
+                if (activeIds.isEmpty()) error = "models_missing"
+                // choosing a phrase is the consent to fetch its model; a failed attempt waits for the user's retry
+                if (downloadError == null) missing.forEach { enqueue(ctx, it) }
+            }
+            if (activeIds.isNotEmpty()) {
                 Voice.ensurePermission(ctx)
                 if (!Voice.hasPermission(ctx)) {
                     error = "mic_permission"
@@ -292,6 +354,7 @@ object WakeWord {
     }
 
     fun detected(id: String, score: Float) {
+        android.util.Log.i("WakeWord", "detected $id %.3f".format(score))
         EventBus.emit("wake_word", mapOf("id" to id, "phrase" to (WakeWordModels.word(id)?.phrase ?: id), "score" to score.toDouble()))
     }
 
@@ -307,14 +370,27 @@ object WakeWord {
         EventBus.emit("status_changed")
     }
 
-    /** Downloads the models for [id] in the background, then switches to them. Progress shows in the status. */
+    /** Queues the download of [id] (a retry after a failure clears the error); downloads run one after the other. */
     fun download(ctx: Context, id: String) {
-        if (downloading != null) return
-        downloading = id
-        downloadFraction = 0.0
         downloadError = null
-        EventBus.emit("status_changed")
-        Thread({
+        enqueue(ctx, id)
+        refresh(ctx)
+    }
+
+    @Synchronized
+    private fun enqueue(ctx: Context, id: String) {
+        if (WakeWordModels.word(id) == null || downloading == id || id in queue || WakeWordModels.missingBytes(ctx, id) == 0L) return
+        queue.addLast(id)
+        if (downloading != null) return
+        downloading = queue.peekFirst()
+        Thread({ work(ctx.applicationContext) }, "wakeword-download").start()
+    }
+
+    private fun work(ctx: Context) {
+        while (true) {
+            val id = synchronized(this) { queue.pollFirst().also { downloading = it } } ?: break
+            downloadFraction = 0.0
+            EventBus.emit("status_changed")
             val err = WakeWordModels.download(ctx, id) { done, total ->
                 val f = done.toDouble() / total.coerceAtLeast(1)
                 if (f - downloadFraction >= 0.02) {
@@ -322,23 +398,51 @@ object WakeWord {
                     EventBus.emit("status_changed")
                 }
             }
-            downloadError = err
-            downloading = null
+            if (err != null) {
+                downloadError = err
+                queue.clear() // do not hammer a broken connection with the rest of the queue
+            }
             refresh(ctx)
-        }, "wakeword-download").start()
+        }
+        downloading = null
+        refresh(ctx)
     }
 
-    fun snapshot(ctx: Context): Map<String, Any?> = mapOf(
-        "wake_word_listening" to listening,
-        "wake_word_error" to error,
-        "wake_word_score" to lastScore.toDouble(),
-        "wake_word_downloading" to downloading,
-        "wake_word_download_fraction" to downloadFraction,
-        "wake_word_download_error" to downloadError,
-        "wake_words" to WakeWordModels.words.map {
-            mapOf("id" to it.id, "phrase" to it.phrase, "installed" to (it.id in WakeWordModels.installedWords(ctx)), "missing_bytes" to WakeWordModels.missingBytes(ctx, it.id))
-        },
-    )
+    /** Deletes the model of [id] and takes it out of the chosen phrases. */
+    fun remove(ctx: Context, id: String) {
+        queue.remove(id)
+        val cfg = DisplayConfig.get(ctx)
+        val rest = chosen(cfg).filter { it != id }
+        // set() refreshes us; the file goes first so the engine is rebuilt without it
+        WakeWordModels.remove(ctx, id)
+        DisplayConfig.set(ctx, mapOf("wake_word_ids" to rest.joinToString(",")))
+    }
+
+    fun snapshot(ctx: Context): Map<String, Any?> {
+        val installed = WakeWordModels.installedWords(ctx)
+        val chosen = chosen(DisplayConfig.get(ctx))
+        return mapOf(
+            "wake_word_listening" to listening,
+            "wake_word_error" to error,
+            "wake_word_score" to lastScore.toDouble(),
+            "wake_word_downloading" to downloading,
+            "wake_word_download_fraction" to downloadFraction,
+            "wake_word_download_error" to downloadError,
+            "wake_words" to WakeWordModels.words.map {
+                mapOf(
+                    "id" to it.id,
+                    "phrase" to it.phrase,
+                    "installed" to (it.id in installed),
+                    "active" to (it.id in chosen),
+                    "size_bytes" to it.size,
+                    "missing_bytes" to WakeWordModels.missingBytes(ctx, it.id),
+                    "downloading" to (it.id == downloading),
+                    "queued" to (it.id in queue),
+                    "source" to it.source.label,
+                )
+            },
+        )
+    }
 }
 
 /**

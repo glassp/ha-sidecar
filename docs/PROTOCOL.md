@@ -29,7 +29,7 @@ State keys: `mode` (`device_owner|accessibility|none`), `lockdown`, `has_pin`, `
 `security_patch`, `build`, `manufacturer`, `model`, `device_owner`, `accessibility_enabled`, `overlay_granted`,
 `write_settings_granted`, `pending_update` (object or null), `next_alarm` (epoch ms), `alarm_ringing`.
 
-Wake word state keys: `wake_word_listening`, `wake_word_error` (`models_missing`, `mic_permission`, `start_blocked`, `mic_failed`, `engine_failed`), `wake_word_score`, `wake_words` (`[{id, phrase, installed, missing_bytes}]`), `mic_permission`, `voice_active`; `cfg` has `wake_word`, `wake_word_id`, `wake_word_threshold`.
+Wake word state keys: `wake_word_listening`, `wake_word_error` (`models_missing`, `mic_permission`, `start_blocked`, `mic_failed`, `engine_failed`), `wake_word_score`, `wake_words` (`[{id, phrase, installed, missing_bytes}]`), `mic_permission`, `voice_active`; `cfg` has `wake_word`, `wake_word_ids` (comma separated catalogue ids), `wake_word_threshold`; each `wake_words` entry is `{id, phrase, installed, active, size_bytes, missing_bytes, downloading, queued, source}`.
 
 Additional state keys: `cfg{...}`, `is_night`, `presence`, `camera_motion`, `camera_active`, `camera_error`,
 `camera_permission`, `target_brightness`, `display_error`, `last_interaction` (epoch ms), `camera_in_use`, `mic_in_use`,
@@ -74,7 +74,7 @@ Voice (see [VOICE.md](VOICE.md)): `{"type":"voice","action":"start|audio|stop|ca
 | `get_timers` | | |
 | `heal_dashboard` | `reason` | restart requested by Home Assistant (beacon silent): answers `{healed, why?}`; refused (`screen_off`, `busy`, `not_in_front`, `rate_limited`); needs neither the watchdog switch nor accessibility |
 | `voice_listen` | | open the assistant page and start a push-to-talk turn (the HA services `listen` / button *Start listening*); errors: `not_connected`, `mic_permission`, `mic_busy`, `mic_failed` |
-| `download_wake_word` | `id` | fetch the wake word models for `id` (progress in the state keys `wake_word_downloading`, `wake_word_download_fraction`, `wake_word_download_error`) |
+| `download_wake_word` | `id` | queue the download of the model for `id` (progress in the state keys `wake_word_downloading`, `wake_word_download_fraction`, `wake_word_download_error`) |
 | `voice_cancel` | | end the running turn and close the page |
 | `voice_announce` | `url`, `message`, `preannounce_url?` | play the sound and the announcement; answers when playback ended (`playback_failed` on an error) |
 | `restart_companion` | | closes and relaunches the Home Assistant app now (device owner: hide + unhide) |
