@@ -1,0 +1,8 @@
+# Copy to `android/key.properties` and fill in your real values.
+# key.properties and the keystore are gitignored and must never be committed.
+# storeFile is resolved relative to android/app/ (here a symlink to ~/.android/release.jks).
+# Without key.properties the release build is signed with the debug key.
+storeFile=release.jks
+storePassword=
+keyPassword=
+keyAlias=upload
