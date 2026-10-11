@@ -509,3 +509,22 @@ The Mac slept for 18 minutes once: the phone kept running, and the tablet reconn
 Release build (`flutter build apk --release`, R8, signed with the debug key): starts and renders on the emulator, the wake word engine loads
 (TFLite XNNPACK delegate) and listens; it was not yet run on the phone.
 
+### Pixel 6 full regression after a reboot (2026-10-11, debug build with the owner-removal feature, lab HA restarted)
+
+The phone came back on its own and reconnected to the lab (the "broken" state was only the lab Home Assistant being down).
+
+| Area | Result |
+|---|---|
+| **`dpm set-device-owner` with the Google account still bound** | ❌ rejected by Android, as expected: `IllegalStateException: Not allowed to set the device owner because there are already some accounts on the device.` Nothing changed (no owner). Removing the account is what decides whether it can work on a set-up device. |
+| Timer: 15 s, rings, dismissed from the phone | ✅ |
+| Lock attacks (slow / fast / quick-settings shade pull, Recents, long-press Home, long-press power, 10× Back at 0.2 s, force-stop the companion, Settings, Maps) | ✅ companion in front every time; **Settings stays blocked** now that the update exception has expired (an item that was open before) |
+| HA's menu button (top left) while locked | ✅ opens |
+| PIN corner (bottom left): five taps → PIN pad, wrong PIN counted, right PIN unlocks, relock from HA | ✅ |
+| Voice turn with the docked card, answer, follow-up wait; result card (weather with forecast) | ✅ |
+| Voice volume 2 → 5 while listening → back to 2 | ✅ after a fix: **a turn cancelled from Home Assistant (`cancel_listening`) left the volume raised** (the conversation flag stayed on, so the restore never ran); `test/voice_controller_test.dart` covers it |
+| Brightness: adaptive setup restored after Day → Manual | ✅ |
+| Idle clock screen, touch dismisses it | ✅ |
+| Camera presence running, alarm set / cancel, 103 entities, no errors in the HA log | ✅ |
+
+Suites: 46 Python, 19 JS, 119 Dart, analyzer clean, Android lint 0 errors, Gradle unit tests pass.
+

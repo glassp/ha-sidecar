@@ -221,7 +221,12 @@ class VoiceController extends ChangeNotifier {
     levels.clear();
     _continue = false;
     notifyListeners();
-    if (!silent) _closeUi();
+    if (!silent) {
+      // the screen closes with it, so nothing is left to follow up: the conversation is over (otherwise the raised volume
+      // would never be given back, and the next turn would count as a follow-up)
+      inConversation = false;
+      _closeUi();
+    }
   }
 
   /// Ends the conversation: stops listening and speaking, plays the closing ping and closes the screen

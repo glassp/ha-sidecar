@@ -798,6 +798,18 @@ void volumeTests() {
       },
     );
 
+    test(
+      'a cancelled turn (cancel_listening from Home Assistant) gives the volume back',
+      () async {
+        await v.listen();
+        expect(platform.calls, contains('volume:50'));
+        await v.cancel();
+        expect(v.inConversation, isFalse);
+        await Future<void>.delayed(const Duration(milliseconds: 1200));
+        expect(platform.calls, contains('volume:restore'));
+      },
+    );
+
     test('an announcement is played at the voice volume too', () async {
       await v.announce(url: '/a.mp3', message: 'Dinner');
       expect(
