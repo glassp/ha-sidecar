@@ -103,10 +103,14 @@ class MainActivity : FlutterActivity() {
 
     /** Leave the current overlay page. */
     fun closeRoute() {
-        if (overlayOnly) {
+        val locked = Prefs.lockdown(this)
+        // While the kiosk is locked the only way out of an overlay is back to the dashboard, never to the sidecar's own screen
+        // (which can be open behind it: the PIN pad reuses that activity), so the activity is finished and the app brought back.
+        if (overlayOnly || locked) {
             runCatching { stopLockTask() }
             UiHost.route = UiHost.MAIN
             finish()
+            if (locked) KioskController.launchTarget(this)
         } else {
             applyRoute(UiHost.MAIN)
         }

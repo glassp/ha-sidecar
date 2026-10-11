@@ -293,7 +293,7 @@ List<SettingEntry> buildRegistry(AppController c) {
           ])
             c: 'corner.$c'.tr(),
         },
-        value: str('hot_corner', 'bottom_left'),
+        value: str('hot_corner', 'top_left'),
         onChanged: (v) => set(ctx, 'hot_corner', v),
       ),
     ),
@@ -344,28 +344,44 @@ List<SettingEntry> buildRegistry(AppController c) {
     }),
 
     // ---------------------------------------------------------------- Kiosk › Start & screen
-    base(
-      'home_app',
-      Section.kiosk,
-      start,
-      (ctx) => SwitchSetting(
+    base('home_app', Section.kiosk, start, (ctx) {
+      final st = s();
+      final isHome = st.isHomeApp;
+      // a status, not a switch: Android decides who the home app is, so this shows whether it is this app (and who it is if not)
+      final current = st.homePackage.isEmpty || isHome
+          ? ''
+          : ' ${'home.current'.tr(namedArgs: {'package': st.homePackage})}';
+      return ActionSetting(
         icon: Icons.home_outlined,
         title: _t('home_app', 'title'),
-        subtitle: !s().kioskLauncher
-            ? _t('home_app', 'desc')
-            : s().isHomeApp
+        subtitle: isHome
             ? 'home.active'.tr()
-            : s().deviceOwner
-            ? 'home.applying'.tr()
-            : 'home.choose'.tr(),
-        value: s().kioskLauncher,
-        onChanged: (v) async {
-          await c.platform.setKioskLauncher(v);
-          if (v && !s().deviceOwner) await c.platform.openSettings('home');
+            : (!st.kioskLauncher
+                      ? _t('home_app', 'desc')
+                      : st.deviceOwner
+                      ? 'home.applying'.tr()
+                      : 'home.choose'.tr()) +
+                  current,
+        trailing: isHome
+            ? Pill('home.is_home'.tr(), color: Semantic.ok, icon: Icons.check)
+            : Pill('home.not_home'.tr(), color: Semantic.warn),
+        onTap: () async {
+          if (isHome && st.deviceOwner) {
+            await c.platform.setKioskLauncher(
+              false,
+            ); // device owner pins it: this is how to give it up
+          } else if (isHome) {
+            await c.platform.openSettings(
+              'home',
+            ); // change the default home app in Android
+          } else {
+            await c.platform.setKioskLauncher(true);
+            if (!st.deviceOwner) await c.platform.openSettings('home');
+          }
           await c.refresh();
         },
-      ),
-    ),
+      );
+    }),
     base(
       'keep_screen_on',
       Section.kiosk,

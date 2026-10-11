@@ -46,7 +46,7 @@ object DisplayConfig {
         "voice_sounds" to true, // the ping when listening starts and when the conversation ends
         "voice_volume" to 50, // media volume (%) during a voice session; the previous level comes back afterwards
         "voice_skin" to "midnight", // the look of the voice screen and the card
-        "hot_corner" to "bottom_left", // where the hidden PIN corner is (the top-left one sits on the Home Assistant menu button)
+        "hot_corner" to "top_left", // where the hidden PIN corner is (it passes the touch on, so it can sit on the Home Assistant menu button)
         "voice_docked" to true, // voice shows as a small card over whatever is on screen instead of a full-screen page
         // on-device wake word (off by default: it keeps the microphone open; the models are downloaded when it is switched on)
         "wake_word" to false,

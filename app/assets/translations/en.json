@@ -112,7 +112,7 @@
     },
     "pin": {
       "title": "PIN",
-      "desc": "Tap the PIN corner (bottom left unless you moved it) 5 times on the locked screen, then enter your PIN.",
+      "desc": "Tap the PIN corner (top left unless you moved it) 5 times on the locked screen, then enter your PIN.",
       "kw": "password, code, unlock, exit, secret"
     },
     "allowed_apps": {
@@ -401,7 +401,7 @@
     },
     "hot_corner": {
       "title": "PIN corner",
-      "desc": "The hidden corner you tap 5 times on the locked screen to reach the PIN pad. Move it if it covers something you need.",
+      "desc": "The hidden corner you tap 5 times on the locked screen to reach the PIN pad. Your taps there still reach the app underneath (the Home Assistant menu opens as usual).",
       "kw": "pin, corner, hot corner, exit, unlock, menu"
     }
   },
@@ -410,7 +410,7 @@
     "change": "Change PIN",
     "new": "New PIN",
     "repeat": "Repeat PIN",
-    "dialog_intro": "At least 4 digits. You will enter it by tapping the hidden PIN corner of the locked screen 5 times (bottom left unless you moved it).",
+    "dialog_intro": "At least 4 digits. You will enter it by tapping the hidden PIN corner of the locked screen 5 times (top left unless you moved it).",
     "too_short": "Use at least 4 digits",
     "mismatch": "The PINs do not match",
     "required_desc": "Required before the kiosk can be locked.",
@@ -450,7 +450,7 @@
     "none_desc": "Turn on the accessibility guard or become device owner to lock the kiosk."
   },
   "home": {
-    "active": "Active. This app is the default home app.",
+    "active": "Active. This app is the default home app. Home goes to the Home Assistant app; with gesture navigation Android turns \"swipe up and hold\" into Home as well, so use 3-button navigation if you need the app switcher while the kiosk is unlocked.",
     "applying": "Applying…",
     "choose": "Almost done: choose \"HA Sidecar\" as the default home app in Android.",
     "needs_attention": "Needs attention",
@@ -488,7 +488,10 @@
     "showing": "Showing {path}",
     "unlock": "Unlock",
     "lock": "Lock the kiosk",
-    "finish_setup": "Finish setup to lock"
+    "finish_setup": "Finish setup to lock",
+    "is_home": "Home app",
+    "not_home": "Not the home app",
+    "current": "Current home app: {package}."
   },
   "companion": {
     "missing": "Not found. Install the Home Assistant companion app and sign in to your server.",
@@ -757,7 +760,7 @@
       "not_set": "No PIN yet",
       "change": "Change",
       "b1_title": "How to unlock",
-      "b1_text": "On the locked screen tap the hidden PIN corner (bottom left unless you moved it) 5 times, then enter the PIN. After 5 wrong tries there is a short waiting time.",
+      "b1_text": "On the locked screen tap the hidden PIN corner (top left unless you moved it) 5 times, then enter the PIN. After 5 wrong tries there is a short waiting time.",
       "b2_title": "From Home Assistant",
       "b2_text": "You can also unlock remotely from Home Assistant. Remote locking needs a PIN to exist."
     },

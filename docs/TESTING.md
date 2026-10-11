@@ -528,3 +528,24 @@ The phone came back on its own and reconnected to the lab (the "broken" state wa
 
 Suites: 46 Python, 19 JS, 119 Dart, analyzer clean, Android lint 0 errors, Gradle unit tests pass.
 
+### Pixel 6 as device owner, real lock-task mode (2026-10-11)
+
+With the Google account removed, `dpm set-device-owner` **succeeded** on the Pixel (it was rejected with the account bound); the app showed
+`Device owner` about 30 s later (the status push interval), and the lock had to be toggled once to start lock-task mode
+(`mLockTaskModeState=LOCKED`, status bar disabled at the OS level). Found by the tester's hands on the phone and fixed:
+
+- **The PIN corner swallowed the touch** (top left covers HA's menu button). It is now top left by default and *passes the touch on*:
+  it counts the tap, then replays it onto the app underneath through the accessibility service (the overlay is made untouchable for the
+  replay, and touches arriving meanwhile are ignored: the first version counted its own replay and opened the PIN pad after three taps).
+  Checked on the device: one tap opens HA's menu, 3 and 4 taps do nothing, 5 taps open the PIN pad. `TapCounter` has JVM tests.
+  Without the accessibility service the corner stays a plain overlay that keeps the touch.
+- **Cancel on the PIN pad landed in the sidecar's own screen** when that was open behind the lock (the PIN page reuses the activity). While
+  locked, closing an overlay now finishes it and brings the companion back (checked: Cancel → companion, still `LOCKED`).
+- **Home app status:** the "Start automatically" toggle is now a status row, a check mark when the launcher Android would start for Home is this
+  app (`home_package == our package`), otherwise the current launcher is named; HA has `sensor.<tablet>_home_app` (the launcher's package id)
+  and `binary_sensor.<tablet>_is_home_app` (named "This app is the home app"). Checked both ways by switching the role to the Pixel Launcher
+  and back; Android 11+ needed a `<queries>` entry for HOME to see the other package.
+- **Not fixable, documented:** with the sidecar as home app and *gesture* navigation, "swipe up and hold" is turned into Home by Android (it
+  starts our home activity and the HA app opens over the overview); the app-switcher key of 3-button navigation works. A workaround that kept the home
+  activity alive showed the Pixel Launcher's app drawer through it and was reverted.
+

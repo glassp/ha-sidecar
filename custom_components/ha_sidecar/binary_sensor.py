@@ -23,7 +23,7 @@ SENSORS = [
     ("camera_in_use", "Camera in use", BinarySensorDeviceClass.RUNNING, None, "mdi:camera"),
     ("mic_in_use", "Microphone in use", BinarySensorDeviceClass.RUNNING, None, "mdi:microphone"),
     ("wake_word_listening", "Wake word listening", None, EntityCategory.DIAGNOSTIC, "mdi:hearing"),
-    ("is_home_app", "Is home app", None, EntityCategory.DIAGNOSTIC, "mdi:home"),
+    ("is_home_app", "This app is the home app", None, EntityCategory.DIAGNOSTIC, "mdi:home"),
     ("device_owner", "Device owner", None, EntityCategory.DIAGNOSTIC, "mdi:shield-account"),
     ("accessibility_enabled", "Accessibility guard", None, EntityCategory.DIAGNOSTIC, "mdi:human"),
     ("overlay_granted", "Overlay permission", None, EntityCategory.DIAGNOSTIC, "mdi:layers"),

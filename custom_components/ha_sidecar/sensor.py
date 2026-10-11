@@ -25,6 +25,7 @@ SENSORS = [
     ("pin_failures", "PIN failures", None, None, EntityCategory.DIAGNOSTIC, "mdi:lock-alert"),
     ("camera_error", "Presence camera error", None, None, EntityCategory.DIAGNOSTIC, "mdi:camera-off"),
     ("mode", "Enforcement mode", None, None, EntityCategory.DIAGNOSTIC, "mdi:shield-lock"),
+    ("home_package", "Home app", None, None, EntityCategory.DIAGNOSTIC, "mdi:home-account"),
 ]
 
 

@@ -112,7 +112,7 @@
     },
     "pin": {
       "title": "PIN",
-      "desc": "Tippe auf dem gesperrten Bildschirm 5-mal auf die PIN-Ecke (unten links, wenn du sie nicht verschoben hast) und gib dann deine PIN ein.",
+      "desc": "Tippe auf dem gesperrten Bildschirm 5-mal auf die PIN-Ecke (oben links, wenn du sie nicht verschoben hast) und gib dann deine PIN ein.",
       "kw": "passwort, code, entsperren, verlassen, geheim"
     },
     "allowed_apps": {
@@ -401,7 +401,7 @@
     },
     "hot_corner": {
       "title": "PIN-Ecke",
-      "desc": "Die versteckte Ecke, auf die du auf dem gesperrten Bildschirm 5-mal tippst, um zur PIN-Eingabe zu kommen. Verschiebe sie, wenn sie etwas verdeckt, das du brauchst.",
+      "desc": "Die versteckte Ecke, auf die du auf dem gesperrten Bildschirm 5-mal tippst, um zur PIN-Eingabe zu kommen. Deine Taps dort erreichen weiterhin die App darunter (das Home-Assistant-Menü öffnet sich wie gewohnt).",
       "kw": "pin, ecke, hot corner, verlassen, entsperren, menü"
     }
   },
@@ -410,7 +410,7 @@
     "change": "PIN ändern",
     "new": "Neue PIN",
     "repeat": "PIN wiederholen",
-    "dialog_intro": "Mindestens 4 Ziffern. Du gibst sie ein, indem du 5-mal auf die versteckte PIN-Ecke des gesperrten Bildschirms tippst (unten links, wenn du sie nicht verschoben hast).",
+    "dialog_intro": "Mindestens 4 Ziffern. Du gibst sie ein, indem du 5-mal auf die versteckte PIN-Ecke des gesperrten Bildschirms tippst (oben links, wenn du sie nicht verschoben hast).",
     "too_short": "Mindestens 4 Ziffern verwenden",
     "mismatch": "Die PINs stimmen nicht überein",
     "required_desc": "Erforderlich, bevor der Kiosk gesperrt werden kann.",
@@ -450,7 +450,7 @@
     "none_desc": "Schalte die Bedienungshilfe ein oder werde Geräteeigentümer, um den Kiosk zu sperren."
   },
   "home": {
-    "active": "Aktiv. Diese App ist die Standard-Home-App.",
+    "active": "Aktiv. Diese App ist die Standard-Home-App. Home führt zur Home-Assistant-App; bei Gestennavigation macht Android auch \"nach oben wischen und halten\" zu Home. Nutze die 3-Tasten-Navigation, wenn du bei entsperrtem Kiosk den App-Wechsler brauchst.",
     "applying": "Wird angewendet …",
     "choose": "Fast geschafft: Wähle in Android \"HA Sidecar\" als Standard-Home-App.",
     "needs_attention": "Braucht Aufmerksamkeit",
@@ -488,7 +488,10 @@
     "showing": "Zeigt {path}",
     "unlock": "Entsperren",
     "lock": "Kiosk sperren",
-    "finish_setup": "Einrichtung abschließen zum Sperren"
+    "finish_setup": "Einrichtung abschließen zum Sperren",
+    "is_home": "Home-App",
+    "not_home": "Nicht die Home-App",
+    "current": "Aktuelle Home-App: {package}."
   },
   "companion": {
     "missing": "Nicht gefunden. Installiere die Home-Assistant-Companion-App und melde dich an deinem Server an.",
@@ -757,7 +760,7 @@
       "not_set": "Noch keine PIN",
       "change": "Ändern",
       "b1_title": "So entsperrst du",
-      "b1_text": "Tippe auf dem gesperrten Bildschirm 5-mal auf die versteckte PIN-Ecke (unten links, wenn du sie nicht verschoben hast) und gib dann die PIN ein. Nach 5 falschen Versuchen gibt es eine kurze Wartezeit.",
+      "b1_text": "Tippe auf dem gesperrten Bildschirm 5-mal auf die versteckte PIN-Ecke (oben links, wenn du sie nicht verschoben hast) und gib dann die PIN ein. Nach 5 falschen Versuchen gibt es eine kurze Wartezeit.",
       "b2_title": "Aus Home Assistant",
       "b2_text": "Du kannst auch aus der Ferne über Home Assistant entsperren. Das Sperren aus der Ferne braucht eine vorhandene PIN."
     },

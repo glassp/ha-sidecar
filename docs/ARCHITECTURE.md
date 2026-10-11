@@ -78,7 +78,7 @@ Label matching is best-effort; OEM update screens will need extra labels. Androi
 
 ## PIN exit
 
-An invisible 72dp window in a corner (bottom left by default, the `hot_corner` setting; top left would cover the HA toolbar menu button) counts taps (5 within 5 s) and opens the Flutter `/pin` page (see
+An invisible 72dp window in a corner (top left by default, the `hot_corner` setting) counts taps, then replays each touch onto the app underneath through the accessibility service (the window is made untouchable for the replay), so the HA toolbar menu button under it keeps working; without the accessibility service it is a plain overlay that keeps the touches. It counts taps (5 within 5 s) and opens the Flutter `/pin` page (see
 [UI.md](UI.md); `FLAG_SECURE` in release builds). The check itself stays native. PBKDF2-HMAC-SHA256 (120k iterations, per-device salt), lockout after 5 failures with
 exponential back-off. Window type: `TYPE_ACCESSIBILITY_OVERLAY` when the accessibility service runs (no permission needed),
 else `TYPE_APPLICATION_OVERLAY` (needs *draw over other apps*).

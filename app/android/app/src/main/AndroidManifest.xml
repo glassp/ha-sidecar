@@ -146,6 +146,11 @@
             <action android:name="android.intent.action.PROCESS_TEXT" />
             <data android:mimeType="text/plain" />
         </intent>
+        <!-- Lets us see which app is the home app (launcher), to tell whether it is this one -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
         <!-- Lets us list launchable apps for the allowlist picker -->
         <intent>
             <action android:name="android.intent.action.MAIN" />

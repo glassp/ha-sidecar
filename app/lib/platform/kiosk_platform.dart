@@ -73,6 +73,9 @@ class DeviceStatus {
   Map<String, dynamic> get cfg =>
       Map<String, dynamic>.from((raw['cfg'] as Map?) ?? const {});
   bool get isHomeApp => _b('is_home_app');
+
+  /// The package Android starts for Home (the launcher), whether it is this app or not; empty if no default is set.
+  String get homePackage => (raw['home_package'] as String?) ?? '';
   bool get alarmRinging => _b('alarm_ringing');
   String? get targetPackage => raw['target_package'] as String?;
   List<String> get allowlist =>

@@ -94,15 +94,15 @@ object KioskController {
 
     // --- home role --------------------------------------------------------------------------
 
-    fun isDefaultHome(ctx: Context): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roles = ctx.getSystemService(android.app.role.RoleManager::class.java)
-            return roles.isRoleHeld(android.app.role.RoleManager.ROLE_HOME)
-        }
+    /** The package Android starts for the Home button (the default home app / launcher), or null if there is none. */
+    fun homePackage(ctx: Context): String? {
         val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-        val resolved = ctx.packageManager.resolveActivity(home, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
-        return resolved?.activityInfo?.packageName == ctx.packageName
+        return ctx.packageManager.resolveActivity(home, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+            ?.activityInfo?.packageName?.takeIf { it != "android" } // "android" is the chooser: no default is set
     }
+
+    /** True when the home app is this app: the id of the launcher Android would start equals ours. */
+    fun isDefaultHome(ctx: Context): Boolean = homePackage(ctx) == ctx.packageName
 
     fun setKioskLauncher(ctx: Context, enabled: Boolean) {
         Prefs.setKioskLauncher(ctx, enabled)
@@ -331,6 +331,7 @@ object KioskController {
             "has_pin" to Prefs.hasPin(ctx),
             "kiosk_launcher" to Prefs.kioskLauncher(ctx),
             "is_home_app" to isDefaultHome(ctx),
+            "home_package" to homePackage(ctx),
             "keep_screen_on" to Prefs.keepScreenOn(ctx),
             "screen_on" to pm.isInteractive,
             "brightness" to Settings.System.getInt(ctx.contentResolver, Settings.System.SCREEN_BRIGHTNESS, -1).takeIf { it >= 0 },
