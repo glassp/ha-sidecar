@@ -141,6 +141,33 @@ object KioskController {
         return null
     }
 
+    /**
+     * Gives up device ownership without a factory reset: ends the lock, undoes every policy this app set as device owner (lock task
+     * packages, status bar, home preference, stay-on setting, the companion app hidden by the watchdog) and then calls
+     * clearDeviceOwnerApp. Returns null on success, else an error code.
+     */
+    @Suppress("DEPRECATION")
+    fun clearDeviceOwner(ctx: Context): String? {
+        if (!isDeviceOwner(ctx)) return "not_device_owner"
+        Prefs.setLockdown(ctx, false)
+        applyPolicy(ctx) // lock task packages emptied, status bar back, home preference cleared
+        val d = dpm(ctx)
+        val a = admin(ctx)
+        for (pkg in COMPANION_PACKAGES + listOfNotNull(targetPackage(ctx))) runCatching { d.setApplicationHidden(a, pkg, false) }
+        runCatching { d.setGlobalSetting(a, Settings.Global.STAY_ON_WHILE_PLUGGED_IN, "0") }
+        runCatching { d.clearPackagePersistentPreferredActivities(a, ctx.packageName) }
+        runCatching { d.setLockTaskPackages(a, emptyArray()) }
+        runCatching { d.setStatusBarDisabled(a, false) }
+        return try {
+            d.clearDeviceOwnerApp(ctx.packageName)
+            refreshOverlay(ctx)
+            EventBus.emit("status_changed")
+            null
+        } catch (e: SecurityException) {
+            "clear_failed"
+        }
+    }
+
     /** Re-applies device-owner policy from persisted prefs (call on boot / allowlist change). */
     fun applyPolicy(ctx: Context) {
         if (!isDeviceOwner(ctx)) return

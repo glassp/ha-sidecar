@@ -373,4 +373,7 @@ abstract class KioskPlatform {
   Future<void> runSystemUpdate();
   Future<void> installSystemUpdate(String uri);
   Future<void> reboot();
+
+  /// Gives up device ownership without a factory reset (device owner only); throws a PlatformException on failure.
+  Future<void> clearDeviceOwner();
 }

@@ -1155,7 +1155,9 @@ List<SettingEntry> buildRegistry(AppController c) {
         trailing: s().deviceOwner
             ? Pill('owner.active'.tr(), color: Semantic.ok, icon: Icons.check)
             : Pill('owner.not_set'.tr()),
-        onTap: () => showProtectionSheet(ctx, c),
+        onTap: () => s().deviceOwner
+            ? showRemoveOwnerDialog(ctx, c)
+            : showProtectionSheet(ctx, c),
       ),
     ),
 

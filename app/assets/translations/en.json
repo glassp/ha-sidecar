@@ -520,7 +520,14 @@
     "active": "Active",
     "not_set": "Not set",
     "active_desc": "This tablet is a device owner: Android itself hides and blocks the system UI.",
-    "optional_desc": "Optional. Tap to see how."
+    "optional_desc": "Optional. Tap to see how.",
+    "remove_title": "Give up device owner?",
+    "remove_body": "This ends the lock and returns the tablet to a normal one: Home Assistant stays installed, nothing is erased. You can make it device owner again later with the adb command. The accessibility guard keeps working as the lock.",
+    "remove_pin": "Kiosk PIN",
+    "remove_button": "Remove",
+    "removed": "Device owner removed",
+    "remove_failed": "Could not remove device owner: {error}",
+    "active_hint": "Tap to give up device owner."
   },
   "update": {
     "available": "An Android update is available",

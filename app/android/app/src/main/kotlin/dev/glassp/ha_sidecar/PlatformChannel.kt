@@ -293,6 +293,10 @@ object PlatformChannel {
                 result.success(openSettings(ctx, "system_update"))
             }
             "installSystemUpdate" -> installSystemUpdate(ctx, call.argument<String>("uri").orEmpty(), result)
+            "clearDeviceOwner" -> {
+                val err = KioskController.clearDeviceOwner(ctx)
+                if (err == null) result.success(null) else result.error(err, err, null)
+            }
             "reboot" -> {
                 if (!KioskController.isDeviceOwner(ctx)) return result.error("needs_device_owner", "reboot needs device owner", null)
                 ctx.getSystemService(DevicePolicyManager::class.java).reboot(KioskController.admin(ctx))

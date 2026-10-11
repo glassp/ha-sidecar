@@ -520,7 +520,14 @@
     "active": "Aktiv",
     "not_set": "Nicht gesetzt",
     "active_desc": "Dieses Tablet ist Geräteeigentümer: Android selbst blendet die Systemoberfläche aus und blockiert sie.",
-    "optional_desc": "Optional. Tippen, um zu sehen, wie."
+    "optional_desc": "Optional. Tippen, um zu sehen, wie.",
+    "remove_title": "Geräteeigentümer abgeben?",
+    "remove_body": "Das beendet die Sperre und macht das Tablet wieder zu einem normalen: Home Assistant bleibt installiert, nichts wird gelöscht. Du kannst es später mit dem adb-Befehl erneut zum Geräteeigentümer machen. Der Bedienungshilfen-Wächter bleibt als Sperre aktiv.",
+    "remove_pin": "Kiosk-PIN",
+    "remove_button": "Entfernen",
+    "removed": "Geräteeigentümer entfernt",
+    "remove_failed": "Geräteeigentümer konnte nicht entfernt werden: {error}",
+    "active_hint": "Tippen, um den Geräteeigentümer abzugeben."
   },
   "update": {
     "available": "Ein Android-Update ist verfügbar",

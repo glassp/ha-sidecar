@@ -266,4 +266,6 @@ class AndroidKioskPlatform implements KioskPlatform {
 
   @override
   Future<void> reboot() => _call('reboot');
+  @override
+  Future<void> clearDeviceOwner() => _call('clearDeviceOwner');
 }
