@@ -195,6 +195,7 @@ class WakeWordEngine(ctx: Context, private val wordIds: List<String>) : AutoClos
         private const val EMB_DIM = 96
         private const val CLS_FRAMES = 16
         private const val WARMUP_CHUNKS = 16 // the classifier window is only real audio after 16 embeddings
+        private const val THREADS = 2 // TFLite threads for the embedding and word models: the default pool burned about 20% more CPU (Pixel 6, 58% -> 47% of a core)
     }
 
     private val dir = WakeWordModels.dir(ctx)
@@ -203,9 +204,9 @@ class WakeWordEngine(ctx: Context, private val wordIds: List<String>) : AutoClos
             ?: throw IllegalStateException("melspectrogram model has an unexpected layout"),
         Interpreter.Options().setUseXNNPACK(false),
     )
-    private val emb = Interpreter(File(dir, "embedding_model.tflite"))
+    private val emb = Interpreter(File(dir, "embedding_model.tflite"), Interpreter.Options().setNumThreads(THREADS))
     private val classifiers = wordIds.associateWith { id ->
-        Interpreter(File(dir, WakeWordModels.word(id)!!.file)).also {
+        Interpreter(File(dir, WakeWordModels.word(id)!!.file), Interpreter.Options().setNumThreads(THREADS)).also {
             check(it.getInputTensor(0).shape().contentEquals(intArrayOf(1, CLS_FRAMES, EMB_DIM)) && it.getOutputTensor(0).numElements() == 1) {
                 "wake word model $id does not take 16 embeddings and return one score"
             }

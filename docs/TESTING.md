@@ -498,3 +498,14 @@ dismissed on the phone, and after HA came back the sidecar was connected with co
 CI (found and fixed on 2026-10-11): `hassfest` and the HACS validation had been failing since the integration was added
 (device filter in `services.yaml`, `<...>` in strings, missing `assist_pipeline` / `intent` dependencies); Android lint found a crash on
 Android 8.0 (API 27 calls with minSdk 26) and a missing coarse-location permission. See docs/CI.md.
+
+Soak (Pixel 6, 2026-10-11, 54 clean minutes, screen on, wake word + camera presence + kiosk lock + HA connected): sidecar CPU 57–61 %
+of one core (flat), memory 251–272 MB (garbage-collection wobble, no trend), battery 85 → 73 % (about 14 %/h, mostly the screen),
+28 → 32.4 °C, **no wake-word activation and no guard trigger** in a quiet room. Where the CPU goes (top -H): the wake word's audio thread
+about a third of a core plus TFLite's helper pool, camera presence about 10 %. Limiting the TFLite threads of the embedding and word
+models to 2 measured 47 % instead of 58 % (same results: threads do not change the maths; wake-word *detection* was not re-run on the
+device after that change because the phone ran out of battery: re-check with your own voice).
+The Mac slept for 18 minutes once: the phone kept running, and the tablet reconnected 29 s after the tunnel returned (backoff 1…30 s).
+Release build (`flutter build apk --release`, R8, signed with the debug key): starts and renders on the emulator, the wake word engine loads
+(TFLite XNNPACK delegate) and listens; it was not yet run on the phone.
+
