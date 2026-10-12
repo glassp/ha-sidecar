@@ -32,7 +32,7 @@ SENSORS = [
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
     add_entities(device, "sensor", async_add_entities, 
-        [*(SidecarSensor(device, *s) for s in SENSORS), CompanionRestartsSensor(device), DashboardLastBeaconSensor(device), CompanionLastRestartSensor(device), WatchdogStateSensor(device), TargetBrightnessSensor(device, raw=False), TargetBrightnessSensor(device, raw=True), NextTimerSensor(device), ActiveTimersSensor(device), AlarmsSensor(device)]
+        [*(SidecarSensor(device, *s) for s in SENSORS), CompanionRestartsSensor(device), DashboardLastBeaconSensor(device), CompanionLastRestartSensor(device), WatchdogStateSensor(device), WatchdogLogSensor(device), TargetBrightnessSensor(device, raw=False), TargetBrightnessSensor(device, raw=True), NextTimerSensor(device), ActiveTimersSensor(device), AlarmsSensor(device)]
     )
 
 
@@ -223,6 +223,36 @@ class WatchdogStateSensor(_WatchdogSensor):
     @property
     def native_value(self) -> str | None:
         return self._watchdog.get("state")
+
+
+class WatchdogLogSensor(_WatchdogSensor):
+    """What the watchdog and the beacon heal did, newest first, kept on the tablet: the state is the last entry."""
+
+    _attr_name = "Watchdog log"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:text-box-search-outline"
+
+    def __init__(self, device) -> None:
+        super().__init__(device, "watchdog_log")
+
+    @staticmethod
+    def _line(entry: dict[str, Any]) -> str:
+        parts = [entry.get("event"), entry.get("reason"), entry.get("detail")]
+        return ": ".join(str(p) for p in parts if p)
+
+    @property
+    def native_value(self) -> str | None:
+        log = self._watchdog.get("log") or []
+        return self._line(log[0])[:255] if log else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        history = []
+        for e in (self._watchdog.get("log") or [])[:20]:
+            at = e.get("at")
+            when = datetime.fromtimestamp(at / 1000, tz=timezone.utc).isoformat() if at else None
+            history.append({"at": when, **{k: e.get(k) for k in ("event", "reason", "detail") if e.get(k)}})
+        return {"history": history}
 
 
 class DashboardLastBeaconSensor(SidecarEntity, SensorEntity):

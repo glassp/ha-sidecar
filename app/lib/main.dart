@@ -76,7 +76,7 @@ class _SidecarAppState extends State<SidecarApp> {
         ),
         routerDelegate: router.delegate,
         routeInformationParser: BeamerParser(),
-        backButtonDispatcher: BeamerBackButtonDispatcher(
+        backButtonDispatcher: SidecarBackDispatcher(
           delegate: router.delegate,
         ),
       ),

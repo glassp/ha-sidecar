@@ -32,6 +32,9 @@ object Prefs {
     fun glanceItemsJson(ctx: Context): String = sp(ctx).getString("glance_items", "[]")!!
     fun setGlanceItemsJson(ctx: Context, v: String) = sp(ctx).edit().putString("glance_items", v).apply()
 
+    fun watchdogLogJson(ctx: Context): String = sp(ctx).getString("watchdog_log", "[]")!!
+    fun setWatchdogLogJson(ctx: Context, v: String) = sp(ctx).edit().putString("watchdog_log", v).apply()
+
     fun pinFails(ctx: Context): Int = sp(ctx).getInt("pin_fails", 0)
 
     fun keepScreenOn(ctx: Context) = sp(ctx).getBoolean("keep_screen_on", false)

@@ -42,8 +42,8 @@
 
 `HomeActivity` (HOME category, invisible) is the lifecycle owner when *Act as home app* is on. Android starts the home
 app at boot and again whenever the task stack is empty, so one mechanism covers: boot start, Home button, HA app
-crash/force-stop, lock-task exit. It starts `KeepAliveService` (headless engine, overlay, policy), then launches the HA
-app (`lockTask` + `CLEAR_TASK` when lockdown is on; plain reorder-to-front otherwise). Device owner sets itself as home
+crash/force-stop, lock-task exit. It starts `KeepAliveService` (headless engine, overlay, policy), then, when lockdown is on, launches the HA
+app (`lockTask` + `CLEAR_TASK`); with the lock off Home opens the sidecar's own UI. Device owner sets itself as home
 via `addPersistentPreferredActivity`; others pick it in Android settings (`ROLE_HOME`). There is deliberately no
 polling for *crashes*: the OS tells us when the HA app is gone. A *frozen* (not dead) HA app is handled by the opt-in
 watchdog below; without the home role or the accessibility service nothing recovers a crashed HA app.

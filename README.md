@@ -98,11 +98,13 @@ on (or keep the kiosk dashboard to one view). Entities: *Dashboard responsive* (
 and *Dashboard last beacon*.
 
 Silence alone never restarts anything. With *Restart the companion app when the beacon goes silent* switched on in the
-integration's options (off by default), a beacon that stops **without** saying goodbye is handled in steps, only while the screen
+integration's options (on by default; an entry that saved it as off keeps that), a beacon that stops **without** saying goodbye is handled in steps, only while the screen
 is on, the app is in front and the tablet is connected: (1) the tablet is sent to the kiosk dashboard with a navigate intent, which
 fixes a wrong page and often a stuck one; (2) if no ping returns within 90 s, the companion app is closed and reopened through
 the watchdog (same limit of three restarts per ten minutes). Events: `dashboard_unresponsive`, `dashboard_navigate_attempt`,
-`dashboard_recovered`.
+`dashboard_recovered`. The tablet keeps a log of what the watchdog and the heal did (detections, restart requests with the reason a
+request was refused, the method used, giving up), also across restarts: the diagnostic sensor *Watchdog log* shows the last entry and
+the last 20 as the attribute `history`. `hide_failed` means the system refused to hide the app, so it was not killed.
 
 ## Timers, stopwatches and remote alarm control
 

@@ -64,7 +64,7 @@ class SidecarDevice:
 
     @property
     def beacon_heal_enabled(self) -> bool:
-        return bool(self.entry.options.get(CONF_BEACON_HEAL))
+        return bool(self.entry.options.get(CONF_BEACON_HEAL, True))
 
     @property
     def last_beacon(self) -> datetime | None:

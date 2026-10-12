@@ -124,6 +124,7 @@ object CompanionWatchdog {
         "restarts" to restarts,
         "last_reason" to lastReason,
         "last_restart_at" to lastRestartAt.takeIf { it > 0 },
+        "log" to WatchdogLog.recent(c),
     )
 
     // --- probing ---------------------------------------------------------------------------------------
@@ -229,6 +230,7 @@ object CompanionWatchdog {
 
     private fun report(c: Context, target: String, reason: String, anrClose: AccessibilityNodeInfo?) {
         responsive = false
+        WatchdogLog.add(c, "detected", reason, if ((cfg(c)["watchdog_action"] as String) == "notify") "notify" else "restart")
         val now = SystemClock.elapsedRealtime()
         if ((cfg(c)["watchdog_action"] as String) == "notify") {
             state = "unresponsive"
@@ -258,6 +260,7 @@ object CompanionWatchdog {
         if (!force && restartTimes.size >= MAX_RESTARTS) {
             gaveUpUntil = now + GIVE_UP_MS
             state = "gave_up"
+            ctx?.let { WatchdogLog.add(it, "gave_up", reason, "${restartTimes.size} restarts in ${WINDOW_MS / 60_000} min") }
             Log.w(TAG, "giving up on $target after ${restartTimes.size} restarts in ${WINDOW_MS / 60_000} minutes ($reason)")
             EventBus.emit(
                 "companion_restart_gave_up",
@@ -280,13 +283,19 @@ object CompanionWatchdog {
         val c = context.applicationContext
         ctx = c
         val target = KioskController.targetPackage(c) ?: return mapOf("healed" to false, "why" to "not_installed")
-        if (!c.getSystemService(PowerManager::class.java).isInteractive) return mapOf("healed" to false, "why" to "screen_off")
+        fun refused(why: String): Map<String, Any?> {
+            WatchdogLog.add(c, "heal_refused", reason, why)
+            EventBus.emit("status_changed")
+            return mapOf("healed" to false, "why" to why)
+        }
+        if (!c.getSystemService(PowerManager::class.java).isInteractive) return refused("screen_off")
         if (AlarmService.ringingId != null || AlarmService.ringingTimerId != null || UiHost.isShowing(UiHost.PIN) ||
             UiHost.isShowing(UiHost.ALARM) || UpdateAutomation.isArmed()
-        ) return mapOf("healed" to false, "why" to "busy")
+        ) return refused("busy")
         val fg = KioskController.lastForeground
-        if (fg != target && fg != ANR_PACKAGE) return mapOf("healed" to false, "why" to "not_in_front")
-        if (!reserveRestart(target, reason, force = false)) return mapOf("healed" to false, "why" to "rate_limited")
+        if (fg != target && fg != ANR_PACKAGE) return refused("not_in_front")
+        if (!reserveRestart(target, reason, force = false)) return refused("rate_limited")
+        WatchdogLog.add(c, "heal_request", reason, "accepted")
         handler.post { execute(c, target, reason, null) }
         return mapOf("healed" to true)
     }
@@ -310,16 +319,17 @@ object CompanionWatchdog {
                 val dpm = c.getSystemService(android.app.admin.DevicePolicyManager::class.java)
                 val admin = KioskController.admin(c)
                 // hiding kills the frozen process; unhiding makes it launchable again with its data intact
-                runCatching { dpm.setApplicationHidden(admin, target, true) }
+                val hidden = runCatching { dpm.setApplicationHidden(admin, target, true) }.getOrDefault(false)
                 Thread.sleep(700)
                 runCatching { dpm.setApplicationHidden(admin, target, false) }
-                "hide_unhide"
+                if (hidden) "hide_unhide" else "hide_failed" // false = the system refused: the process was not killed
             }
             else -> "relaunch_only" // nothing can kill it without device owner or the dialog: bring it to the front and tell HA
         }
         Thread.sleep(if (method == "anr_close") 1200 else 400)
         noteLaunch()
         KioskController.launchTarget(c, lockTask = Prefs.lockdown(c), dashboard = true)
+        WatchdogLog.add(c, "restart", reason, method)
         EventBus.emit("companion_restarted", mapOf("reason" to reason, "method" to method, "count" to restarts, "package" to target))
         Log.i(TAG, "restarted $target: $reason via $method")
         state = "ok"

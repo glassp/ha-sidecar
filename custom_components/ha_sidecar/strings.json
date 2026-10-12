@@ -474,7 +474,7 @@
           "presence_entities": "Any of these being on means someone is near the tablet (mmWave, PIR, ...). Optional: the tablet can also use its camera.",
           "night_entity": "On = night. A sun entity counts as night while below the horizon. Leave empty to use the night schedule on the tablet.",
           "glance_entities": "Up to 9 entities whose values are shown on the at-a-glance screen (temperature, energy, ...).",
-          "beacon_heal": "Only applies to tablets whose dashboard has an HA Sidecar beacon card, and only while the screen is on and the app is in front.",
+          "beacon_heal": "On by default. Only applies to tablets whose dashboard has an HA Sidecar beacon card, and only while the screen is on and the app is in front.",
           "beacon_timeout": "Minutes without a ping before the dashboard counts as unresponsive."
         }
       }

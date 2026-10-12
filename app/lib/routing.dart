@@ -102,3 +102,19 @@ class AppRouter {
     }
   }
 }
+
+/// System back: first whatever is open on top (dialog, sheet, a pushed page, the history), and when there is
+/// nothing to go back to but the page is not the start page (opened from a notification, after the activity was
+/// recreated), back goes to the start page. Only there it leaves the app.
+class SidecarBackDispatcher extends BeamerBackButtonDispatcher {
+  SidecarBackDispatcher({required super.delegate});
+
+  @override
+  Future<bool> invokeCallback(Future<bool> defaultValue) async {
+    if (await super.invokeCallback(defaultValue)) return true;
+    final path = delegate.currentBeamLocation.state.routeInformation.uri.path;
+    if (path == '/' || AppRouter.nativeHosted.contains(path)) return false;
+    delegate.beamToNamed('/', stacked: false);
+    return true;
+  }
+}

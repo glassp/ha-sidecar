@@ -27,7 +27,7 @@ When something is wrong, the most useful report is: what you did, what you expec
       top and from the right, Recents (button and gesture), back-swipe out of the app 10 times, long-press Home, long-press power,
       open Settings from a notification, split screen. Good: the dashboard is always back within about a second and nothing stays.
       Known and expected: the shade/Recents may *flash* for a moment. Report anything that **stays**.
-- [ ] **Act as home app, kiosk lock off.** Home goes to the HA app (by design). With *gesture* navigation Android also turns "swipe up and hold" into Home when another app is the home app, so the app switcher cannot be shown: the app-switcher *key* of 3-button navigation works (Settings → System → Gestures → System navigation). Tell me if you prefer a different behaviour.
+- [ ] **Act as home app, kiosk lock off.** Home opens the sidecar app (with the lock on it goes to the dashboard). With *gesture* navigation Android also turns "swipe up and hold" into Home when another app is the home app, so the app switcher cannot be shown: the app-switcher *key* of 3-button navigation works (Settings → System → Gestures → System navigation). Tell me if you prefer a different behaviour.
 - [ ] 🔒 **Exit.** Tap the PIN corner 5 times (top left by default, on the Home Assistant menu button: the menu opens and closes as usual while you tap; `select.<tablet>_pin_corner` moves it), enter the PIN. Wrong PIN
       5 times → cooldown. Good: exits cleanly, HA's lock switch turns off.
 - [ ] **Alarms and timers** at the volume you will really use: `ha_sidecar.set_alarm` one minute ahead, snooze, stop, a timer from

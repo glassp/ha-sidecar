@@ -61,6 +61,17 @@ class EventTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAVE_HA, "needs the homeassistant package")
+@unittest.skipUnless(HAVE_HA, "needs the homeassistant package")
+class BeaconHealDefaultTest(unittest.TestCase):
+    def test_heal_is_on_unless_the_entry_saved_it_off(self):
+        from custom_components.ha_sidecar.const import CONF_BEACON_HEAL
+
+        _, device = make_device()
+        self.assertTrue(device.beacon_heal_enabled)
+        device.entry.options = {CONF_BEACON_HEAL: False}
+        self.assertFalse(device.beacon_heal_enabled)
+
+
 class SendCommandTest(unittest.IsolatedAsyncioTestCase):
     async def test_a_socket_that_closes_while_writing_is_a_home_assistant_error_and_leaves_nothing_pending(self):
         hass, device = make_device(asyncio.get_running_loop())

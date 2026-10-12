@@ -210,7 +210,7 @@ class SidecarOptionsFlow(OptionsFlow):
                         description={"suggested_value": opts.get(CONF_GLANCE_ENTITIES, [])},
                     ): selector.EntitySelector(selector.EntitySelectorConfig(multiple=True)),
                     vol.Optional(
-                        CONF_BEACON_HEAL, default=bool(opts.get(CONF_BEACON_HEAL, False))
+                        CONF_BEACON_HEAL, default=bool(opts.get(CONF_BEACON_HEAL, True))
                     ): selector.BooleanSelector(),
                     vol.Optional(
                         CONF_BEACON_TIMEOUT, default=int(opts.get(CONF_BEACON_TIMEOUT, 4))
