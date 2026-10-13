@@ -133,6 +133,13 @@ class SidecarAccessibilityService : AccessibilityService() {
         return runCatching { dispatchGesture(gesture, null, null) }.getOrDefault(false)
     }
 
+    /** The package of the application window that is in front right now (not the last one that reported a change), or null if unknown. */
+    fun frontPackage(): String? = runCatching {
+        windows.filter { it.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION }
+            .let { apps -> apps.firstOrNull { it.isActive } ?: apps.maxByOrNull { it.layer } }
+            ?.root?.packageName?.toString()
+    }.getOrNull()
+
     private fun bounce() {
         val now = SystemClock.elapsedRealtime()
         if (now - lastBounce < BOUNCE_DEBOUNCE_MS) {

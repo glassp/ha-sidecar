@@ -190,10 +190,12 @@ object BrightnessController {
         // The idle screen is a translucent overlay: the companion app below stays started (paused, not stopped), so it has to
         // be there first. Start it when it is not the app in front, then lay the idle screen over it.
         val target = KioskController.targetPackage(c)
-        val behind = target != null && KioskController.lastForeground != target && KioskController.launchTarget(c)
-        UiHost.under = if (behind) target else KioskController.lastForeground
+        // the window that is in front now, not the last change an event reported (stale after a restart of the app)
+        val front = SidecarAccessibilityService.instance?.frontPackage() ?: KioskController.lastForeground
+        val behind = target != null && front != target && KioskController.launchTarget(c)
+        UiHost.under = if (behind) target else front
         WatchdogLog.add(c, "glance", "shown", if (behind) "companion_started" else "overlay")
-        if (behind) main.postDelayed({ if (!present) UiHost.show(c, UiHost.GLANCE) }, 1200) else UiHost.show(c, UiHost.GLANCE)
+        if (behind) main.postDelayed({ if (manual || !present) UiHost.show(c, UiHost.GLANCE) }, 1200) else UiHost.show(c, UiHost.GLANCE)
         return true
     }
 
