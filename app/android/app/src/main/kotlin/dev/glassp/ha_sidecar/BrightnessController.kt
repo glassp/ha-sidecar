@@ -72,6 +72,7 @@ object BrightnessController {
 
     fun setExternalPresence(on: Boolean) {
         if (extPresence && !on) extPresenceOffAt = System.currentTimeMillis()
+        if (on && !extPresence) manualGlance = false // a sensor going on is new presence: it closes a glance that was opened by hand
         extPresence = on
         poke()
     }
