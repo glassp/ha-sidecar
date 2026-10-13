@@ -78,7 +78,11 @@ object BrightnessController {
     }
 
     fun cameraMotion() {
-        lastCameraMotion = System.currentTimeMillis()
+        val now = System.currentTimeMillis()
+        // movement after a quiet spell is somebody new: it closes a glance opened by hand (movement that is still going on
+        // from before the button press does not)
+        if (manualGlance && now - lastCameraMotion > MOTION_QUIET_MS && now - manualGlanceAt > MOTION_QUIET_MS) manualGlance = false
+        lastCameraMotion = now
         poke()
     }
 
@@ -131,6 +135,8 @@ object BrightnessController {
         private set
 
     @Volatile private var manualGlance = false
+    @Volatile private var manualGlanceAt = 0L
+    private const val MOTION_QUIET_MS = 3_000L
 
     private fun glanceShowing() = UiHost.isShowing(UiHost.GLANCE) || dashboardGlanceShowing
 
@@ -178,6 +184,7 @@ object BrightnessController {
         if (glanceShowing()) return true
         // asked for by hand (button, switch): someone being near is why they asked, so presence does not close it until it has gone
         manualGlance = manual
+        manualGlanceAt = System.currentTimeMillis()
         val cfg = DisplayConfig.get(c)
         val glancePath = cfg["glance_dashboard"] as String
         val kioskPath = cfg["kiosk_dashboard"] as String
