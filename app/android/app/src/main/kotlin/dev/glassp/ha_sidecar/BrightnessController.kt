@@ -129,6 +129,8 @@ object BrightnessController {
     @Volatile var dashboardGlanceShowing = false
         private set
 
+    @Volatile private var manualGlance = false
+
     private fun glanceShowing() = UiHost.isShowing(UiHost.GLANCE) || dashboardGlanceShowing
 
     /**
@@ -142,7 +144,8 @@ object BrightnessController {
             return
         }
         if (glanceShowing()) {
-            if (present) {
+            if (!present) manualGlance = false
+            if (present && !manualGlance) {
                 WatchdogLog.add(c, "glance", "presence", "dismissed")
                 dismissGlance(c)
                 InteractionTracker.touch() // restart the idle timer so it does not pop straight back
@@ -170,8 +173,10 @@ object BrightnessController {
      * Shows the idle screen now (idle timer, `show_glance` command, the glance switch). With a glance dashboard (and a kiosk
      * dashboard to come back to) the companion app is navigated to it by intent; the native clock screen is only an overlay.
      */
-    fun showGlance(c: Context): Boolean {
+    fun showGlance(c: Context, manual: Boolean = false): Boolean {
         if (glanceShowing()) return true
+        // asked for by hand (button, switch): someone being near is why they asked, so presence does not close it until it has gone
+        manualGlance = manual
         val cfg = DisplayConfig.get(c)
         val glancePath = cfg["glance_dashboard"] as String
         val kioskPath = cfg["kiosk_dashboard"] as String
@@ -186,6 +191,7 @@ object BrightnessController {
         // be there first. Start it when it is not the app in front, then lay the idle screen over it.
         val target = KioskController.targetPackage(c)
         val behind = target != null && KioskController.lastForeground != target && KioskController.launchTarget(c)
+        UiHost.under = if (behind) target else KioskController.lastForeground
         WatchdogLog.add(c, "glance", "shown", if (behind) "companion_started" else "overlay")
         if (behind) main.postDelayed({ if (!present) UiHost.show(c, UiHost.GLANCE) }, 1200) else UiHost.show(c, UiHost.GLANCE)
         return true

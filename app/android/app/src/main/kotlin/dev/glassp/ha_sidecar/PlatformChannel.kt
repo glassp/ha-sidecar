@@ -141,7 +141,7 @@ object PlatformChannel {
                 EventBus.emit("status_changed")
                 result.success(null)
             }
-            "showGlance" -> result.success(BrightnessController.showGlance(ctx))
+            "showGlance" -> result.success(BrightnessController.showGlance(ctx, manual = true))
             "hideGlance" -> {
                 BrightnessController.dismissGlance(ctx)
                 InteractionTracker.touch() // restart the idle timer so it does not pop straight back

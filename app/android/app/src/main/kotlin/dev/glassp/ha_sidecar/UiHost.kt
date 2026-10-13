@@ -20,6 +20,9 @@ object UiHost {
     @Volatile var route: String = MAIN
     @Volatile var resumed = false
 
+    /** The app that was in front when the idle screen went up (the translucent overlay never makes it report a window again). */
+    @Volatile var under: String? = null
+
     fun isShowing(r: String) = activity != null && route == r
 
     /** Brings the Flutter UI to the front showing [r]. Works from a service while the sidecar is not visible. */

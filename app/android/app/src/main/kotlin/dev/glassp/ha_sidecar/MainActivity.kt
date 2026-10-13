@@ -114,10 +114,13 @@ class MainActivity : FlutterActivity() {
             UiHost.route = UiHost.MAIN
             finish()
             if (locked && wasGlance) {
-                // the companion app is underneath (the idle screen is translucent): finishing is enough. Start it only if it is not.
+                // the companion app is underneath (the idle screen is translucent): finishing is enough, it never left. Start it
+                // only if it was not there when the idle screen went up.
                 val app = applicationContext
-                Handler(Looper.getMainLooper()).postDelayed({
-                    if (KioskController.lastForeground != KioskController.targetPackage(app)) KioskController.launchTarget(app)
+                val target = KioskController.targetPackage(app)
+                if (UiHost.under == target) KioskController.lastForeground = target
+                else Handler(Looper.getMainLooper()).postDelayed({
+                    if (KioskController.lastForeground != target) KioskController.launchTarget(app)
                 }, 700)
             } else if (locked) KioskController.launchTarget(this)
         } else {
