@@ -50,6 +50,7 @@ class _GlancePageState extends State<GlancePage> {
     final date = DateFormat.MMMMEEEEd(locale).format(now);
     final next = s.nextAlarmMillis;
     final items = s.glanceItems.take(9).toList();
+    final bigClock = items.isEmpty;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -76,15 +77,19 @@ class _GlancePageState extends State<GlancePage> {
                         // one line at any width: full size on a tablet, scaled down on a phone
                         SizedBox(
                           width: double.infinity,
+                          // nothing else to show: the clock grows to fill the screen instead of stopping at 150
+                          height: bigClock
+                              ? MediaQuery.sizeOf(context).height * 0.55
+                              : null,
                           child: FittedBox(
-                            fit: BoxFit.scaleDown,
+                            fit: bigClock ? BoxFit.contain : BoxFit.scaleDown,
                             child: Text(
                               time,
                               maxLines: 1,
                               softWrap: false,
                               style: const TextStyle(
                                 fontSize: 150,
-                                fontWeight: FontWeight.w200,
+                                fontWeight: FontWeight.w400,
                                 color: Colors.white,
                                 height: 1,
                               ),

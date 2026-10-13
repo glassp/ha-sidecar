@@ -141,9 +141,10 @@ object PlatformChannel {
                 EventBus.emit("status_changed")
                 result.success(null)
             }
-            "showGlance" -> result.success(UiHost.show(ctx, UiHost.GLANCE))
+            "showGlance" -> result.success(BrightnessController.showGlance(ctx))
             "hideGlance" -> {
-                UiHost.close(UiHost.GLANCE)
+                BrightnessController.dismissGlance(ctx)
+                InteractionTracker.touch() // restart the idle timer so it does not pop straight back
                 result.success(null)
             }
             "requestPermission" -> {

@@ -23,6 +23,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             SidecarSwitch(device, "keep_screen_on", "Keep screen on", "set_keep_screen_on", "mdi:brightness-7"),
             SidecarSwitch(device, "kiosk_launcher", "Act as home app", "set_kiosk_launcher", "mdi:home-lock"),
             AlarmsMutedSwitch(device),
+            GlanceSwitch(device),
             *(ConfigSwitch(device, *s) for s in SWITCHES),
         ]
     )
@@ -63,3 +64,16 @@ class AlarmsMutedSwitch(SidecarSwitch):
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._device.send_command("unmute_alarms", {})
+
+
+class GlanceSwitch(SidecarSwitch):
+    """The glance (idle) screen as a mode: on = shown, off = dismissed. Follows the tablet, so an automation can set or read it."""
+
+    def __init__(self, device) -> None:
+        super().__init__(device, "glance_showing", "Glance screen", "show_glance", "mdi:clock-digital")
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._device.send_command("show_glance", {})
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._device.send_command("hide_glance", {})

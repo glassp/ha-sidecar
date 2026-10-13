@@ -138,11 +138,12 @@ object BrightnessController {
      */
     private fun glance(c: Context, cfg: Map<String, Any>, now: Long) {
         if (cfg["glance"] != true) {
-            if (glanceShowing()) dismissGlance(c)
+            if (glanceShowing()) { WatchdogLog.add(c, "glance", "disabled", "dismissed"); dismissGlance(c) }
             return
         }
         if (glanceShowing()) {
             if (present) {
+                WatchdogLog.add(c, "glance", "presence", "dismissed")
                 dismissGlance(c)
                 InteractionTracker.touch() // restart the idle timer so it does not pop straight back
             }
@@ -161,13 +162,33 @@ object BrightnessController {
             val fg = KioskController.lastForeground
             val target = KioskController.targetPackage(c)
             if (fg != null && target != null && fg != target) return
-            if (KioskController.launchTarget(c, navigatePath = glancePath)) {
-                dashboardGlanceShowing = true
-                EventBus.emit("status_changed")
-            }
-        } else {
-            UiHost.show(c, UiHost.GLANCE)
         }
+        showGlance(c)
+    }
+
+    /**
+     * Shows the idle screen now (idle timer, `show_glance` command, the glance switch). With a glance dashboard (and a kiosk
+     * dashboard to come back to) the companion app is navigated to it by intent; the native clock screen is only an overlay.
+     */
+    fun showGlance(c: Context): Boolean {
+        if (glanceShowing()) return true
+        val cfg = DisplayConfig.get(c)
+        val glancePath = cfg["glance_dashboard"] as String
+        val kioskPath = cfg["kiosk_dashboard"] as String
+        if (glancePath.isNotEmpty() && kioskPath.isNotEmpty()) {
+            if (!KioskController.launchTarget(c, navigatePath = glancePath)) return false
+            dashboardGlanceShowing = true
+            WatchdogLog.add(c, "glance", "shown", "dashboard")
+            EventBus.emit("status_changed")
+            return true
+        }
+        // The idle screen is a translucent overlay: the companion app below stays started (paused, not stopped), so it has to
+        // be there first. Start it when it is not the app in front, then lay the idle screen over it.
+        val target = KioskController.targetPackage(c)
+        val behind = target != null && KioskController.lastForeground != target && KioskController.launchTarget(c)
+        WatchdogLog.add(c, "glance", "shown", if (behind) "companion_started" else "overlay")
+        if (behind) main.postDelayed({ if (!present) UiHost.show(c, UiHost.GLANCE) }, 1200) else UiHost.show(c, UiHost.GLANCE)
+        return true
     }
 
     fun dismissGlance(c: Context) {

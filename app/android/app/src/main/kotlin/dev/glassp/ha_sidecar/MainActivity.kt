@@ -7,6 +7,8 @@ import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.core.content.ContextCompat
 import android.view.View
 import android.view.WindowManager
@@ -104,13 +106,20 @@ class MainActivity : FlutterActivity() {
     /** Leave the current overlay page. */
     fun closeRoute() {
         val locked = Prefs.lockdown(this)
+        val wasGlance = UiHost.route == UiHost.GLANCE
         // While the kiosk is locked the only way out of an overlay is back to the dashboard, never to the sidecar's own screen
         // (which can be open behind it: the PIN pad reuses that activity), so the activity is finished and the app brought back.
         if (overlayOnly || locked) {
             runCatching { stopLockTask() }
             UiHost.route = UiHost.MAIN
             finish()
-            if (locked) KioskController.launchTarget(this)
+            if (locked && wasGlance) {
+                // the companion app is underneath (the idle screen is translucent): finishing is enough. Start it only if it is not.
+                val app = applicationContext
+                Handler(Looper.getMainLooper()).postDelayed({
+                    if (KioskController.lastForeground != KioskController.targetPackage(app)) KioskController.launchTarget(app)
+                }, 700)
+            } else if (locked) KioskController.launchTarget(this)
         } else {
             applyRoute(UiHost.MAIN)
         }
