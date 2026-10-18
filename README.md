@@ -64,6 +64,14 @@ Voice answers can come with cards (weather with a forecast, what is playing, a c
 (`number.<prefix>_preferred_voice_volume`) is what the tablet uses while it talks and is put back afterwards. "Set the volume to 30 percent" works through
 `media_player.<prefix>_voice`. See [docs/VOICE.md](docs/VOICE.md).
 
+## Echo cancellation
+
+The tablet's own speaker leaks into its microphone. The microphone loop therefore attaches Android's echo canceller where the tablet has
+one (*Echo cancellation* `auto | on | off`, `select.<prefix>_echo_cancellation_mode`; optional *noise suppression*,
+`switch.<prefix>_microphone_noise_suppression`; *microphone source*, `select.<prefix>_microphone_source`). It is best effort and its
+quality differs a lot between tablets: `sensor.<prefix>_echo_cancellation` (`active`, `idle`, `unsupported`, `disabled`) shows what
+your tablet really does, and `off` is the way back if the wake word gets worse. See [docs/VOICE.md](docs/VOICE.md).
+
 ## Dashboard timers card
 
 Timers do not float over the screen. Add the card **HA Sidecar timers** to a dashboard to see and control the tablet's timers there:

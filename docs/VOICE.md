@@ -210,7 +210,8 @@ the tests check that every text is readable on what it sits on (WCAG contrast of
   running (and to Home Assistant while one is). The engine is the openWakeWord pipeline: a mel spectrogram model, an embedding
   model and one small classifier per phrase, run with LiteRT 1.4 (`org.tensorflow.lite.Interpreter`). A score above the *Wake word
   threshold* (50 % by default) starts a turn exactly like the talk button, with the phrase passed to Home Assistant (`wake_word` in
-  `start`); then the engine pauses, and for 2 s after the turn, so the answer is not heard as a new wake word.
+  `start`); then the engine pauses, and for 2 s after the turn, so the answer is not heard as a new wake word (echo cancellation
+  helps on top of that, see "Echo cancellation").
 - **Phrases (21):** Alexa, Hey Jarvis, Jarvis, OK Jarvis, Computer, OK Computer, Hey Mycroft, Hey Rhasspy, Hey Nabu, OK Nabu,
   Home Assistant, OK Home, Hey Friday, Marvin, Hey KITT, Hey Spock, Alfred, GLaDOS, Terminator, Mr. Anderson, Hey House. Several
   can be active at the same time (one classifier each, sharing the mel and embedding models, so each extra phrase costs one small
@@ -242,10 +243,94 @@ the tests check that every text is readable on what it sits on (WCAG contrast of
   is visible). After a reboot the wake word therefore starts by itself on a device-owner tablet (not verified on hardware); otherwise
   the status shows *Android did not allow the microphone to start in the background* until the app is opened once.
 
+## Echo cancellation (slice 3.8)
+
+The tablet's own speaker (answers, announcements, pings, timers and alarms) leaks into its microphone. Without help the wake word
+hears the answer, the answer is recorded into the next turn and a "stop" is missed while an alarm rings. The microphone loop now
+attaches Android's own acoustic echo canceller (`android.media.audiofx.AcousticEchoCanceler`) to the recorder, **best effort**:
+the quality is the vendor's, it differs a lot between tablets and is poor on many cheap ones. Nothing here claims the problem is
+solved; the diagnostic sensor tells you what your tablet really does.
+
+- **Settings** (*System > Voice*, and the same through `set_config`): *Echo cancellation* `auto | on | off` (default `auto`),
+  *Noise suppression* (off by default), *Microphone source* `auto | voice_recognition | voice_communication` (default `auto`).
+  Entities: `select.<prefix>_echo_cancellation_mode`, `switch.<prefix>_microphone_noise_suppression`,
+  `select.<prefix>_microphone_source`. `auto` and `on` attach the canceller where the tablet has one and behave the same;
+  they differ in how a tablet without one is reported (`on` shows it as a problem in the app). `off` (with the source on `auto` and noise
+  suppression off) is exactly the previous behaviour: **if wake word detection gets worse, set it to `off`** (see "Wake word interaction" below).
+  A change applies without restarting the app: the microphone loop notices it, releases the recorder and the effects and starts
+  again with the new setup (a short gap in the audio; the wake word models are reloaded).
+- **Diagnostic** `sensor.<prefix>_echo_cancellation` (and the status row in the app):
+  `active` (the canceller is enabled on the microphone that records right now), `idle` (wanted and supported, but the microphone is
+  not recording: it is attached when the wake word or a conversation starts, and released when they end),
+  `unsupported` (the tablet has no canceller, or creating/enabling it failed: the log says which, the microphone works as before)
+  and `disabled` (the setting is `off`). On the wire (`echo_cancellation_state`) `unsupported` is called `unavailable`; Home
+  Assistant reserves that word for an entity it cannot reach (greyed out, left out of history), so the sensor translates it.
+  Attributes: `noise_suppression` (same words) and `microphone_source` (the source of the recorder that runs, empty while off).
+- **What is attached and what is not.** Only the acoustic echo canceller, and the noise suppressor when switched on. Automatic gain
+  control is never attached: it pumps the level, which the wake word and speech recognition do not like. Every effect call is
+  guarded; if one throws or returns nothing it is logged (tag `MicEffects`), the sensor says `unsupported` and the loop carries on
+  without it. The effects are released together with the recorder (`finally` in `Voice.micLoop`).
+
+### Is the playback covered?
+
+A platform canceller removes what the device itself renders from the microphone signal, so it only helps for sound that goes through
+the device's own audio path. From the code:
+
+| Sound | Played by | Route |
+|---|---|---|
+| Answers, announcements, `ask_question` | `MediaPlayer`, `USAGE_ASSISTANT`, `CONTENT_TYPE_SPEECH` (`Voice.play`) | platform audio path, media volume |
+| Listening / end pings | `AudioTrack`, `USAGE_ASSISTANT`, `CONTENT_TYPE_SONIFICATION` (`Voice.ping`) | platform audio path, media volume |
+| Alarms and timers | `MediaPlayer`, `USAGE_ALARM` (`AlarmService.playSound`) | platform audio path, alarm stream |
+
+None of them uses a direct or offloaded output of its own or Bluetooth-specific routing, so all three go where the canceller expects
+its reference. What the code cannot show is which signal the vendor's canceller takes as the reference (usually the speaker's whole
+mix, but that is the vendor's choice). **Not covered, or not known to be:**
+
+- sound that another app plays (the Home Assistant companion app's own audio, a music app) is only cancelled if the vendor's reference
+  is the whole mix. Not verified; the trial step below plays music on purpose;
+- sound that does not come from this tablet's speaker (a TV, another speaker, a Bluetooth speaker the tablet plays to) is not
+  cancelled at all;
+- the first moments of a loud sound: an adaptive canceller needs a moment to converge.
+
+### `VOICE_COMMUNICATION` instead of `VOICE_RECOGNITION` + effect?
+
+Not decided by guessing, so the source is a setting. What is known without a device in hand: which effects a source gets by default
+is configured by the vendor (`audio_effects.xml`); Android's guidance expects an echo canceller on the capture path of
+`VOICE_COMMUNICATION` and promises nothing for `VOICE_RECOGNITION` (see the
+[AOSP pre-processing guide](https://source.android.com/docs/core/audio/implement-pre-processing); the page could not be fetched while
+this was written, the statement is from a search summary of it); the platform's own description of `VOICE_COMMUNICATION` says it
+takes advantage of echo cancellation **or automatic gain control** if available, and automatic gain control is exactly what is kept off
+the wake word path. So `auto` stays `VOICE_RECOGNITION` plus the effect (what the loop recorded from before), and
+`voice_communication` is there to be tried per tablet: set it, look at the sensor, run the trial step. If the source does not open on a
+tablet, the loop falls back to `VOICE_RECOGNITION` and logs it. The trial is what decides whether `auto` should ever pick it.
+
+`AudioManager.MODE_IN_COMMUNICATION` is **not** used and not built as an option. It would make the voice-call stream the one the
+volume keys control and may make vendors route or limit media playback differently (the earpiece, a communication volume curve).
+What it really does differs per device and was not measured here. `VoiceVolume` assumes the assistant sound is on the media stream (`STREAM_MUSIC`), and it sets and restores exactly that
+level, so a mode switch could make the preferred voice volume a lie. It is worth building only for a tablet where
+`voice_communication` alone does not engage the canceller, and then as an opt-in that restores the previous mode afterwards; no
+such tablet is known yet.
+
+### Wake word interaction
+
+The wake word models (openWakeWord) were trained on unprocessed speech; echo cancellation and above all noise suppression can change
+what they hear. That is why noise suppression is off by default and why `off` is kept as the way back.
+
+- The cooldown (`COOLDOWN_MS` in `Voice.kt`) is unchanged: the engine is paused during a turn and quiet for 2 s after it. No extra quiet window after
+  playback was added; add one only if the trial shows the canceller alone is not enough.
+- To compare detection with the canceller on and off, read the score lines: `adb logcat -s WakeWord:I MicEffects:I`. A score of at
+  least 0.2 is logged (at most twice a second) as
+  `score hey_jarvis 0.43 (threshold 0.50) source=voice_recognition echo=active noise=disabled`, and a detection as
+  `detected hey_jarvis 0.874 source=... echo=... noise=...`. So: say the phrase ten times with the setting on, ten times with it off, and
+  compare the peaks; then play a recording of the phrase **through the tablet's own speaker** and compare again. With the
+  canceller working the second case should drop and the first should not. (`WW_INJECT` from docs/TESTING.md bypasses the
+  microphone and therefore the effects; it cannot be used for this.) `wake_word_score` in the state is the latest score only.
+
 ## Not built yet
 
 - More phrases (own models can be trained with openWakeWord; a custom model slot is not built), several active wake words at once.
 - Wake word detection on the tablet while HA is unreachable still starts a turn that fails with *Not connected*; there is no local fallback.
 - A microphone/speaker test in the app, custom wake word models.
-- Binary audio frames (base64 in JSON is used), a microphone/speaker test in the app, a volume setting, echo cancellation while
-  the answer plays (the engine is paused instead).
+- Binary audio frames (base64 in JSON is used), a microphone/speaker test in the app, a volume setting.
+- Echo cancellation is best effort (see above); `AudioManager.MODE_IN_COMMUNICATION` and an extra quiet window after playback are not
+  built, on purpose.

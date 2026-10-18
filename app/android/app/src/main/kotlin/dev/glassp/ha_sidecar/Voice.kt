@@ -117,29 +117,32 @@ object Voice {
     internal fun micLoop(ctx: Context) {
         val me = Thread.currentThread()
         micThread = me
-        val min = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
-        val rec = try {
-            AudioRecord(
-                MediaRecorder.AudioSource.VOICE_RECOGNITION, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT, maxOf(min, FRAME_SAMPLES * 2 * 6),
-            )
-        } catch (e: Exception) {
+        MicEffects.refresh(ctx)
+        val plan = MicEffects.plan
+        // a source the device refuses falls back to the one the loop always used
+        var source = plan.source
+        val rec = openRecorder(source) ?: run {
+            source = MediaRecorder.AudioSource.VOICE_RECOGNITION
+            if (plan.source == source) null else {
+                android.util.Log.w("MicEffects", "${plan.sourceName} did not open, using ${MicPlan.nameOf(source)}")
+                openRecorder(source)
+            }
+        }
+        if (rec == null) {
             micFailed(ctx, "mic_failed")
             return
         }
-        if (rec.state != AudioRecord.STATE_INITIALIZED) {
-            rec.release()
-            micFailed(ctx, "mic_failed")
-            return
-        }
+        var effects: MicEffects.Attached? = null
         var engine: WakeWordEngine? = null
         var engineWords: List<String> = emptyList()
         var quietUntil = 0L
         var wasTurn = false
         val buf = ShortArray(FRAME_SAMPLES)
         try {
+            effects = MicEffects.attach(rec.audioSessionId, source, plan)
             rec.startRecording()
-            while (micThread === me && (session != null || WakeWord.wanted)) {
+            // a changed echo / noise / source setting ends the loop; the service starts it again with the new setup
+            while (micThread === me && (session != null || WakeWord.wanted) && MicEffects.plan == plan) {
                 var filled = 0
                 val injected = debugInject?.poll()
                 if (injected != null) {
@@ -188,6 +191,7 @@ object Voice {
                     }
                     val best = engine?.feed(buf)?.maxByOrNull { it.value }
                     WakeWord.lastScore = best?.value ?: 0f
+                    if (best != null) WakeWord.trace(best.key, best.value, now)
                     if (best != null && now >= quietUntil && best.value >= WakeWord.threshold) {
                         quietUntil = now + COOLDOWN_MS
                         engine?.reset()
@@ -197,11 +201,31 @@ object Voice {
             }
         } finally {
             runCatching { rec.stop() }
+            effects?.close() // before the recorder: the effects sit on its audio session
             rec.release()
             engine?.close()
             WakeWord.listening = false
             if (micThread === me) micThread = null
         }
+    }
+
+    /** An initialised recorder on [source], or null if the device does not give one. */
+    @Suppress("MissingPermission")
+    private fun openRecorder(source: Int): AudioRecord? {
+        val min = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+        val rec = try {
+            AudioRecord(
+                source, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT, maxOf(min, FRAME_SAMPLES * 2 * 6),
+            )
+        } catch (e: Exception) {
+            return null
+        }
+        if (rec.state != AudioRecord.STATE_INITIALIZED) {
+            rec.release()
+            return null
+        }
+        return rec
     }
 
     private fun emitFrame(id: String, buf: ShortArray) {

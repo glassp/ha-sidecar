@@ -32,7 +32,7 @@ SENSORS = [
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     device = hass.data[DOMAIN]["devices"][entry.data[CONF_DEVICE_ID]]
     add_entities(device, "sensor", async_add_entities, 
-        [*(SidecarSensor(device, *s) for s in SENSORS), CompanionRestartsSensor(device), DashboardLastBeaconSensor(device), CompanionLastRestartSensor(device), WatchdogStateSensor(device), WatchdogLogSensor(device), TargetBrightnessSensor(device, raw=False), TargetBrightnessSensor(device, raw=True), NextTimerSensor(device), ActiveTimersSensor(device), AlarmsSensor(device)]
+        [*(SidecarSensor(device, *s) for s in SENSORS), CompanionRestartsSensor(device), DashboardLastBeaconSensor(device), CompanionLastRestartSensor(device), WatchdogStateSensor(device), WatchdogLogSensor(device), EchoCancellationSensor(device), TargetBrightnessSensor(device, raw=False), TargetBrightnessSensor(device, raw=True), NextTimerSensor(device), ActiveTimersSensor(device), AlarmsSensor(device)]
     )
 
 
@@ -57,6 +57,39 @@ class SidecarSensor(SidecarEntity, SensorEntity):
 
 def _iso(ms: int | None) -> str | None:
     return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).isoformat() if ms else None
+
+
+# The tablet says "unavailable" for a microphone without the effect; Home Assistant reserves that word for an entity it cannot reach
+# (greyed out, left out of history), so the sensors say "unsupported" instead.
+EFFECT_STATES = {"active": "active", "idle": "idle", "unavailable": "unsupported", "disabled": "disabled"}
+
+
+class EchoCancellationSensor(SidecarEntity, SensorEntity):
+    """Is the tablet's own speaker being cancelled out of its microphone? The platform's echo canceller is best effort:
+
+    `active` = on the microphone that is recording, `idle` = wanted and supported, attached when the microphone next starts,
+    `unsupported` = the tablet has none or it could not be attached (the microphone works as before), `disabled` = switched off.
+    """
+
+    _attr_name = "Echo cancellation"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = list(dict.fromkeys(EFFECT_STATES.values()))
+    _attr_icon = "mdi:ear-hearing-off"
+
+    def __init__(self, device) -> None:
+        super().__init__(device, "echo_cancellation_state")
+
+    @property
+    def native_value(self) -> str | None:
+        return EFFECT_STATES.get(self._state.get("echo_cancellation_state"))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "noise_suppression": EFFECT_STATES.get(self._state.get("noise_suppression_state")),
+            "microphone_source": self._state.get("mic_source_in_use"),
+        }
 
 
 class NextTimerSensor(SidecarEntity, SensorEntity):

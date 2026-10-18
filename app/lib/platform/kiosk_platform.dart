@@ -41,6 +41,16 @@ class DeviceStatus {
       raw['wake_word_download_error'] as String?;
   double get wakeWordScore => (raw['wake_word_score'] as num?)?.toDouble() ?? 0;
 
+  /// What the microphone's platform effects are doing: `active`, `idle` (wanted, attached when the microphone starts),
+  /// `unavailable` (the tablet has none, or it could not be attached) or `disabled`.
+  String get echoCancellationState =>
+      raw['echo_cancellation_state'] as String? ?? 'idle';
+  String get noiseSuppressionState =>
+      raw['noise_suppression_state'] as String? ?? 'disabled';
+
+  /// The Android audio source of the recording microphone (`voice_recognition`, `voice_communication`), null while it is off.
+  String? get micSourceInUse => raw['mic_source_in_use'] as String?;
+
   /// The phrases chosen to listen for (installed or not).
   List<Map<String, dynamic>> get activeWakeWords => [
     for (final w in wakeWords)

@@ -399,6 +399,26 @@
       "desc": "Das Aussehen des Sprachbildschirms und der angedockten Karte.",
       "kw": "skin, thema, farben, aussehen, sprache, karte"
     },
+    "echo_cancellation": {
+      "title": "Echounterdrückung",
+      "desc": "Verhindert, dass das Tablet seinen eigenen Lautsprecher (Antworten, Durchsagen, Wecker) über das Mikrofon hört. Nutzt den in Android eingebauten Echo-Unterdrücker. Auto verwendet ihn, wenn das Tablet einen hat; Aus ist der Weg zurück, falls das Aktivierungswort schlechter wird. Die Qualität unterscheidet sich stark zwischen Tablets.",
+      "kw": "echo, echounterdrückung, aec, rückkopplung, hört sich selbst, lautsprecher, mikrofon, aktivierungswort, fehlalarm"
+    },
+    "echo_status": {
+      "title": "Status der Echounterdrückung",
+      "desc": "Ob dieses Tablet einen Echo-Unterdrücker hat und ob er auf dem Mikrofon arbeitet.",
+      "kw": "echo, status, aktiv, nicht unterstützt, diagnose"
+    },
+    "noise_suppression": {
+      "title": "Rauschunterdrückung",
+      "desc": "Lässt zusätzlich Androids Rauschunterdrückung auf dem Mikrofon laufen. Standardmäßig aus: Sie kann den Klang verändern, auf den die Aktivierungswort-Modelle trainiert sind. Nur ausprobieren, wenn die Echounterdrückung allein nicht reicht.",
+      "kw": "rauschen, rauschunterdrückung, hintergrund, lüfter, mikrofon"
+    },
+    "mic_source": {
+      "title": "Mikrofonquelle",
+      "desc": "Von welcher Android-Audioquelle der Assistent aufnimmt. Auto ist Spracherkennung plus Echo-Unterdrücker. Anruf ist die Quelle, die Android für Telefon- und Videoanrufe abstimmt: Manche Tablets unterdrücken Echo damit besser, manche ändern dabei auch den Pegel. Nur ändern, wenn Echo bleibt.",
+      "kw": "mikrofon, quelle, spracherkennung, anruf, voip, echo, audioquelle"
+    },
     "hot_corner": {
       "title": "PIN-Ecke",
       "desc": "Die versteckte Ecke, auf die du auf dem gesperrten Bildschirm 5-mal tippst, um zur PIN-Eingabe zu kommen. Deine Taps dort erreichen weiterhin die App darunter (das Home-Assistant-Menü öffnet sich wie gewohnt).",
@@ -928,6 +948,27 @@
     "err_hash_mismatch": "Die geladene Datei passte nicht zur Prüfsumme und wurde verworfen.",
     "err_unknown_word": "Unbekanntes Aktivierungswort.",
     "err_no_space": "Nicht genug Speicher auf dem Tablet."
+  },
+  "mic": {
+    "echo_auto": "Auto",
+    "echo_on": "An",
+    "echo_off": "Aus",
+    "source_auto": "Auto",
+    "source_voice_recognition": "Sprache",
+    "source_voice_communication": "Anruf",
+    "state_active": "Aktiv",
+    "state_idle": "Bereit",
+    "state_unavailable": "Nicht unterstützt",
+    "state_disabled": "Aus",
+    "echo_state_active": "Aktiv: Der eigene Ton des Tablets wird aus dem Mikrofon herausgerechnet.",
+    "echo_state_idle": "Unterstützt. Startet mit dem Mikrofon (Aktivierungswort oder Gespräch).",
+    "echo_state_unavailable": "Dieses Tablet hat keinen Echo-Unterdrücker, oder er ließ sich nicht starten. Das Mikrofon arbeitet wie bisher.",
+    "echo_state_disabled": "Aus. Das Mikrofon arbeitet wie bisher.",
+    "noise_state_active": "Rauschunterdrückung: aktiv",
+    "noise_state_idle": "Rauschunterdrückung: startet mit dem Mikrofon",
+    "noise_state_unavailable": "Rauschunterdrückung: auf diesem Tablet nicht unterstützt",
+    "noise_state_disabled": "Rauschunterdrückung: aus",
+    "source_in_use": "Aufnahme von: {source}"
   },
   "corner": {
     "bottom_left": "Unten links",

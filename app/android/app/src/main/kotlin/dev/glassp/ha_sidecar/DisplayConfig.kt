@@ -46,6 +46,10 @@ object DisplayConfig {
         "voice_sounds" to true, // the ping when listening starts and when the conversation ends
         "voice_volume" to 50, // media volume (%) during a voice session; the previous level comes back afterwards
         "voice_skin" to "midnight", // the look of the voice screen and the card
+        // microphone: the platform's echo canceller keeps the tablet from hearing its own speaker (see MicPlan; "off" is the escape hatch)
+        "echo_cancellation" to "auto", // auto | on | off
+        "noise_suppression" to false, // the platform's noise suppressor on the microphone
+        "mic_source" to "auto", // auto | voice_recognition | voice_communication
         "hot_corner" to "top_left", // where the hidden PIN corner is (it passes the touch on, so it can sit on the Home Assistant menu button)
         "voice_docked" to true, // voice shows as a small card over whatever is on screen instead of a full-screen page
         // on-device wake word (off by default: it keeps the microphone open; the models are downloaded when it is switched on)
@@ -85,6 +89,7 @@ object DisplayConfig {
         PresenceCamera.refresh(ctx)
         CompanionWatchdog.refresh(ctx)
         WakeWord.refresh(ctx)
+        MicEffects.refresh(ctx) // a running microphone loop notices a changed setup and restarts itself
         KioskController.refreshOverlay(ctx) // the hot corner may have moved
         EventBus.emit("status_changed")
         return Result(get(ctx), rejected)
@@ -120,6 +125,8 @@ object DisplayConfig {
         "camera_facing" -> v in FACINGS
         "theme" -> v in THEMES
         "voice_skin" -> v in VOICE_SKINS
+        "echo_cancellation" -> v in MicPlan.ECHO_MODES
+        "mic_source" -> v in MicPlan.SOURCES
         "hot_corner" -> v in CORNERS
         "watchdog_action" -> v == "restart" || v == "notify"
         "wake_word_ids" -> v.split(',').map { it.trim() }.filter { it.isNotEmpty() }.all { WakeWordModels.word(it) != null }

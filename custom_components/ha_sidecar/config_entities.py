@@ -87,6 +87,7 @@ SWITCHES = [
     ("conversation", "Keep listening after an answer", "mdi:forum-outline"),
     ("voice_sounds", "Voice pings", "mdi:bell-ring-outline"),
     ("voice_docked", "Voice as a docked card", "mdi:dock-bottom"),
+    ("noise_suppression", "Microphone noise suppression", "mdi:volume-variant-off"),
 ]
 
 # key, name, options, icon
@@ -97,6 +98,8 @@ SELECTS = [
     ("watchdog_action", "Watchdog action", ["restart", "notify"], "mdi:wrench-clock"),
     ("hot_corner", "PIN corner", ["bottom_left", "bottom_right", "top_left", "top_right"], "mdi:gesture-tap"),
     ("voice_skin", "Voice skin", ["midnight", "aurora", "sunrise", "paper", "contrast"], "mdi:palette"),
+    ("echo_cancellation", "Echo cancellation mode", ["auto", "on", "off"], "mdi:ear-hearing-off"),
+    ("mic_source", "Microphone source", ["auto", "voice_recognition", "voice_communication"], "mdi:microphone-settings"),
 ]
 
 # key, name, icon

@@ -43,8 +43,24 @@ When something is wrong, the most useful report is: what you did, what you expec
 - [ ] **A real conversation**: your language, a follow-up question, "what is the temperature in the kitchen", "turn on the light", a
       timer, "set the volume to 30 percent". Good: STT understands you, the answer is spoken at the preferred voice volume and the volume
       goes back afterwards.
-- [ ] **Sound**: how do the pings, the answers and the echo of the speaker into the microphone feel? Does the tablet hear its own answer
-      and start a new turn? (If so: lower the voice volume or turn off *Keep listening after an answer*.)
+- [ ] **Sound**: how do the pings and the answers feel? (The echo of the speaker into the microphone has its own step below.)
+- [ ] **Echo cancellation, on and off** (*System > Voice*; docs/VOICE.md, "Echo cancellation"). First write down what *Echo cancellation
+      status* says (`Active` while recording / `Ready` / `Not supported`) and the same in Home Assistant (`sensor.<tablet>_echo_cancellation`);
+      with the wake word on it should read `active`, and `idle` again a moment after you switch the wake word off and nobody talks.
+      Then run each of the three parts with *Echo cancellation* **Auto** and again with **Off** (and with *Microphone source* **Call** if
+      Auto leaves echo; one setting change takes effect within a second, no restart):
+      1. **Long answer at 100 %.** Set *Preferred voice volume* to 100, ask something with a long answer ("what can you do?"), say nothing
+         while it speaks and keep *Keep listening after an answer* on. Good: the transcript holds only your question and the answer, no
+         second turn starts by itself, the follow-up bubble stays empty. Bad: words of the answer in the "you said" bubble or a new turn
+         (that is the echo).
+      2. **Wake word over music.** Play music from another app at a normal listening level and say the wake phrase at your usual distance
+         ten times. Count the hits. Then do the same while an alarm rings (`ha_sidecar.set_alarm` one minute ahead) and say the phrase and
+         "stop". Good: with *Auto* more hits than with *Off*, and "stop" gets through.
+      3. **Quiet room, nothing playing.** Say the phrase ten times. Good: about as many hits as with *Off*. If *Auto* is clearly worse
+         here, leave it **Off**: the canceller changes what the wake word model hears.
+      Send back: the model of the tablet, the status words, the hit counts per row, and `adb logcat -d -s WakeWord:I MicEffects:I` from the run
+      (the lines show the peak score and `echo=` / `source=` for each). Also say whether the music of another app was cancelled: that is the
+      case the code cannot promise (the canceller's reference is the vendor's choice).
 - [ ] **Docked card** over the dashboard (needs "draw over other apps" or the accessibility service): appears, buttons work, goes away,
       does not cover something you need.
 - [ ] LLM agent (if you use one): result cards via `ha_sidecar.show_card`, long answers, the thinking time.

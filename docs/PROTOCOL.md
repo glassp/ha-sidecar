@@ -31,6 +31,10 @@ State keys: `mode` (`device_owner|accessibility|none`), `lockdown`, `has_pin`, `
 
 Wake word state keys: `wake_word_listening`, `wake_word_error` (`models_missing`, `mic_permission`, `start_blocked`, `mic_failed`, `engine_failed`), `wake_word_score`, `wake_words` (`[{id, phrase, installed, missing_bytes}]`), `mic_permission`, `voice_active`; `cfg` has `conversation`, `conversation_timeout_s`, `voice_sounds`, `wake_word`, `wake_word_ids` (comma separated catalogue ids), `wake_word_threshold`; each `wake_words` entry is `{id, phrase, installed, active, size_bytes, missing_bytes, downloading, queued, source}`.
 
+Microphone effects (docs/VOICE.md, "Echo cancellation"): state keys `echo_cancellation_state` and `noise_suppression_state` (`active | idle | unavailable | disabled`; the
+Home Assistant sensor shows `unavailable` as `unsupported`), `mic_source_in_use` (`voice_recognition | voice_communication`, null while the microphone is off); `cfg` has
+`echo_cancellation` (`auto | on | off`), `noise_suppression` (bool) and `mic_source` (`auto | voice_recognition | voice_communication`).
+
 Additional state keys: `cfg{...}`, `is_night`, `presence`, `camera_motion`, `camera_active`, `camera_error`,
 `camera_permission`, `target_brightness`, `display_error`, `last_interaction` (epoch ms), `camera_in_use`, `mic_in_use`,
 `last_blocked_app`, `blocked_count`, `pin_failures`, `glance_showing`.

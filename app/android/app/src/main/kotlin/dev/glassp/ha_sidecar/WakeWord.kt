@@ -354,8 +354,22 @@ object WakeWord {
         EventBus.emit("status_changed")
     }
 
+    private const val TRACE_FLOOR = 0.2f
+    private const val TRACE_EVERY_MS = 500L
+    private var lastTrace = 0L // the microphone thread only
+
+    /**
+     * Logs a score worth a look (a near miss, a hit, the tablet hearing itself) together with the microphone setup it came through,
+     * so a run with echo cancellation on can be compared with one that has it off: `adb logcat -s WakeWord` (docs/VOICE.md).
+     */
+    fun trace(id: String, score: Float, now: Long) {
+        if (score < TRACE_FLOOR || now - lastTrace < TRACE_EVERY_MS) return
+        lastTrace = now
+        android.util.Log.i("WakeWord", "score $id %.3f (threshold %.2f) ${MicEffects.label()}".format(score, threshold))
+    }
+
     fun detected(id: String, score: Float) {
-        android.util.Log.i("WakeWord", "detected $id %.3f".format(score))
+        android.util.Log.i("WakeWord", "detected $id %.3f ${MicEffects.label()}".format(score))
         EventBus.emit("wake_word", mapOf("id" to id, "phrase" to (WakeWordModels.word(id)?.phrase ?: id), "score" to score.toDouble()))
     }
 

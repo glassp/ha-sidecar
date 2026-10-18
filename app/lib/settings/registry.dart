@@ -620,6 +620,78 @@ List<SettingEntry> buildRegistry(AppController c) {
       Icons.dock_outlined,
       'voice_docked',
     ),
+    base(
+      'echo_cancellation',
+      Section.system,
+      _g('voice'),
+      (ctx) => SegmentedSetting(
+        icon: Icons.graphic_eq,
+        title: _t('echo_cancellation', 'title'),
+        subtitle: _t('echo_cancellation', 'desc'),
+        options: {
+          for (final m in const ['auto', 'on', 'off']) m: 'mic.echo_$m'.tr(),
+        },
+        value: str('echo_cancellation', 'auto'),
+        onChanged: (v) => set(ctx, 'echo_cancellation', v),
+      ),
+    ),
+    base('echo_status', Section.system, _g('voice'), (ctx) {
+      final st = c.status;
+      final echo = st.echoCancellationState;
+      final noise = st.noiseSuppressionState;
+      final source = st.micSourceInUse;
+      // "on" is a statement that the tablet should have it: say so when it does not
+      final problem =
+          echo == 'unavailable' && str('echo_cancellation', 'auto') == 'on';
+      return Tile(
+        icon: Icons.settings_voice_outlined,
+        color: problem ? Semantic.warn : null,
+        title: _t('echo_status', 'title'),
+        subtitle: [
+          'mic.echo_state_$echo'.tr(),
+          if (b('noise_suppression')) 'mic.noise_state_$noise'.tr(),
+          if (source != null)
+            'mic.source_in_use'.tr(
+              namedArgs: {'source': 'mic.source_$source'.tr()},
+            ),
+        ].join('\n'),
+        trailing: Pill(
+          'mic.state_$echo'.tr(),
+          color: echo == 'active'
+              ? Semantic.ok
+              : problem
+              ? Semantic.warn
+              : null,
+        ),
+      );
+    }),
+    switchEntry(
+      'noise_suppression',
+      Section.system,
+      _g('voice'),
+      Icons.noise_aware_outlined,
+      'noise_suppression',
+    ),
+    base(
+      'mic_source',
+      Section.system,
+      _g('voice'),
+      (ctx) => SegmentedSetting(
+        icon: Icons.mic_external_on_outlined,
+        title: _t('mic_source', 'title'),
+        subtitle: _t('mic_source', 'desc'),
+        options: {
+          for (final m in const [
+            'auto',
+            'voice_recognition',
+            'voice_communication',
+          ])
+            m: 'mic.source_$m'.tr(),
+        },
+        value: str('mic_source', 'auto'),
+        onChanged: (v) => set(ctx, 'mic_source', v),
+      ),
+    ),
     base('wake_word_status', Section.system, _g('voice'), (ctx) {
       final st = c.status;
       final chosenMissing = [

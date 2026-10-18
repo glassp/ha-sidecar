@@ -399,6 +399,26 @@
       "desc": "The look of the voice screen and the docked card.",
       "kw": "skin, theme, colors, look, voice, card"
     },
+    "echo_cancellation": {
+      "title": "Echo cancellation",
+      "desc": "Keeps the tablet from hearing its own speaker (answers, announcements, alarms) through the microphone, using the echo canceller built into Android. Auto uses it where the tablet has one; Off is the way back if the wake word gets worse. The quality differs a lot between tablets.",
+      "kw": "echo, cancellation, aec, feedback, hears itself, speaker, microphone, wake word, false trigger"
+    },
+    "echo_status": {
+      "title": "Echo cancellation status",
+      "desc": "Whether this tablet has an echo canceller and whether it is working on the microphone.",
+      "kw": "echo, status, active, unavailable, support, diagnostic"
+    },
+    "noise_suppression": {
+      "title": "Noise suppression",
+      "desc": "Also run Android's noise suppressor on the microphone. Off by default: it can change the sound the wake word models were trained on, so try it only if echo cancellation alone is not enough.",
+      "kw": "noise, suppression, background, fan, microphone"
+    },
+    "mic_source": {
+      "title": "Microphone source",
+      "desc": "Which Android audio source the assistant records from. Auto is speech recognition plus the echo canceller. Call is the source Android tunes for phone and video calls: some tablets cancel echo better with it, some also change the volume level. Change it only if echo remains.",
+      "kw": "microphone, source, voice recognition, communication, call, voip, echo, audio source"
+    },
     "hot_corner": {
       "title": "PIN corner",
       "desc": "The hidden corner you tap 5 times on the locked screen to reach the PIN pad. Your taps there still reach the app underneath (the Home Assistant menu opens as usual).",
@@ -928,6 +948,27 @@
     "err_hash_mismatch": "The downloaded file did not match its checksum and was discarded.",
     "err_unknown_word": "Unknown wake word.",
     "err_no_space": "Not enough storage on the tablet."
+  },
+  "mic": {
+    "echo_auto": "Auto",
+    "echo_on": "On",
+    "echo_off": "Off",
+    "source_auto": "Auto",
+    "source_voice_recognition": "Speech",
+    "source_voice_communication": "Call",
+    "state_active": "Active",
+    "state_idle": "Ready",
+    "state_unavailable": "Not supported",
+    "state_disabled": "Off",
+    "echo_state_active": "Active: the tablet's own sound is taken out of the microphone.",
+    "echo_state_idle": "Supported. It starts with the microphone (wake word or a conversation).",
+    "echo_state_unavailable": "This tablet has no echo canceller, or it could not be started. The microphone works as before.",
+    "echo_state_disabled": "Off. The microphone works as before.",
+    "noise_state_active": "Noise suppression: active",
+    "noise_state_idle": "Noise suppression: starts with the microphone",
+    "noise_state_unavailable": "Noise suppression: not supported on this tablet",
+    "noise_state_disabled": "Noise suppression: off",
+    "source_in_use": "Recording from: {source}"
   },
   "corner": {
     "bottom_left": "Bottom left",
